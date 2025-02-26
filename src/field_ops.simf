@@ -1,0 +1,67 @@
+fn add_mod(a: u256, b: u256) -> u256 {
+    jet::fe_add(a, b)
+}
+
+fn sub_mod(a: u256, b: u256) -> u256 {
+    let b_neg: u256 = jet::fe_negate(b);
+    add_mod(a, b_neg)
+}
+
+fn mul_mod(a: u256, b: u256) -> u256 {
+    jet::fe_multiply(a, b)
+}
+
+fn div_mod(a: u256, b: u256) -> u256 {
+    let b_inv: u256 = jet::fe_invert(b);
+    mul_mod(a, b_inv)
+}
+
+type PowModCtx = (u256, u256, u32);
+
+fn pow_mod_step(ctx: PowModCtx, unused: (), counter: u16) -> Either<u256, PowModCtx> {
+    let (res, base, exp): PowModCtx = ctx;
+    match jet::is_zero_32(exp) {
+        true => Left(res),
+        false => {
+            let new_res: u256 = match jet::divides_32(2, exp) {
+                true => res,
+                false => mul_mod(res, base),
+            };
+            let new_base: u256 = jet::fe_square(base);
+            let new_exp: u32 = jet::divide_32(exp, 2);
+            Right((new_res, new_base, new_exp))
+        }
+    }
+}
+
+fn pow_mod(a: u256, b: u32) -> u256 {
+    let res: Either<u256, PowModCtx> = for_while::<pow_mod_step>((1, a, b), ());
+    unwrap_left::<PowModCtx>(res)
+}
+
+fn main() {
+    let a: u256 = 1;
+    let b: u256 = 1;
+    let c: u256 = add_mod(a, b);
+    assert!(jet::eq_256(c, 2));
+
+    let a: u256 = 2;
+    let b: u256 = 1;
+    let c: u256 = sub_mod(a, b);
+    assert!(jet::eq_256(c, 1));
+
+    let a: u256 = 2;
+    let b: u256 = 2;
+    let c: u256 = mul_mod(a, b);
+    assert!(jet::eq_256(c, 4));
+
+    let a: u256 = 4;
+    let b: u256 = 2;
+    let c: u256 = div_mod(a, b);
+    assert!(jet::eq_256(c, 2));
+
+    let a: u256 = 2;
+    let b: u32 = 3;
+    let c: u256 = pow_mod(a, b);
+    assert!(jet::eq_256(c, 8));
+}
