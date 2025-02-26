@@ -10,5 +10,5 @@ path = "src/main.rs"
 [dependencies]
 anyhow = "1.0"
 clap = { version = "4.4", features = ["derive"] }
-simfony = { git = "https://github.com/BlockstreamResearch/simfony" }
 base64 = "0.21"
+simfony = { git = "https://github.com/m-kus/simfony", rev = "37476a6141d64cc0da4ae683212b521e2b505e29" }
