@@ -1,25 +1,42 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
+//! Arithmetic operations in the secp256k1 prime field.
+
+/// Add two field elements modulo the secp256k1 prime.
 fn add_mod(a: u256, b: u256) -> u256 {
     jet::fe_add(a, b)
 }
 
+/// Subtract two field elements modulo the secp256k1 prime.
 fn sub_mod(a: u256, b: u256) -> u256 {
     let b_neg: u256 = jet::fe_negate(b);
     add_mod(a, b_neg)
 }
 
+/// Multiply two field elements modulo the secp256k1 prime.
 fn mul_mod(a: u256, b: u256) -> u256 {
     jet::fe_multiply(a, b)
 }
 
+/// Divide two field elements modulo the secp256k1 prime.
 fn div_mod(a: u256, b: u256) -> u256 {
     let b_inv: u256 = jet::fe_invert(b);
     mul_mod(a, b_inv)
 }
 
-type PowModCtx = (u256, u256, u32);
+/// Accumulator for the power modulo operation.
+///
+/// The accumulator is a tuple of three elements:
+/// - The result of the power modulo operation.
+/// - The base of the power modulo operation.
+/// - The exponent of the power modulo operation.
+type PowModAcc = (u256, u256, u32);
 
-fn pow_mod_step(ctx: PowModCtx, unused: (), counter: u16) -> Either<u256, PowModCtx> {
-    let (res, base, exp): PowModCtx = ctx;
+/// Implementation of the iterative square and multiply algorithm.
+fn pow_mod_step(acc: PowModAcc, context: (), counter: u16) -> Either<u256, PowModAcc> {
+    let (res, base, exp): PowModAcc = acc;
     match jet::is_zero_32(exp) {
         true => Left(res),
         false => {
@@ -34,9 +51,10 @@ fn pow_mod_step(ctx: PowModCtx, unused: (), counter: u16) -> Either<u256, PowMod
     }
 }
 
+/// Raise a field element to a power modulo the secp256k1 prime.
 fn pow_mod(a: u256, b: u32) -> u256 {
-    let res: Either<u256, PowModCtx> = for_while::<pow_mod_step>((1, a, b), ());
-    unwrap_left::<PowModCtx>(res)
+    let res: Either<u256, PowModAcc> = for_while::<pow_mod_step>((1, a, b), ());
+    unwrap_left::<PowModAcc>(res)
 }
 
 fn main() {
