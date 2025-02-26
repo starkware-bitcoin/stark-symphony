@@ -1,0 +1,5 @@
+fn main() {
+    let a: u16 = 0x1000;
+    let b: u16 = 0x1000;
+    assert!(jet::eq_16(a, b));
+}

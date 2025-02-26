@@ -1,3 +1,3 @@
 [workspace]
-members = ["tests"]
+members = ["simfony-cli"]
 resolver = "2"

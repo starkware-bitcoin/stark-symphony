@@ -1,8 +1,5 @@
-install:
-	cargo install --git https://github.com/BlockstreamResearch/simfony simfony
-
 build:
-	simc src/main.simf
+	cargo run --bin simfony-cli build src/simple_fib.simf
 
 test:
-	cargo test
+	cargo run --bin simfony-cli run src/simple_fib.simf
