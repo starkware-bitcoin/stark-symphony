@@ -1,5 +1,8 @@
+install:
+	cargo install --path simfony-cli simfony-cli
+
 build:
-	cargo run --bin simfony-cli build src/simple_fib.simf
+	simfony build src/simple_fib.simf
 
 test:
-	cargo run --bin simfony-cli run src/simple_fib.simf
+	simfony run src/simple_fib.simf
