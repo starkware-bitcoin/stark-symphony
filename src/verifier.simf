@@ -1,0 +1,15 @@
+// p_mt_root u256
+// cp_alpha (u256, u256, u256)
+// idx u32
+// p_eval (u256, u256, u256)
+// fri_commitments List<FriLayer>, FriLayer = (cp_mt_root, beta, u256)
+
+type Inner = List<u32, 4>;
+
+fn main() {
+    
+    let lst1: Inner = list![1, 2, 3];
+    let lst2: Inner = list![5, 6, 7];
+    let lst: List<Inner, 4> = list![lst1, lst2];
+
+}

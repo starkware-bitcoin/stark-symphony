@@ -1,0 +1,57 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
+//! A non-interactive channel for communication between the prover and the verifier.
+//! The channel is based on the SHA-256 hash function.
+
+/// The channel state is a 256-bit value, initialized to 0.
+type ChannelState = u256;
+
+/// Mix a 256-bit value into the channel state.
+///
+/// # Arguments
+///
+/// * `state` - The current channel state.
+/// * `value` - The value to mix into the channel state.
+fn channel_mix_u256(state: ChannelState, value: u256) -> ChannelState {
+    let ctx: Ctx8 = jet::sha_256_ctx_8_init();
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_32(ctx, state);
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_32(ctx, value);
+    jet::sha_256_ctx_8_finalize(ctx)
+}
+
+/// Update the channel state by hashing the current state.
+fn channel_mix(state: ChannelState) -> ChannelState {
+    let ctx: Ctx8 = jet::sha_256_ctx_8_init();
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_32(ctx, state);
+    jet::sha_256_ctx_8_finalize(ctx)
+}
+
+/// Draw a 256-bit value from the channel state.
+///
+/// # Arguments
+///
+/// * `state` - The current channel state.
+fn channel_draw_u256(state: ChannelState) -> (ChannelState, u256) {
+    let value: u256 = jet::fe_normalize(state);
+    (channel_mix(state), value)
+}
+
+/// Draw a 32-bit value from the channel state.
+///
+/// # Arguments
+///
+/// * `state` - The current channel state.
+fn channel_draw_u32(state: ChannelState) -> (ChannelState, u32) {
+    let (_, lo128): (u128, u128) = <u256>::into(state);
+    let (_, lo64): (u64, u64) = <u128>::into(lo128);
+    let (_, value): (u32, u32) = <u64>::into(lo64);
+    (channel_mix(state), value)
+}
+
+fn main() {
+    let state: ChannelState = channel_mix_u256(0, 1);
+    let (state, value): (ChannelState, u32) = channel_draw_u32(state);
+    let (state, value): (ChannelState, u256) = channel_draw_u256(state);
+}

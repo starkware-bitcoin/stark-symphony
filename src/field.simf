@@ -26,17 +26,17 @@ fn div_mod(a: u256, b: u256) -> u256 {
     mul_mod(a, b_inv)
 }
 
-/// Accumulator for the power modulo operation.
+/// Accumulator for the modular exponentiation operation.
 ///
 /// The accumulator is a tuple of three elements:
-/// - The result of the power modulo operation.
-/// - The base of the power modulo operation.
-/// - The exponent of the power modulo operation.
-type PowModAcc = (u256, u256, u32);
+/// - The result of the modular exponentiation operation.
+/// - The base of the modular exponentiation operation.
+/// - The exponent of the modular exponentiation operation.
+type ExpModAcc = (u256, u256, u32);
 
 /// Implementation of the iterative square and multiply algorithm.
-fn pow_mod_step(acc: PowModAcc, context: (), counter: u16) -> Either<u256, PowModAcc> {
-    let (res, base, exp): PowModAcc = acc;
+fn exp_mod_step(acc: ExpModAcc, context: (), counter: u16) -> Either<u256, ExpModAcc> {
+    let (res, base, exp): ExpModAcc = acc;
     match jet::is_zero_32(exp) {
         true => Left(res),
         false => {
@@ -52,9 +52,9 @@ fn pow_mod_step(acc: PowModAcc, context: (), counter: u16) -> Either<u256, PowMo
 }
 
 /// Raise a field element to a power modulo the secp256k1 prime.
-fn pow_mod(a: u256, b: u32) -> u256 {
-    let res: Either<u256, PowModAcc> = for_while::<pow_mod_step>((1, a, b), ());
-    unwrap_left::<PowModAcc>(res)
+fn exp_mod(a: u256, b: u32) -> u256 {
+    let res: Either<u256, ExpModAcc> = for_while::<exp_mod_step>((1, a, b), ());
+    unwrap_left::<ExpModAcc>(res)
 }
 
 fn main() {
@@ -80,6 +80,6 @@ fn main() {
 
     let a: u256 = 2;
     let b: u32 = 3;
-    let c: u256 = pow_mod(a, b);
+    let c: u256 = exp_mod(a, b);
     assert!(jet::eq_256(c, 8));
 }
