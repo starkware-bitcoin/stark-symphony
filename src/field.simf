@@ -57,7 +57,7 @@ fn exp_mod(a: u256, b: u32) -> u256 {
     unwrap_left::<ExpModAcc>(res)
 }
 
-fn main() {
+fn test_field() {
     let a: u256 = 1;
     let b: u256 = 1;
     let c: u256 = add_mod(a, b);

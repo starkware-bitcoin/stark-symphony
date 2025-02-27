@@ -1,0 +1,31 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
+//! SHA256 hash helpers.
+
+#ifndef SHA256_SIMF
+#define SHA256_SIMF
+
+/// SHA256 hash of a 256-bit value (big-endian).
+fn sha256(input: u256) -> u256 {
+    let ctx: Ctx8 = jet::sha_256_ctx_8_init();
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_32(ctx, input);
+    jet::sha_256_ctx_8_finalize(ctx)
+}
+
+/// SHA256 hash of a concatenation of two 256-bit values (big-endian).
+fn sha256_pair(left: u256, right: u256) -> u256 {
+    let ctx: Ctx8 = jet::sha_256_ctx_8_init();
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_32(ctx, left);
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_32(ctx, right);
+    jet::sha_256_ctx_8_finalize(ctx)
+}
+
+fn test_sha256() {
+    let input: u256 = 0x0000000000000000000000000000000000000000000000000000000000000000;
+    let result: u256 = sha256(input);
+    assert!(jet::eq_256(result, 0x66687aadf862bd776c8fc18b8e9f8e20089714856ee233b3902a591d0d5f2925));
+}
+
+#endif

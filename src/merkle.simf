@@ -1,0 +1,42 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
+//! Merkle tree helpers.
+
+#include "sha256.simf"
+
+/// A proof node is a tuple of a 256-bit value and a boolean indicating whether it is the left or right sibling.
+type ProofNode = (u256, bool);
+
+/// Compute the next node in the proof.
+fn merkle_compute_step(element: ProofNode, acc: u256) -> u256 {
+    let (node, is_left): ProofNode = element;
+    match is_left {
+        true => sha256_pair(node, acc),
+        false => sha256_pair(acc, node),
+    }
+}
+
+/// Verify a proof of inclusion for a leaf in a Merkle tree.
+///
+/// # Arguments
+///
+/// * `leaf` - The leaf value to verify.
+/// * `proof` - The proof of inclusion.
+/// * `root` - The root of the Merkle tree.
+fn merkle_verify(leaf: u256, proof: List<ProofNode, 16>, root: u256) {
+    let node: u256 = sha256(leaf);
+    let computed_root: u256 = fold::<merkle_compute_step, 16>(proof, node);
+    assert!(jet::eq_256(computed_root, root));
+}
+
+fn test_merkle() {
+    let root: u256 = 0x875ef7b0a28899d85920fa5586628c27dd7f3ca3d221ee018ee34fc5d758a477;
+    let leaf: u256 = 0;
+    let proof: List<ProofNode, 16> = list![
+        (0xa665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3, false),
+        (0x114bd151f8fb0c58642d2170da4ae7d7c57977260ac2cc8905306cab6b2acabc, false),
+    ];
+    merkle_verify(leaf, proof, root);
+}

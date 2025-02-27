@@ -5,6 +5,8 @@
 //! A non-interactive channel for communication between the prover and the verifier.
 //! The channel is based on the SHA-256 hash function.
 
+#include "sha256.simf"
+
 /// The channel state is a 256-bit value, initialized to 0.
 type ChannelState = u256;
 
@@ -13,27 +15,22 @@ type ChannelState = u256;
 /// # Arguments
 ///
 /// * `state` - The current channel state.
-/// * `value` - The value to mix into the channel state.
-fn channel_mix_u256(state: ChannelState, value: u256) -> ChannelState {
-    let ctx: Ctx8 = jet::sha_256_ctx_8_init();
-    let ctx: Ctx8 = jet::sha_256_ctx_8_add_32(ctx, state);
-    let ctx: Ctx8 = jet::sha_256_ctx_8_add_32(ctx, value);
-    jet::sha_256_ctx_8_finalize(ctx)
+/// * `felt` - The value to mix into the channel state.
+fn channel_mix_felt(state: ChannelState, felt: u256) -> ChannelState {
+    sha256_pair(state, felt)
 }
 
 /// Update the channel state by hashing the current state.
 fn channel_mix(state: ChannelState) -> ChannelState {
-    let ctx: Ctx8 = jet::sha_256_ctx_8_init();
-    let ctx: Ctx8 = jet::sha_256_ctx_8_add_32(ctx, state);
-    jet::sha_256_ctx_8_finalize(ctx)
+    sha256(state)
 }
 
-/// Draw a 256-bit value from the channel state.
+/// Draw a field element from the channel state.
 ///
 /// # Arguments
 ///
 /// * `state` - The current channel state.
-fn channel_draw_u256(state: ChannelState) -> (ChannelState, u256) {
+fn channel_draw_felt(state: ChannelState) -> (ChannelState, u256) {
     let value: u256 = jet::fe_normalize(state);
     (channel_mix(state), value)
 }
@@ -43,15 +40,17 @@ fn channel_draw_u256(state: ChannelState) -> (ChannelState, u256) {
 /// # Arguments
 ///
 /// * `state` - The current channel state.
-fn channel_draw_u32(state: ChannelState) -> (ChannelState, u32) {
+/// * `max` - The upper bound of the value to draw (exclusive).
+fn channel_draw_u32(state: ChannelState, max: u32) -> (ChannelState, u32) {
     let (_, lo128): (u128, u128) = <u256>::into(state);
     let (_, lo64): (u64, u64) = <u128>::into(lo128);
-    let (_, value): (u32, u32) = <u64>::into(lo64);
+    let (_, lo32): (u32, u32) = <u64>::into(lo64);
+    let value: u32 = jet::modulo_32(lo32, max);
     (channel_mix(state), value)
 }
 
-fn main() {
-    let state: ChannelState = channel_mix_u256(0, 1);
-    let (state, value): (ChannelState, u32) = channel_draw_u32(state);
-    let (state, value): (ChannelState, u256) = channel_draw_u256(state);
+fn test_channel() {
+    let state: ChannelState = channel_mix_felt(0, 1);
+    let (state, value): (ChannelState, u32) = channel_draw_u32(state, 10);
+    let (state, value): (ChannelState, u256) = channel_draw_felt(state);
 }

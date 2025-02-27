@@ -2,9 +2,9 @@ install:
 	cargo install --path simfony-cli simfony-cli
 
 build:
-	simfony build src/field.simf
-	simfony build src/channel.simf
+	mcpp -P src/main.simf -o target/main.out.simf
+	simfony build target/main.out.simf
 
 test:
-	simfony run src/field.simf
-	simfony run src/channel.simf
+	mcpp -P src/tests.simf -o target/tests.out.simf
+	simfony run target/tests.out.simf
