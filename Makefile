@@ -8,3 +8,6 @@ build:
 test:
 	mcpp -P src/tests.simf -o target/tests.out.simf
 	simfony run target/tests.out.simf
+
+vsix:
+	cd simfony-vsix && vsce package

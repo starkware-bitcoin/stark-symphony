@@ -1,0 +1,73 @@
+{
+  "name": "simfony-language",
+  "displayName": "Simfony Language Support",
+  "description": "Syntax highlighting and autocompletion for Simfony language",
+  "version": "0.0.1",
+  "publisher": "starkware",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/keep-starknet-strange/stark-symphony"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "simfony",
+      "aliases": ["Simfony", "simfony"],
+      "extensions": [".simf"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "simfony",
+      "scopeName": "source.simfony",
+      "path": "./syntaxes/simfony.tmLanguage.json"
+    }],
+    "snippets": [
+      {
+        "language": "simfony",
+        "path": "./snippets/arithmetic.json"
+      },
+      {
+        "language": "simfony",
+        "path": "./snippets/bitcoin_without_primitives.json"
+      },
+      {
+        "language": "simfony",
+        "path": "./snippets/digital_signatures.json"
+      },
+      {
+        "language": "simfony",
+        "path": "./snippets/elliptic_curve_functions.json"
+      },
+      {
+        "language": "simfony",
+        "path": "./snippets/hash_functions.json"
+      },
+      {
+        "language": "simfony",
+        "path": "./snippets/issuance.json"
+      },
+      {
+        "language": "simfony",
+        "path": "./snippets/multi_bit_logic.json"
+      },
+      {
+        "language": "simfony",
+        "path": "./snippets/signature_hash_modes.json"
+      },
+      {
+        "language": "simfony",
+        "path": "./snippets/time_locks.json"
+      },
+      {
+        "language": "simfony",
+        "path": "./snippets/transaction.json"
+      }
+    ]
+  },
+  "license": "MIT"
+}

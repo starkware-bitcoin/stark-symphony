@@ -1,0 +1,47 @@
+{
+    "jet::check_lock_distance": {
+        "prefix": "jet::check_lock_distance",
+        "body": "jet::check_lock_distance($1)",
+        "description": "Assert that the value returned by tx_lock_distance is greater than or equal to the given value. Cost: 105 mWU"
+    },
+    "jet::check_lock_duration": {
+        "prefix": "jet::check_lock_duration",
+        "body": "jet::check_lock_duration($1)",
+        "description": "Assert that the value returned by tx_lock_duration is greater than or equal to the given value. Cost: 102 mWU"
+    },
+    "jet::check_lock_height": {
+        "prefix": "jet::check_lock_height",
+        "body": "jet::check_lock_height($1)",
+        "description": "Assert that the value returned by tx_lock_height is greater than or equal to the given value. Cost: 77 mWU"
+    },
+    "jet::check_lock_time": {
+        "prefix": "jet::check_lock_time",
+        "body": "jet::check_lock_time($1)",
+        "description": "Assert that the value returned by tx_lock_time is greater than or equal to the given value. Cost: 93 mWU"
+    },
+    "jet::tx_is_final": {
+        "prefix": "jet::tx_is_final",
+        "body": "jet::tx_is_final()",
+        "description": "Check if the sequence numbers of all transaction inputs are at their maximum value. Cost: 71 mWU"
+    },
+    "jet::tx_lock_distance": {
+        "prefix": "jet::tx_lock_distance",
+        "body": "jet::tx_lock_distance()",
+        "description": "If version returns 2 or greater, then return the greatest valid Distance value of any transaction input. Return zeroes otherwise. Cost: 91 mWU"
+    },
+    "jet::tx_lock_duration": {
+        "prefix": "jet::tx_lock_duration",
+        "body": "jet::tx_lock_duration()",
+        "description": "If version returns 2 or greater, then return the greatest valid Duration value of any transaction input. Return zeroes otherwise. Cost: 84 mWU"
+    },
+    "jet::tx_lock_height": {
+        "prefix": "jet::tx_lock_height",
+        "body": "jet::tx_lock_height()",
+        "description": "If tx_is_final returns false, then try to parse the transaction's lock time as a Height value. Return zeroes otherwise. Cost: 80 mWU"
+    },
+    "jet::tx_lock_time": {
+        "prefix": "jet::tx_lock_time",
+        "body": "jet::tx_lock_time()",
+        "description": "If tx_is_final returns false, then try to parse the transaction's lock time as a Time value. Return zeroes otherwise. Cost: 80 mWU"
+    }
+} 

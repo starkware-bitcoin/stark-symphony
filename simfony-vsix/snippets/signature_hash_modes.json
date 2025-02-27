@@ -1,0 +1,177 @@
+{
+    "jet::annex_hash": {
+        "prefix": "jet::annex_hash",
+        "body": "jet::annex_hash($1, $2)",
+        "description": "Continue a SHA256 hash with an optional hash by appending the following: If there is no hash, then the byte 0x00. If there is a hash, then the byte 0x01 followed by the given hash (32 bytes). Cost: 241 mWU"
+    },
+    "jet::asset_amount_hash": {
+        "prefix": "jet::asset_amount_hash",
+        "body": "jet::asset_amount_hash($1, $2, $3)",
+        "description": "Continue a SHA256 hash with the serialization of a confidential asset followed by the serialization of a amount. Cost: 308 mWU"
+    },
+    "jet::build_tapbranch": {
+        "prefix": "jet::build_tapbranch",
+        "body": "jet::build_tapbranch($1, $2)",
+        "description": "Return the SHA256 hash of the following: The hash of the ASCII string 'TapBranch/elements' (32 bytes), the lexicographically smaller of the two inputs (32 bytes), the hash of the ASCII string 'TapBranch/elements' again (32 bytes), the lexicographically larger of the two inputs (32 bytes). This builds a taproot from two branches. Cost: 2563 mWU"
+    },
+    "jet::build_tapleaf_simplicity": {
+        "prefix": "jet::build_tapleaf_simplicity",
+        "body": "jet::build_tapleaf_simplicity($1)",
+        "description": "Return the SHA256 hash of the following: The hash of the ASCII string 'TapBranch/elements' (32 bytes), the hash of the ASCII string 'TapBranch/elements' again (32 bytes), the lexicographically smaller of the two inputs (32 bytes), the lexicographically larger of the two inputs (32 bytes). This builds a taproot from two branches. Cost: 1843 mWU"
+    },
+    "jet::build_taptweak": {
+        "prefix": "jet::build_taptweak",
+        "body": "jet::build_taptweak($1, $2)",
+        "description": "Implementation of 'taproot_tweak_pubkey' from BIP-0341. Cost: 92813 mWU"
+    },
+    "jet::input_amounts_hash": {
+        "prefix": "jet::input_amounts_hash",
+        "body": "jet::input_amounts_hash()",
+        "description": "Return the SHA256 hash of the serialization of each input UTXO's asset and amount fields. Cost: 140 mWU"
+    },
+    "jet::input_annexes_hash": {
+        "prefix": "jet::input_annexes_hash",
+        "body": "jet::input_annexes_hash()",
+        "description": "Return the SHA256 hash of the concatenation of the following for every input: If the input has no annex, or isn't a taproot spend, then the byte 0x00. If the input has an annex, then the byte 0x01 followed by the SHA256 hash of the annex (32 bytes). Cost: 155 mWU"
+    },
+    "jet::input_hash": {
+        "prefix": "jet::input_hash",
+        "body": "jet::input_hash($1)",
+        "description": "Return the SHA256 hash of the following: 1. The asset issuance, 2. The token issuance, 3. The range proofs, 4. The blinding entropy. Return None if the input does not exist. Cost: 965 mWU"
+    },
+    "jet::input_outpoints_hash": {
+        "prefix": "jet::input_outpoints_hash",
+        "body": "jet::input_outpoints_hash()",
+        "description": "Return the SHA256 hash of the concatenation of the following for every input: If the input is not a pegin, then the byte 0x00. If the input is a pegin, then the byte 0x01 followed by the parent chain's genesis hash (32 bytes). The input's serialized previous transaction id (32 bytes). The input's previous transaction index in big endian format (4 bytes). Cost: 142 mWU"
+    },
+    "jet::input_script_sigs_hash": {
+        "prefix": "jet::input_script_sigs_hash",
+        "body": "jet::input_script_sigs_hash()",
+        "description": "Return the SHA256 hash of the concatenation of the SHA256 hash of each input's scriptSig. Cost: 138 mWU"
+    },
+    "jet::input_scripts_hash": {
+        "prefix": "jet::input_scripts_hash",
+        "body": "jet::input_scripts_hash()",
+        "description": "Return the SHA256 hash of the concatenation of the SHA256 hash of each input UTXO's scriptPubKey. Cost: 137 mWU"
+    },
+    "jet::input_sequences_hash": {
+        "prefix": "jet::input_sequences_hash",
+        "body": "jet::input_sequences_hash()",
+        "description": "Return the SHA256 hash of the concatenation of the following for every input: The input's sequence number in big endian format (4 bytes). Cost: 142 mWU"
+    },
+    "jet::input_utxo_hash": {
+        "prefix": "jet::input_utxo_hash",
+        "body": "jet::input_utxo_hash($1)",
+        "description": "Return the SHA256 hash of the following: The serialization of the input UTXO's asset and amount fields. The SHA256 hash of the input UTXO's scriptPubKey. Return None if the input does not exist. Cost: 1996 mWU"
+    },
+    "jet::input_utxos_hash": {
+        "prefix": "jet::input_utxos_hash",
+        "body": "jet::input_utxos_hash()",
+        "description": "Return the SHA256 hash of the following: The result of input_amounts_hash (32 bytes). The result of input_scripts_hash (32 bytes). Cost: 140 mWU"
+    },
+    "jet::inputs_hash": {
+        "prefix": "jet::inputs_hash",
+        "body": "jet::inputs_hash()",
+        "description": "Return the SHA256 hash of the following: The result of input_outpoints_hash (32 bytes). The result of input_sequences_hash (32 bytes). The result of input_annexes_hash (32 bytes). Cost: 154 mWU"
+    },
+    "jet::issuance_asset_amounts_hash": {
+        "prefix": "jet::issuance_asset_amounts_hash",
+        "body": "jet::issuance_asset_amounts_hash()",
+        "description": "Return the SHA256 hash of the concatenation of the following for every input: If the input has no issuance then two bytes 0x00 0x00. If the input is has a new issuance then the byte 0x01 followed by a serialization of the calculated issued asset id (32 bytes) followed by the serialization of the (possibly confidential) issued asset amount (9 bytes or 33 bytes). If the input is has a reissuance then the byte 0x01 followed by a serialization of the issued asset id (32 bytes), followed by the serialization of the (possibly confidential) issued asset amount (9 bytes or 33 bytes). Cost: 139 mWU"
+    },
+    "jet::issuance_blinding_entropy_hash": {
+        "prefix": "jet::issuance_blinding_entropy_hash",
+        "body": "jet::issuance_blinding_entropy_hash()",
+        "description": "Return the SHA256 hash of the concatenation of the following for every input: If the input has no issuance then the byte 0x00. If the input is has a new issuance then the byte 0x01 followed by 32 0x00 bytes and the new issuance's contract hash field (32 bytes). If the input is has reissuance then the byte 0x01 followed by a serializaiton of the reissuance's blinding nonce field (32 bytes) and the reissuance's entropy field (32 bytes). Cost: 129 mWU"
+    },
+    "jet::issuance_hash": {
+        "prefix": "jet::issuance_hash",
+        "body": "jet::issuance_hash($1)",
+        "description": "Return the SHA256 hash of the following: 1. The asset issuance, 2. The token issuance, 3. The range proofs, 4. The blinding entropy. Return None if the input does not exist. Cost: 3738 mWU"
+    },
+    "jet::issuance_range_proofs_hash": {
+        "prefix": "jet::issuance_range_proofs_hash",
+        "body": "jet::issuance_range_proofs_hash()",
+        "description": "Return the SHA256 hash of the concatenation of the following for every input: The SHA256 hash of the range proof of the input's issuance asset amount (32 bytes). The SHA256 hash of the range proof of the input's issuance token amount (32 bytes). Cost: 129 mWU"
+    },
+    "jet::issuance_token_amounts_hash": {
+        "prefix": "jet::issuance_token_amounts_hash",
+        "body": "jet::issuance_token_amounts_hash()",
+        "description": "Return the SHA256 hash of the concatenation of the following for every input: If the input has no issuance then two bytes 0x00 0x00. If the input is has a new issuance then the byte 0x01 followed by a serialization of the calculated issued token id (32 bytes) followed by the serialization of the (possibly confidential) issued token amount (9 bytes or 33 bytes). If the input is has a reissuance then the byte 0x01 followed by a serialization of the issued token id (32 bytes), followed by the serialization of the explicit 0 amount (i.e 0x01 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00) (9 bytes). Cost: 138 mWU"
+    },
+    "jet::issuances_hash": {
+        "prefix": "jet::issuances_hash",
+        "body": "jet::issuances_hash()",
+        "description": "Return the SHA256 hash of the following: The result of issuance_asset_amounts_hash (32 bytes). The result of issuance_token_amounts_hash (32 bytes). The result of issuance_range_proofs_hash (32 bytes). The result of issuance_blinding_entropy_hash (32 bytes). Cost: 141 mWU"
+    },
+    "jet::nonce_hash": {
+        "prefix": "jet::nonce_hash",
+        "body": "jet::nonce_hash($1, $2)",
+        "description": "Continue the SHA256 hash with the serialization of an optional nonce. Cost: 317 mWU"
+    },
+    "jet::outpoint_hash": {
+        "prefix": "jet::outpoint_hash",
+        "body": "jet::outpoint_hash($1, $2, $3)",
+        "description": "Continue the SHA256 hash with an optional pegin and an outpoint by appending the following: If the input is not a pegin, then the byte 0x00. If the input is a pegin, then the byte 0x01 followed by the given parent genesis hash (32 bytes). The input's previous transaction id (32 bytes). The input's previous transaction index in big endian format (4 bytes). Cost: 319 mWU"
+    },
+    "jet::output_amounts_hash": {
+        "prefix": "jet::output_amounts_hash",
+        "body": "jet::output_amounts_hash()",
+        "description": "Return the SHA256 hash of the serialization of each output's asset and amount fields. Cost: 140 mWU"
+    },
+    "jet::output_hash": {
+        "prefix": "jet::output_hash",
+        "body": "jet::output_hash($1)",
+        "description": "Return the SHA256 hash of the following: The serialization of the output's asset and amount fields. The serialization of the output's nonce field. The SHA256 hash of the output's scriptPubKey. The SHA256 hash of the output's range proof. Return None if the output does not exist. Cost: 2849 mWU"
+    },
+    "jet::output_nonces_hash": {
+        "prefix": "jet::output_nonces_hash",
+        "body": "jet::output_nonces_hash()",
+        "description": "Return the SHA256 hash of the serialization of each output's nonce field. Cost: 151 mWU"
+    },
+    "jet::output_range_proofs_hash": {
+        "prefix": "jet::output_range_proofs_hash",
+        "body": "jet::output_range_proofs_hash()",
+        "description": "Return the SHA256 hash of the concatenation of the SHA256 hash of each output's range proof. Cost: 136 mWU"
+    },
+    "jet::output_scripts_hash": {
+        "prefix": "jet::output_scripts_hash",
+        "body": "jet::output_scripts_hash()",
+        "description": "Return the SHA256 hash of the concatenation of the SHA256 hash of each output's scriptPubKey. Cost: 142 mWU"
+    },
+    "jet::output_surjection_proofs_hash": {
+        "prefix": "jet::output_surjection_proofs_hash",
+        "body": "jet::output_surjection_proofs_hash()",
+        "description": "Return the SHA256 hash of the concatenation of the SHA256 hash of each output's surjection proof. Cost: 138 mWU"
+    },
+    "jet::outputs_hash": {
+        "prefix": "jet::outputs_hash",
+        "body": "jet::outputs_hash()",
+        "description": "Return the SHA256 hash of the following: The result of output_amounts_hash (32 bytes). The result of output_nonces_hash (32 bytes). The result of output_scripts_hash (32 bytes). The result of output_range_proofs_hash (32 bytes). Cost: 135 mWU"
+    },
+    "jet::sig_all_hash": {
+        "prefix": "jet::sig_all_hash",
+        "body": "jet::sig_all_hash()",
+        "description": "Return the SHA256 hash of the following: The result of genesis_block_hash (32 bytes). The result of genesis_block_hash again (32 bytes). The result of tx_hash (32 bytes). The result of tap_env_hash (32 bytes). The result of current_index (Note: this is in big endian format) (4 bytes). Cost: 133 mWU"
+    },
+    "jet::tap_env_hash": {
+        "prefix": "jet::tap_env_hash",
+        "body": "jet::tap_env_hash()",
+        "description": "Return the SHA256 hash of the following: The result of tapleaf_hash (32 bytes). The result of tappath_hash (32 bytes). The result of internal_key (32 bytes). Cost: 162 mWU"
+    },
+    "jet::tapleaf_hash": {
+        "prefix": "jet::tapleaf_hash",
+        "body": "jet::tapleaf_hash()",
+        "description": "Return the SHA256 hash of the following: The hash of the ASCII string 'TapLeaf/elements' (32 bytes). The hash of the ASCII string 'TapLeaf/elements' again (32 bytes). The result of tapleaf_version (1 byte). The byte 0x20 (1 byte). The result of script_cmr (32 bytes). Cost: 136 mWU"
+    },
+    "jet::tappath_hash": {
+        "prefix": "jet::tappath_hash",
+        "body": "jet::tappath_hash()",
+        "description": "Return a hash of the current input's control block excluding the leaf version and the taproot internal key. Using the notation of BIP-0341, it returns the SHA256 hash of c[33: 33 + 32m]. Cost: 143 mWU"
+    },
+    "jet::tx_hash": {
+        "prefix": "jet::tx_hash",
+        "body": "jet::tx_hash()",
+        "description": "Return the SHA256 hash of the following: The result of version (Note: this is in big endian format) (4 bytes). The result of tx_lock_time (Note: this is in big endian format) (4 bytes). The result of inputs_hash (32 bytes). The result of outputs_hash (32 bytes). The result of issuances_hash (32 bytes). The result of output_surjection_proofs_hash (32 bytes). The result of input_utxos_hash (32 bytes). Cost: 143 mWU"
+    }
+} 

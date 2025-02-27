@@ -9,7 +9,7 @@
 /// A proof node is a tuple of a 256-bit value and a boolean indicating whether it is the left or right sibling.
 type ProofNode = (u256, bool);
 
-/// Compute the next node in the proof.
+/// Compute the next intermediate node in the Merkle tree.
 fn merkle_compute_step(element: ProofNode, acc: u256) -> u256 {
     let (node, is_left): ProofNode = element;
     match is_left {

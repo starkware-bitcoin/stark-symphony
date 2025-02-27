@@ -1,0 +1,372 @@
+{
+    "jet::all_8": {
+        "prefix": "jet::all_8",
+        "body": "jet::all_8($1)",
+        "description": "Check if the value is u8::MAX. Cost: 76 mWU"
+    },
+    "jet::all_16": {
+        "prefix": "jet::all_16",
+        "body": "jet::all_16($1)",
+        "description": "Check if the value is u16::MAX. Cost: 62 mWU"
+    },
+    "jet::all_32": {
+        "prefix": "jet::all_32",
+        "body": "jet::all_32($1)",
+        "description": "Check if the value is u32::MAX. Cost: 65 mWU"
+    },
+    "jet::all_64": {
+        "prefix": "jet::all_64",
+        "body": "jet::all_64($1)",
+        "description": "Check if the value is u64::MAX. Cost: 79 mWU"
+    },
+    "jet::and_1": {
+        "prefix": "jet::and_1",
+        "body": "jet::and_1($1, $2)",
+        "description": "Bitwise AND of two 1-bit values. Cost: 79 mWU"
+    },
+    "jet::and_8": {
+        "prefix": "jet::and_8",
+        "body": "jet::and_8($1, $2)",
+        "description": "Bitwise AND of two 8-bit values. Cost: 91 mWU"
+    },
+    "jet::and_16": {
+        "prefix": "jet::and_16",
+        "body": "jet::and_16($1, $2)",
+        "description": "Bitwise AND of two 16-bit values. Cost: 88 mWU"
+    },
+    "jet::and_32": {
+        "prefix": "jet::and_32",
+        "body": "jet::and_32($1, $2)",
+        "description": "Bitwise AND of two 32-bit values. Cost: 94 mWU"
+    },
+    "jet::and_64": {
+        "prefix": "jet::and_64",
+        "body": "jet::and_64($1, $2)",
+        "description": "Bitwise AND of two 64-bit values. Cost: 93 mWU"
+    },
+    "jet::ch_1": {
+        "prefix": "jet::ch_1",
+        "body": "jet::ch_1($1, $2, $3)",
+        "description": "Bitwise CHOICE of a bit and two 1-bit values. If the bit is true, then take the first value, else take the second value. Cost: 78 mWU"
+    },
+    "jet::ch_8": {
+        "prefix": "jet::ch_8",
+        "body": "jet::ch_8($1, $2, $3)",
+        "description": "Bitwise CHOICE of a bit and two 8-bit values. If the bit is true, then take the first value, else take the second value. Cost: 77 mWU"
+    },
+    "jet::ch_16": {
+        "prefix": "jet::ch_16",
+        "body": "jet::ch_16($1, ($2, $3))",
+        "description": "Bitwise CHOICE of a bit and two 16-bit values. If the bit is true, then take the first value, else take the second value. Cost: 94 mWU"
+    },
+    "jet::ch_32": {
+        "prefix": "jet::ch_32",
+        "body": "jet::ch_32($1, ($2, $3))",
+        "description": "Bitwise CHOICE of a bit and two 32-bit values. If the bit is true, then take the first value, else take the second value. Cost: 91 mWU"
+    },
+    "jet::ch_64": {
+        "prefix": "jet::ch_64",
+        "body": "jet::ch_64($1, ($2, $3))",
+        "description": "Bitwise CHOICE of a bit and two 64-bit values. If the bit is true, then take the first value, else take the second value. Cost: 91 mWU"
+    },
+    "jet::complement_1": {
+        "prefix": "jet::complement_1",
+        "body": "jet::complement_1($1)",
+        "description": "Bitwise NOT of a 1-bit value. Cost: 79 mWU"
+    },
+    "jet::complement_8": {
+        "prefix": "jet::complement_8",
+        "body": "jet::complement_8($1)",
+        "description": "Bitwise NOT of an 8-bit value. Cost: 80 mWU"
+    },
+    "jet::complement_16": {
+        "prefix": "jet::complement_16",
+        "body": "jet::complement_16($1)",
+        "description": "Bitwise NOT of a 16-bit value. Cost: 75 mWU"
+    },
+    "jet::complement_32": {
+        "prefix": "jet::complement_32",
+        "body": "jet::complement_32($1)",
+        "description": "Bitwise NOT of a 32-bit value. Cost: 93 mWU"
+    },
+    "jet::complement_64": {
+        "prefix": "jet::complement_64",
+        "body": "jet::complement_64($1)",
+        "description": "Bitwise NOT of a 64-bit value. Cost: 88 mWU"
+    },
+    "jet::eq_1": {
+        "prefix": "jet::eq_1",
+        "body": "jet::eq_1($1, $2)",
+        "description": "Check if two 1-bit values are equal. Cost: 74 mWU"
+    },
+    "jet::eq_8": {
+        "prefix": "jet::eq_8",
+        "body": "jet::eq_8($1, $2)",
+        "description": "Check if two 8-bit values are equal. Cost: 95 mWU"
+    },
+    "jet::eq_16": {
+        "prefix": "jet::eq_16",
+        "body": "jet::eq_16($1, $2)",
+        "description": "Check if two 16-bit values are equal. Cost: 84 mWU"
+    },
+    "jet::eq_32": {
+        "prefix": "jet::eq_32",
+        "body": "jet::eq_32($1, $2)",
+        "description": "Check if two 32-bit values are equal. Cost: 88 mWU"
+    },
+    "jet::eq_64": {
+        "prefix": "jet::eq_64",
+        "body": "jet::eq_64($1, $2)",
+        "description": "Check if two 64-bit values are equal. Cost: 100 mWU"
+    },
+    "jet::eq_256": {
+        "prefix": "jet::eq_256",
+        "body": "jet::eq_256($1, $2)",
+        "description": "Check if two 256-bit values are equal. Cost: 225 mWU"
+    },
+    "jet::high_1": {
+        "prefix": "jet::high_1",
+        "body": "jet::high_1()",
+        "description": "Return u1::MAX = 1. Cost: 57 mWU"
+    },
+    "jet::high_8": {
+        "prefix": "jet::high_8",
+        "body": "jet::high_8()",
+        "description": "Return u8::MAX. Cost: 59 mWU"
+    },
+    "jet::high_16": {
+        "prefix": "jet::high_16",
+        "body": "jet::high_16()",
+        "description": "Return u16::MAX. Cost: 66 mWU"
+    },
+    "jet::high_32": {
+        "prefix": "jet::high_32",
+        "body": "jet::high_32()",
+        "description": "Return u32::MAX. Cost: 58 mWU"
+    },
+    "jet::high_64": {
+        "prefix": "jet::high_64",
+        "body": "jet::high_64()",
+        "description": "Return u64::MAX. Cost: 68 mWU"
+    },
+    "jet::left_rotate_8": {
+        "prefix": "jet::left_rotate_8",
+        "body": "jet::left_rotate_8($1, $2)",
+        "description": "Left-rotate an 8-bit value by the given amount. Cost: 88 mWU"
+    },
+    "jet::left_rotate_16": {
+        "prefix": "jet::left_rotate_16",
+        "body": "jet::left_rotate_16($1, $2)",
+        "description": "Left-rotate a 16-bit value by the given amount. Cost: 77 mWU"
+    },
+    "jet::left_rotate_32": {
+        "prefix": "jet::left_rotate_32",
+        "body": "jet::left_rotate_32($1, $2)",
+        "description": "Left-rotate a 32-bit value by the given amount. Cost: 106 mWU"
+    },
+    "jet::left_rotate_64": {
+        "prefix": "jet::left_rotate_64",
+        "body": "jet::left_rotate_64($1, $2)",
+        "description": "Left-rotate a 64-bit value by the given amount. Cost: 98 mWU"
+    },
+    "jet::left_shift_8": {
+        "prefix": "jet::left_shift_8",
+        "body": "jet::left_shift_8($1, $2)",
+        "description": "Left-shift an 8-bit value by the given amount. Bits are filled with zeroes. Cost: 91 mWU"
+    },
+    "jet::left_shift_16": {
+        "prefix": "jet::left_shift_16",
+        "body": "jet::left_shift_16($1, $2)",
+        "description": "Left-shift a 16-bit value by the given amount. Bits are filled with zeroes. Cost: 72 mWU"
+    },
+    "jet::left_shift_32": {
+        "prefix": "jet::left_shift_32",
+        "body": "jet::left_shift_32($1, $2)",
+        "description": "Left-shift a 32-bit value by the given amount. Bits are filled with zeroes. Cost: 78 mWU"
+    },
+    "jet::left_shift_64": {
+        "prefix": "jet::left_shift_64",
+        "body": "jet::left_shift_64($1, $2)",
+        "description": "Left-shift a 64-bit value by the given amount. Bits are filled with zeroes. Cost: 82 mWU"
+    },
+    "jet::left_shift_with_8": {
+        "prefix": "jet::left_shift_with_8",
+        "body": "jet::left_shift_with_8($1, $2, $3)",
+        "description": "Left-shift an 8-bit value by the given amount. Bits are filled with the given bit. Cost: 107 mWU"
+    },
+    "jet::left_shift_with_16": {
+        "prefix": "jet::left_shift_with_16",
+        "body": "jet::left_shift_with_16($1, $2, $3)",
+        "description": "Left-shift a 16-bit value by the given amount. Bits are filled with the given bit. Cost: 83 mWU"
+    },
+    "jet::left_shift_with_32": {
+        "prefix": "jet::left_shift_with_32",
+        "body": "jet::left_shift_with_32($1, $2, $3)",
+        "description": "Left-shift a 32-bit value by the given amount. Bits are filled with the given bit. Cost: 95 mWU"
+    },
+    "jet::left_shift_with_64": {
+        "prefix": "jet::left_shift_with_64",
+        "body": "jet::left_shift_with_64($1, $2, $3)",
+        "description": "Left-shift a 64-bit value by the given amount. Bits are filled with the given bit. Cost: 103 mWU"
+    },
+    "jet::low_1": {
+        "prefix": "jet::low_1",
+        "body": "jet::low_1()",
+        "description": "Return 0 as a 1-bit integer. Cost: 57 mWU"
+    },
+    "jet::low_8": {
+        "prefix": "jet::low_8",
+        "body": "jet::low_8()",
+        "description": "Return 0 as an 8-bit integer. Cost: 59 mWU"
+    },
+    "jet::low_16": {
+        "prefix": "jet::low_16",
+        "body": "jet::low_16()",
+        "description": "Return 0 as a 16-bit integer. Cost: 59 mWU"
+    },
+    "jet::low_32": {
+        "prefix": "jet::low_32",
+        "body": "jet::low_32()",
+        "description": "Return 0 as a 32-bit integer. Cost: 59 mWU"
+    },
+    "jet::low_64": {
+        "prefix": "jet::low_64",
+        "body": "jet::low_64()",
+        "description": "Return 0 as a 64-bit integer. Cost: 59 mWU"
+    },
+    "jet::maj_1": {
+        "prefix": "jet::maj_1",
+        "body": "jet::maj_1($1, $2, $3)",
+        "description": "Bitwise MAJORITY of three 1-bit values. Return the value that appears most often among the three inputs. Cost: 78 mWU"
+    },
+    "jet::maj_8": {
+        "prefix": "jet::maj_8",
+        "body": "jet::maj_8($1, $2, $3)",
+        "description": "Bitwise MAJORITY of three 8-bit values. Return the value that appears most often among the three inputs. Cost: 77 mWU"
+    },
+    "jet::maj_16": {
+        "prefix": "jet::maj_16",
+        "body": "jet::maj_16($1, $2, $3)",
+        "description": "Bitwise MAJORITY of three 16-bit values. Return the value that appears most often among the three inputs. Cost: 77 mWU"
+    },
+    "jet::maj_32": {
+        "prefix": "jet::maj_32",
+        "body": "jet::maj_32($1, $2, $3)",
+        "description": "Bitwise MAJORITY of three 32-bit values. Return the value that appears most often among the three inputs. Cost: 77 mWU"
+    },
+    "jet::maj_64": {
+        "prefix": "jet::maj_64",
+        "body": "jet::maj_64($1, $2, $3)",
+        "description": "Bitwise MAJORITY of three 64-bit values. Return the value that appears most often among the three inputs. Cost: 77 mWU"
+    },
+    "jet::or_1": {
+        "prefix": "jet::or_1",
+        "body": "jet::or_1($1, $2)",
+        "description": "Bitwise OR of two 1-bit values. Cost: 79 mWU"
+    },
+    "jet::or_8": {
+        "prefix": "jet::or_8",
+        "body": "jet::or_8($1, $2)",
+        "description": "Bitwise OR of two 8-bit values. Cost: 91 mWU"
+    },
+    "jet::or_16": {
+        "prefix": "jet::or_16",
+        "body": "jet::or_16($1, $2)",
+        "description": "Bitwise OR of two 16-bit values. Cost: 88 mWU"
+    },
+    "jet::or_32": {
+        "prefix": "jet::or_32",
+        "body": "jet::or_32($1, $2)",
+        "description": "Bitwise OR of two 32-bit values. Cost: 94 mWU"
+    },
+    "jet::or_64": {
+        "prefix": "jet::or_64",
+        "body": "jet::or_64($1, $2)",
+        "description": "Bitwise OR of two 64-bit values. Cost: 93 mWU"
+    },
+    "jet::right_rotate_8": {
+        "prefix": "jet::right_rotate_8",
+        "body": "jet::right_rotate_8($1, $2)",
+        "description": "Right-rotate an 8-bit value by the given amount. Cost: 88 mWU"
+    },
+    "jet::right_rotate_16": {
+        "prefix": "jet::right_rotate_16",
+        "body": "jet::right_rotate_16($1, $2)",
+        "description": "Right-rotate a 16-bit value by the given amount. Cost: 77 mWU"
+    },
+    "jet::right_rotate_32": {
+        "prefix": "jet::right_rotate_32",
+        "body": "jet::right_rotate_32($1, $2)",
+        "description": "Right-rotate a 32-bit value by the given amount. Cost: 106 mWU"
+    },
+    "jet::right_rotate_64": {
+        "prefix": "jet::right_rotate_64",
+        "body": "jet::right_rotate_64($1, $2)",
+        "description": "Right-rotate a 64-bit value by the given amount. Cost: 98 mWU"
+    },
+    "jet::right_shift_8": {
+        "prefix": "jet::right_shift_8",
+        "body": "jet::right_shift_8($1, $2)",
+        "description": "Right-shift an 8-bit value by the given amount. Bits are filled with zeroes. Cost: 91 mWU"
+    },
+    "jet::right_shift_16": {
+        "prefix": "jet::right_shift_16",
+        "body": "jet::right_shift_16($1, $2)",
+        "description": "Right-shift a 16-bit value by the given amount. Bits are filled with zeroes. Cost: 72 mWU"
+    },
+    "jet::right_shift_32": {
+        "prefix": "jet::right_shift_32",
+        "body": "jet::right_shift_32($1, $2)",
+        "description": "Right-shift a 32-bit value by the given amount. Bits are filled with zeroes. Cost: 78 mWU"
+    },
+    "jet::right_shift_64": {
+        "prefix": "jet::right_shift_64",
+        "body": "jet::right_shift_64($1, $2)",
+        "description": "Right-shift a 64-bit value by the given amount. Bits are filled with zeroes. Cost: 82 mWU"
+    },
+    "jet::right_shift_with_8": {
+        "prefix": "jet::right_shift_with_8",
+        "body": "jet::right_shift_with_8($1, $2, $3)",
+        "description": "Right-shift an 8-bit value by the given amount. Bits are filled with the given bit. Cost: 107 mWU"
+    },
+    "jet::right_shift_with_16": {
+        "prefix": "jet::right_shift_with_16",
+        "body": "jet::right_shift_with_16($1, $2, $3)",
+        "description": "Right-shift a 16-bit value by the given amount. Bits are filled with the given bit. Cost: 83 mWU"
+    },
+    "jet::right_shift_with_32": {
+        "prefix": "jet::right_shift_with_32",
+        "body": "jet::right_shift_with_32($1, $2, $3)",
+        "description": "Right-shift a 32-bit value by the given amount. Bits are filled with the given bit. Cost: 95 mWU"
+    },
+    "jet::right_shift_with_64": {
+        "prefix": "jet::right_shift_with_64",
+        "body": "jet::right_shift_with_64($1, $2, $3)",
+        "description": "Right-shift a 64-bit value by the given amount. Bits are filled with the given bit. Cost: 103 mWU"
+    },
+    "jet::xor_1": {
+        "prefix": "jet::xor_1",
+        "body": "jet::xor_1($1, $2)",
+        "description": "Bitwise XOR of two 1-bit values. Cost: 79 mWU"
+    },
+    "jet::xor_8": {
+        "prefix": "jet::xor_8",
+        "body": "jet::xor_8($1, $2)",
+        "description": "Bitwise XOR of two 8-bit values. Cost: 91 mWU"
+    },
+    "jet::xor_16": {
+        "prefix": "jet::xor_16",
+        "body": "jet::xor_16($1, $2)",
+        "description": "Bitwise XOR of two 16-bit values. Cost: 88 mWU"
+    },
+    "jet::xor_32": {
+        "prefix": "jet::xor_32",
+        "body": "jet::xor_32($1, $2)",
+        "description": "Bitwise XOR of two 32-bit values. Cost: 94 mWU"
+    },
+    "jet::xor_64": {
+        "prefix": "jet::xor_64",
+        "body": "jet::xor_64($1, $2)",
+        "description": "Bitwise XOR of two 64-bit values. Cost: 93 mWU"
+    }
+} 

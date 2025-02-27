@@ -1,0 +1,252 @@
+{
+    "jet::current_amount": {
+        "prefix": "jet::current_amount",
+        "body": "jet::current_amount()",
+        "description": "Return the input_amount at the current_index. Cost: 225 mWU"
+    },
+    "jet::current_annex_hash": {
+        "prefix": "jet::current_annex_hash",
+        "body": "jet::current_annex_hash()",
+        "description": "Return the input_annex_hash at the current_index. Cost: 79 mWU"
+    },
+    "jet::current_asset": {
+        "prefix": "jet::current_asset",
+        "body": "jet::current_asset()",
+        "description": "Return the input_asset at the current_index. Cost: 171 mWU"
+    },
+    "jet::current_index": {
+        "prefix": "jet::current_index",
+        "body": "jet::current_index()",
+        "description": "Return the index of the current txin. Cost: 88 mWU"
+    },
+    "jet::current_issuance_asset_amount": {
+        "prefix": "jet::current_issuance_asset_amount",
+        "body": "jet::current_issuance_asset_amount()",
+        "description": "Return the issuance_asset_amount at the current_index. Cost: 165 mWU"
+    },
+    "jet::current_issuance_asset_proof": {
+        "prefix": "jet::current_issuance_asset_proof",
+        "body": "jet::current_issuance_asset_proof()",
+        "description": "Return the issuance_asset_proof at the current_index. Cost: 140 mWU"
+    },
+    "jet::current_issuance_token_amount": {
+        "prefix": "jet::current_issuance_token_amount",
+        "body": "jet::current_issuance_token_amount()",
+        "description": "Return the issuance_token_amount at the current_index. Cost: 188 mWU"
+    },
+    "jet::current_issuance_token_proof": {
+        "prefix": "jet::current_issuance_token_proof",
+        "body": "jet::current_issuance_token_proof()",
+        "description": "Return the issuance_token_proof at the current_index. Cost: 144 mWU"
+    },
+    "jet::current_new_issuance_contract": {
+        "prefix": "jet::current_new_issuance_contract",
+        "body": "jet::current_new_issuance_contract()",
+        "description": "Return the new_issuance_contract at the current_index. Cost: 145 mWU"
+    },
+    "jet::current_pegin": {
+        "prefix": "jet::current_pegin",
+        "body": "jet::current_pegin()",
+        "description": "Return the input_pegin at the current_index. Cost: 147 mWU"
+    },
+    "jet::current_prev_outpoint": {
+        "prefix": "jet::current_prev_outpoint",
+        "body": "jet::current_prev_outpoint()",
+        "description": "Return the previous outpoint of the current txin. Cost: 156 mWU"
+    },
+    "jet::current_reissuance_blinding": {
+        "prefix": "jet::current_reissuance_blinding",
+        "body": "jet::current_reissuance_blinding()",
+        "description": "Return the reissuance_blinding at the current_index. Cost: 94 mWU"
+    },
+    "jet::current_reissuance_entropy": {
+        "prefix": "jet::current_reissuance_entropy",
+        "body": "jet::current_reissuance_entropy()",
+        "description": "Return the reissuance_entropy at the current_index. Cost: 85 mWU"
+    },
+    "jet::current_script_hash": {
+        "prefix": "jet::current_script_hash",
+        "body": "jet::current_script_hash()",
+        "description": "Return the SHA256 hash of the scriptPubKey of the UTXO of the current txin. Cost: 134 mWU"
+    },
+    "jet::current_script_sig_hash": {
+        "prefix": "jet::current_script_sig_hash",
+        "body": "jet::current_script_sig_hash()",
+        "description": "Return the SHA256 hash of the scriptSig of the current txin. Cost: 139 mWU"
+    },
+    "jet::current_sequence": {
+        "prefix": "jet::current_sequence",
+        "body": "jet::current_sequence()",
+        "description": "Return the nSequence of the current txin. Cost: 89 mWU"
+    },
+    "jet::genesis_block_hash": {
+        "prefix": "jet::genesis_block_hash",
+        "body": "jet::genesis_block_hash()",
+        "description": "Return the SHA256 hash of the genesis block. Cost: 148 mWU"
+    },
+    "jet::input_amount": {
+        "prefix": "jet::input_amount",
+        "body": "jet::input_amount($1)",
+        "description": "Return the asset id and the asset amount at the given input index. Cost: 285 mWU"
+    },
+    "jet::input_annex_hash": {
+        "prefix": "jet::input_annex_hash",
+        "body": "jet::input_annex_hash($1)",
+        "description": "Return the SHA256 hash of the annex at the given input. Cost: 90 mWU"
+    },
+    "jet::input_asset": {
+        "prefix": "jet::input_asset",
+        "body": "jet::input_asset($1)",
+        "description": "Return the asset id of the input at the given index. Cost: 162 mWU"
+    },
+    "jet::input_pegin": {
+        "prefix": "jet::input_pegin",
+        "body": "jet::input_pegin($1)",
+        "description": "Return the parent genesis block hash if the input at the given index is a peg-in. Cost: 151 mWU"
+    },
+    "jet::input_prev_outpoint": {
+        "prefix": "jet::input_prev_outpoint",
+        "body": "jet::input_prev_outpoint($1)",
+        "description": "Return the previous outpoint of the input at the given index. Cost: 160 mWU"
+    },
+    "jet::input_script_hash": {
+        "prefix": "jet::input_script_hash",
+        "body": "jet::input_script_hash($1)",
+        "description": "Return the SHA256 hash of the scriptPubKey of the UTXO of the input at the given index. Cost: 147 mWU"
+    },
+    "jet::input_script_sig_hash": {
+        "prefix": "jet::input_script_sig_hash",
+        "body": "jet::input_script_sig_hash($1)",
+        "description": "Return the SHA256 hash of the scriptSigKey of the input at the given index. Cost: 153 mWU"
+    },
+    "jet::input_sequence": {
+        "prefix": "jet::input_sequence",
+        "body": "jet::input_sequence($1)",
+        "description": "Return the nSequence of the input at the given index. Cost: 99 mWU"
+    },
+    "jet::internal_key": {
+        "prefix": "jet::internal_key",
+        "body": "jet::internal_key()",
+        "description": "Return the internal key of the current input. Cost: 152 mWU"
+    },
+    "jet::issuance_asset_amount": {
+        "prefix": "jet::issuance_asset_amount",
+        "body": "jet::issuance_asset_amount($1)",
+        "description": "Return the possibly confidential amount of the issuance if the input at the given index has an issuance. Cost: 162 mWU"
+    },
+    "jet::issuance_asset_proof": {
+        "prefix": "jet::issuance_asset_proof",
+        "body": "jet::issuance_asset_proof($1)",
+        "description": "Return the SHA256 hash of the range proof for the amount of the issuance at the given input index. Cost: 150 mWU"
+    },
+    "jet::issuance_token_amount": {
+        "prefix": "jet::issuance_token_amount",
+        "body": "jet::issuance_token_amount($1)",
+        "description": "Return the possibly confidential amount of the reissuance tokens if the input at the given index has an issuance. Cost: 196 mWU"
+    },
+    "jet::issuance_token_proof": {
+        "prefix": "jet::issuance_token_proof",
+        "body": "jet::issuance_token_proof($1)",
+        "description": "Return the SHA256 hash of the range proof for the amount of the reissuance tokens at the given input index. Cost: 150 mWU"
+    },
+    "jet::lock_time": {
+        "prefix": "jet::lock_time",
+        "body": "jet::lock_time()",
+        "description": "Return the lock time of the transaction. Cost: 85 mWU"
+    },
+    "jet::new_issuance_contract": {
+        "prefix": "jet::new_issuance_contract",
+        "body": "jet::new_issuance_contract($1)",
+        "description": "Return the contract hash for the new issuance at the given input index. Cost: 157 mWU"
+    },
+    "jet::num_inputs": {
+        "prefix": "jet::num_inputs",
+        "body": "jet::num_inputs()",
+        "description": "Return the number of inputs of the transaction. Cost: 86 mWU"
+    },
+    "jet::num_outputs": {
+        "prefix": "jet::num_outputs",
+        "body": "jet::num_outputs()",
+        "description": "Return the number of outputs of the transaction. Cost: 79 mWU"
+    },
+    "jet::output_amount": {
+        "prefix": "jet::output_amount",
+        "body": "jet::output_amount($1)",
+        "description": "Return the asset amount of the output at the given index. Cost: 298 mWU"
+    },
+    "jet::output_asset": {
+        "prefix": "jet::output_asset",
+        "body": "jet::output_asset($1)",
+        "description": "Return the asset id of the output at the given index. Cost: 170 mWU"
+    },
+    "jet::output_is_fee": {
+        "prefix": "jet::output_is_fee",
+        "body": "jet::output_is_fee($1)",
+        "description": "Check if the output at the given index is a fee output. Cost: 92 mWU"
+    },
+    "jet::output_nonce": {
+        "prefix": "jet::output_nonce",
+        "body": "jet::output_nonce($1)",
+        "description": "Return the nonce of the output at the given index. Cost: 196 mWU"
+    },
+    "jet::output_null_datum": {
+        "prefix": "jet::output_null_datum",
+        "body": "jet::output_null_datum($1, $2)",
+        "description": "Return the b-th entry of a null data (OP_RETURN) output at index a. Cost: 87 mWU"
+    },
+    "jet::output_range_proof": {
+        "prefix": "jet::output_range_proof",
+        "body": "jet::output_range_proof($1)",
+        "description": "Return the SHA256 hash of the range proof of the output at the given index. Cost: 154 mWU"
+    },
+    "jet::output_script_hash": {
+        "prefix": "jet::output_script_hash",
+        "body": "jet::output_script_hash($1)",
+        "description": "Return the SHA256 hash of the scriptPubKey of the output at the given index. Cost: 151 mWU"
+    },
+    "jet::output_surjection_proof": {
+        "prefix": "jet::output_surjection_proof",
+        "body": "jet::output_surjection_proof($1)",
+        "description": "Return the SHA256 hash of the surjection proof of the output at the given index. Cost: 151 mWU"
+    },
+    "jet::reissuance_blinding": {
+        "prefix": "jet::reissuance_blinding",
+        "body": "jet::reissuance_blinding($1)",
+        "description": "Return the blinding factor used for the reissuance at the given input index. Cost: 91 mWU"
+    },
+    "jet::reissuance_entropy": {
+        "prefix": "jet::reissuance_entropy",
+        "body": "jet::reissuance_entropy($1)",
+        "description": "Return the entropy used for the reissuance at the given input index. Cost: 93 mWU"
+    },
+    "jet::script_cmr": {
+        "prefix": "jet::script_cmr",
+        "body": "jet::script_cmr()",
+        "description": "Return the CMR of the Simplicity program in the current input. Cost: 136 mWU"
+    },
+    "jet::tapleaf_version": {
+        "prefix": "jet::tapleaf_version",
+        "body": "jet::tapleaf_version()",
+        "description": "Return the tap leaf version of the current input. Cost: 105 mWU"
+    },
+    "jet::tappath": {
+        "prefix": "jet::tappath",
+        "body": "jet::tappath($1)",
+        "description": "Return the SHA256 hash of the tap path of the current input. Cost: 83 mWU"
+    },
+    "jet::total_fee": {
+        "prefix": "jet::total_fee",
+        "body": "jet::total_fee($1)",
+        "description": "Return the total amount of fees paid to the given asset id. Cost: 230 mWU"
+    },
+    "jet::transaction_id": {
+        "prefix": "jet::transaction_id",
+        "body": "jet::transaction_id()",
+        "description": "Return the transaction ID. Cost: 139 mWU"
+    },
+    "jet::version": {
+        "prefix": "jet::version",
+        "body": "jet::version()",
+        "description": "Return the version number of the transaction. Cost: 93 mWU"
+    }
+} 

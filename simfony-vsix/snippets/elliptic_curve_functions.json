@@ -1,0 +1,212 @@
+{
+    "jet::decompress": {
+        "prefix": "jet::decompress",
+        "body": "jet::decompress($1)",
+        "description": "Decompress a point into affine coordinates. Returns None if the x-coordinate is not on the curve. Cost: 10861 mWU"
+    },
+    "jet::fe_add": {
+        "prefix": "jet::fe_add",
+        "body": "jet::fe_add($1, $2)",
+        "description": "Add two field elements. Cost: 755 mWU"
+    },
+    "jet::fe_invert": {
+        "prefix": "jet::fe_invert",
+        "body": "jet::fe_invert($1)",
+        "description": "Compute the modular inverse of a field element. Cost: 3175 mWU"
+    },
+    "jet::fe_is_odd": {
+        "prefix": "jet::fe_is_odd",
+        "body": "jet::fe_is_odd($1)",
+        "description": "Check if the canonical representative of the field element is odd. Cost: 290 mWU"
+    },
+    "jet::fe_is_zero": {
+        "prefix": "jet::fe_is_zero",
+        "body": "jet::fe_is_zero($1)",
+        "description": "Check if the field element represents zero. Cost: 268 mWU"
+    },
+    "jet::fe_multiply": {
+        "prefix": "jet::fe_multiply",
+        "body": "jet::fe_multiply($1, $2)",
+        "description": "Multiply two field elements. Cost: 808 mWU"
+    },
+    "jet::fe_multiply_beta": {
+        "prefix": "jet::fe_multiply_beta",
+        "body": "jet::fe_multiply_beta($1)",
+        "description": "Multiply a field element by the canonical primitive cube root of unity (beta). Cost: 579 mWU"
+    },
+    "jet::fe_negate": {
+        "prefix": "jet::fe_negate",
+        "body": "jet::fe_negate($1)",
+        "description": "Negate a field element. Cost: 531 mWU"
+    },
+    "jet::fe_normalize": {
+        "prefix": "jet::fe_normalize",
+        "body": "jet::fe_normalize($1)",
+        "description": "Return the canonical representation of a field element. Cost: 521 mWU"
+    },
+    "jet::fe_square": {
+        "prefix": "jet::fe_square",
+        "body": "jet::fe_square($1)",
+        "description": "Square a field element. Cost: 556 mWU"
+    },
+    "jet::fe_square_root": {
+        "prefix": "jet::fe_square_root",
+        "body": "jet::fe_square_root($1)",
+        "description": "Compute the modular square root of a field element if it exists. Cost: 10275 mWU"
+    },
+    "jet::ge_is_on_curve": {
+        "prefix": "jet::ge_is_on_curve",
+        "body": "jet::ge_is_on_curve($1)",
+        "description": "Check if the given point satisfies the curve equation y² = x³ + 7. Cost: 642 mWU"
+    },
+    "jet::ge_negate": {
+        "prefix": "jet::ge_negate",
+        "body": "jet::ge_negate($1)",
+        "description": "Negate a point. Cost: 945 mWU"
+    },
+    "jet::gej_add": {
+        "prefix": "jet::gej_add",
+        "body": "jet::gej_add($1, $2)",
+        "description": "Add two points. Cost: 2897 mWU"
+    },
+    "jet::gej_double": {
+        "prefix": "jet::gej_double",
+        "body": "jet::gej_double($1)",
+        "description": "Double a point. If the result is the point at infinity, it is returned in canonical form. Cost: 1764 mWU"
+    },
+    "jet::gej_equiv": {
+        "prefix": "jet::gej_equiv",
+        "body": "jet::gej_equiv($1, $2)",
+        "description": "Check if two points represent the same point. Cost: 2220 mWU"
+    },
+    "jet::gej_ge_add": {
+        "prefix": "jet::gej_ge_add",
+        "body": "jet::gej_ge_add($1, $2)",
+        "description": "Add two points. If the result is the point at infinity, it is returned in canonical form. Cost: 2477 mWU"
+    },
+    "jet::gej_ge_add_ex": {
+        "prefix": "jet::gej_ge_add_ex",
+        "body": "jet::gej_ge_add_ex($1, $2)",
+        "description": "Add two points. Also return the ratio of the a's z-coordinate and the result's z-coordinate. Cost: 2719 mWU"
+    },
+    "jet::gej_ge_equiv": {
+        "prefix": "jet::gej_ge_equiv",
+        "body": "jet::gej_ge_equiv($1, $2)",
+        "description": "Check if two points represent the same point. Cost: 1765 mWU"
+    },
+    "jet::gej_infinity": {
+        "prefix": "jet::gej_infinity",
+        "body": "jet::gej_infinity()",
+        "description": "Return the canonical representation of the point at infinity. Cost: 716 mWU"
+    },
+    "jet::gej_is_infinity": {
+        "prefix": "jet::gej_is_infinity",
+        "body": "jet::gej_is_infinity($1)",
+        "description": "Check if the point represents infinity. Cost: 666 mWU"
+    },
+    "jet::gej_is_on_curve": {
+        "prefix": "jet::gej_is_on_curve",
+        "body": "jet::gej_is_on_curve($1)",
+        "description": "Check if the given point satisfies the curve equation y² = x³ + 7. Cost: 1016 mWU"
+    },
+    "jet::gej_negate": {
+        "prefix": "jet::gej_negate",
+        "body": "jet::gej_negate($1)",
+        "description": "Negate a point. Cost: 1381 mWU"
+    },
+    "jet::gej_normalize": {
+        "prefix": "jet::gej_normalize",
+        "body": "jet::gej_normalize($1)",
+        "description": "Convert the point into affine coordinates with canonical field representatives. Cost: 4099 mWU"
+    },
+    "jet::gej_rescale": {
+        "prefix": "jet::gej_rescale",
+        "body": "jet::gej_rescale($1, $2)",
+        "description": "Change the representatives of a point by multiplying the z-coefficient by the given value. Cost: 1908 mWU"
+    },
+    "jet::gej_x_equiv": {
+        "prefix": "jet::gej_x_equiv",
+        "body": "jet::gej_x_equiv($1, $2)",
+        "description": "Check if the point represents an affine point with the given x-coordinate. Cost: 1047 mWU"
+    },
+    "jet::gej_y_is_odd": {
+        "prefix": "jet::gej_y_is_odd",
+        "body": "jet::gej_y_is_odd($1)",
+        "description": "Check if the point represents an affine point with odd y-coordinate. Cost: 3651 mWU"
+    },
+    "jet::generate": {
+        "prefix": "jet::generate",
+        "body": "jet::generate($1)",
+        "description": "Multiply the generator point with the given scalar. Cost: 50071 mWU"
+    },
+    "jet::hash_to_curve": {
+        "prefix": "jet::hash_to_curve",
+        "body": "jet::hash_to_curve($1)",
+        "description": "A cryptographic hash function that results in a point on the secp256k1 curve. Cost: 68094 mWU"
+    },
+    "jet::linear_combination_1": {
+        "prefix": "jet::linear_combination_1",
+        "body": "jet::linear_combination_1(($1, $2), $3)",
+        "description": "Compute the linear combination b * a + c * g for point b and scalars a and c, where g is the generator point. Cost: 84674 mWU"
+    },
+    "jet::linear_verify_1": {
+        "prefix": "jet::linear_verify_1",
+        "body": "jet::linear_verify_1((($1, $2), $3), $4)",
+        "description": "Assert that a point b is equal to the linear combination a.0 * a.1 + a.2 * g, where g is the generator point. Cost: 43364 mWU"
+    },
+    "jet::point_verify_1": {
+        "prefix": "jet::point_verify_1",
+        "body": "jet::point_verify_1((($1, $2), $3), $4)",
+        "description": "Assert that a point b is equal to the linear combination a.0 * a.1 + a.2 * g, where g is the generator point. Cost: 41494 mWU"
+    },
+    "jet::scalar_add": {
+        "prefix": "jet::scalar_add",
+        "body": "jet::scalar_add($1, $2)",
+        "description": "Add two scalars. Cost: 739 mWU"
+    },
+    "jet::scalar_invert": {
+        "prefix": "jet::scalar_invert",
+        "body": "jet::scalar_invert($1)",
+        "description": "Compute the modular inverse of a scalar. Cost: 3193 mWU"
+    },
+    "jet::scalar_is_zero": {
+        "prefix": "jet::scalar_is_zero",
+        "body": "jet::scalar_is_zero($1)",
+        "description": "Check if the scalar represents zero. Cost: 271 mWU"
+    },
+    "jet::scalar_multiply": {
+        "prefix": "jet::scalar_multiply",
+        "body": "jet::scalar_multiply($1, $2)",
+        "description": "Multiply two scalars. Cost: 774 mWU"
+    },
+    "jet::scalar_multiply_lambda": {
+        "prefix": "jet::scalar_multiply_lambda",
+        "body": "jet::scalar_multiply_lambda($1)",
+        "description": "Multiply a scalar with the canonical primitive cube of unity (lambda). Cost: 557 mWU"
+    },
+    "jet::scalar_negate": {
+        "prefix": "jet::scalar_negate",
+        "body": "jet::scalar_negate($1)",
+        "description": "Negate a scalar. Cost: 490 mWU"
+    },
+    "jet::scalar_normalize": {
+        "prefix": "jet::scalar_normalize",
+        "body": "jet::scalar_normalize($1)",
+        "description": "Return the canonical representation of the scalar. Cost: 472 mWU"
+    },
+    "jet::scalar_square": {
+        "prefix": "jet::scalar_square",
+        "body": "jet::scalar_square($1)",
+        "description": "Square a scalar. Cost: 575 mWU"
+    },
+    "jet::scale": {
+        "prefix": "jet::scale",
+        "body": "jet::scale($1, $2)",
+        "description": "Multiply a point by a scalar. Cost: 72675 mWU"
+    },
+    "jet::swu": {
+        "prefix": "jet::swu",
+        "body": "jet::swu($1)",
+        "description": "Algebraically distribute a field element over the secp256k1 curve. Cost: 32120 mWU"
+    }
+} 
