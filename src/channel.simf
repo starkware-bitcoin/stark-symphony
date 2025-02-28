@@ -10,14 +10,16 @@
 /// The channel state is a 256-bit value, initialized to 0.
 type ChannelState = u256;
 
-/// Mix a 256-bit value into the channel state.
+/// Mix a u32 value into the channel state.
 ///
 /// # Arguments
 ///
 /// * `state` - The current channel state.
-/// * `felt` - The value to mix into the channel state.
-fn channel_mix_felt(state: ChannelState, felt: u256) -> ChannelState {
-    sha256_pair(state, felt)
+/// * `input` - The value to mix into the channel state.
+fn channel_mix_32(state: ChannelState, input: u32) -> ChannelState {
+    let ctx: Ctx8 = jet::sha_256_ctx_8_init();
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_4(ctx, input);
+    jet::sha_256_ctx_8_finalize(ctx)
 }
 
 /// Update the channel state by hashing the current state.
@@ -41,7 +43,7 @@ fn channel_draw_felt(state: ChannelState) -> (ChannelState, u256) {
 ///
 /// * `state` - The current channel state.
 /// * `max` - The upper bound of the value to draw (exclusive).
-fn channel_draw_u32(state: ChannelState, max: u32) -> (ChannelState, u32) {
+fn channel_draw_32(state: ChannelState, max: u32) -> (ChannelState, u32) {
     let (_, lo128): (u128, u128) = <u256>::into(state);
     let (_, lo64): (u64, u64) = <u128>::into(lo128);
     let (_, lo32): (u32, u32) = <u64>::into(lo64);
@@ -50,7 +52,7 @@ fn channel_draw_u32(state: ChannelState, max: u32) -> (ChannelState, u32) {
 }
 
 fn test_channel() {
-    let state: ChannelState = channel_mix_felt(0, 1);
-    let (state, value): (ChannelState, u32) = channel_draw_u32(state, 10);
+    let state: ChannelState = channel_mix_32(0, 1);
+    let (state, value): (ChannelState, u32) = channel_draw_32(state, 10);
     let (state, value): (ChannelState, u256) = channel_draw_felt(state);
 }

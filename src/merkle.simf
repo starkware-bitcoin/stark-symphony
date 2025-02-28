@@ -6,37 +6,45 @@
 
 #include "sha256.simf"
 
-/// A proof node is a tuple of a 256-bit value and a boolean indicating whether it is the left or right sibling.
-type ProofNode = (u256, bool);
+/// Merkle root, leaf, or intermediate node.
+type MerkleNode = u256;
+
+/// A proof of inclusion for a Merkle tree having a maximum depth of 32.
+/// Consists of a list of sibling nodes required to reconstruct the root.
+type MerkleProof32 = List<MerkleNode, 32>;
+
+type MerkleAcc = (u256, u32);
 
 /// Compute the next intermediate node in the Merkle tree.
-fn merkle_compute_step(element: ProofNode, acc: u256) -> u256 {
-    let (node, is_left): ProofNode = element;
-    match is_left {
-        true => sha256_pair(node, acc),
-        false => sha256_pair(acc, node),
-    }
+fn merkle_compute_step(sib_node: MerkleNode, acc: MerkleAcc) -> MerkleAcc {
+    let (curr_node, path): MerkleAcc = acc;
+    let next_node: u256 = match jet::divides_32(2, path) {
+        true => sha256_pair(sib_node, curr_node),
+        false => sha256_pair(curr_node, sib_node),
+    };
+    (next_node, jet::divide_32(path, 2))
 }
 
-/// Verify a proof of inclusion for a leaf in a Merkle tree.
+/// Verify a proof of inclusion for a leaf in a Merkle tree having a maximum depth of 32.
 ///
 /// # Arguments
 ///
 /// * `leaf` - The leaf value to verify.
-/// * `proof` - The proof of inclusion.
+/// * `leaf_idx` - The leaf index (counting from the root) which is effectively authentication path.
+/// * `proof` - The proof of inclusion, which is a list of sibling nodes required to reconstruct the root.
 /// * `root` - The root of the Merkle tree.
-fn merkle_verify(leaf: u256, proof: List<ProofNode, 16>, root: u256) {
-    let node: u256 = sha256(leaf);
-    let computed_root: u256 = fold::<merkle_compute_step, 16>(proof, node);
+fn merkle_verify_32(leaf: u256, leaf_idx: u32, proof: MerkleProof32, root: u256) {
+    let acc: MerkleAcc = (sha256(leaf), leaf_idx);
+    let (computed_root, _): MerkleAcc = fold::<merkle_compute_step, 32>(proof, acc);
     assert!(jet::eq_256(computed_root, root));
 }
 
 fn test_merkle() {
     let root: u256 = 0x875ef7b0a28899d85920fa5586628c27dd7f3ca3d221ee018ee34fc5d758a477;
     let leaf: u256 = 0;
-    let proof: List<ProofNode, 16> = list![
-        (0xa665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3, false),
-        (0x114bd151f8fb0c58642d2170da4ae7d7c57977260ac2cc8905306cab6b2acabc, false),
+    let proof: MerkleProof32 = list![
+        0xa665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3,
+        0x114bd151f8fb0c58642d2170da4ae7d7c57977260ac2cc8905306cab6b2acabc,
     ];
-    merkle_verify(leaf, proof, root);
+    merkle_verify_32(leaf, 3, proof, root);
 }

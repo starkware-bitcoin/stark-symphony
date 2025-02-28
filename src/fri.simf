@@ -1,0 +1,85 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
+//! FRI protocol.
+
+#include "field.simf"
+#include "merkle.simf"
+#include "channel.simf"
+
+/// Accumulator for the FRI protocol.
+/// * (random) index
+/// * x point
+/// * composition polynomial evaluation
+/// * domain size
+/// * channel state
+type FriAcc = (u32, u32, u32, u32, ChannelState);
+
+/// FRI commitment (one layer).
+/// * merkle root of the commitment to the current FRI layer
+/// * (random) beta or free term (for the last FRI polynomial)
+/// * cpa
+/// * cpa merkle proof
+/// * cpb
+/// * cpb merkle proof
+/// * flag indicating if this is the last layer
+type FriLayer = (u256, u32, u32, MerkleProof32, u32, MerkleProof32, bool);
+
+/// Read the commitment to the current FRI layer and update the channel state accordingly.
+fn fri_read_commitment(layer: FriLayer, state: ChannelState) -> ChannelState {
+    let (cp_mt_root, beta, _, _, _, _, is_last): FriLayer = layer;
+    channel_mix_32(state, cp_mt_root);
+    match is_last {
+        false => {
+            let random: u32 = channel_draw_32(state, FIELD_MODULUS);
+            assert!(jet::eq_32(random, beta));
+            state
+        },
+        true => {
+            // here beta is actually the free term
+            channel_mix_32(state, beta)
+        }
+    }
+}
+
+/// Read the commitments to the FRI layers and update the channel state accordingly.
+fn fri_read_commitments_32(layers: List<FriLayer, 32>, state: ChannelState) -> ChannelState {
+    fold::<fri_read_commitment, 32>(layers, state)
+}
+
+/// Evaluate the next FRI polynomial at a given point,
+/// given the evaluations of the decomposed previous polynomial.
+fn fri_eval_cp_next(cpa: u32, cpb: u32, x: u32, beta: u32) -> u32 {
+    let op0: u32 = div_mod(add_mod(cpa, cpb), 2);
+    let op1: u32 = div_mod(sub_mod(cpa, cpb), mul_mod(x, 2));
+    add_mod(op0, mul_mod(op1, beta))
+}
+
+/// Verify the current FRI layer.
+fn fri_verify_layer(layer: FriLayer, acc: FriAcc) -> FriAcc {
+    let (cp_mt_root, beta, cpa, cpa_proof, cpb, cpb_proof, is_last): FriLayer = layer;
+    let (idx, x, cp, domain_size): FriAcc = acc;
+    match is_last {
+        false => {
+            let cp_next: u32 = fri_eval_cp_next(cpa, cpb, x, beta);
+            let domain_size_next: u32 = jet::divide_32(domain_size, 2);
+            let cpa_idx: u32 = jet::add_32(idx, domain_size);
+            let cpb_idx: u32 = jet::add_32(cpa_idx, domain_size_next);
+            merkle_verify_32(cpa, cpa_idx, cpa_proof, cp_mt_root);
+            merkle_verify_32(cpb, cpb_idx, cpb_proof, cp_mt_root);
+            (idx, mul_mod(x, x), cp_next, domain_size_next)
+        },
+        true => {
+            let cp_last: u32 = beta;
+            assert!(jet::eq_32(cp, cp_last));
+            (0, 0, 0, 0)
+        },
+    }
+}
+
+/// Verify the FRI proof with the number of layers below 32.
+fn fri_verify_32(layers: List<FriLayer, 32>, idx: u32, x0: u32, cp0: u32) {
+    let acc: FriAcc = (idx, x0, xp0, DOMAIN_EX_SIZE);
+    fold::<fri_verify_layer, 32>(layers, acc);
+}
