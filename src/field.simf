@@ -2,28 +2,60 @@
 //
 // SPDX-License-Identifier: MIT
 
-//! Arithmetic operations in the secp256k1 prime field.
+//! Arithmetic operations in the field modulo 3*2^30 + 1
 
-/// Add two field elements modulo the secp256k1 prime.
-fn add_mod(a: u256, b: u256) -> u256 {
-    jet::fe_add(a, b)
+#define MODULUS 3221225473
+
+/// Add two field elements modulo the field prime.
+fn add_mod(a: u32, b: u32) -> u32 {
+    let lhs: u64 = <(u32, u32)>::into((0, a));
+    let rhs: u64 = <(u32, u32)>::into((0, b));
+    let (_, sum): (bool, u64) = jet::add_64(lhs, rhs);
+    let res64: u64 = jet::modulo_64(sum, MODULUS);
+    let (_, res): (u32, u32) = <u64>::into(res64);
+    res
 }
 
-/// Subtract two field elements modulo the secp256k1 prime.
-fn sub_mod(a: u256, b: u256) -> u256 {
-    let b_neg: u256 = jet::fe_negate(b);
+/// Subtract two field elements modulo the field prime.
+fn sub_mod(a: u32, b: u32) -> u32 {
+    let (_, b_neg): (bool, u32) = jet::subtract_32(MODULUS, b);
     add_mod(a, b_neg)
 }
 
-/// Multiply two field elements modulo the secp256k1 prime.
-fn mul_mod(a: u256, b: u256) -> u256 {
-    jet::fe_multiply(a, b)
+/// Multiply two field elements modulo the field prime.
+fn mul_mod(a: u32, b: u32) -> u32 {
+    let mul: u64 = jet::multiply_32(a, b);
+    let res64: u64 = jet::modulo_64(mul, MODULUS);
+    let (_, res): (u32, u32) = <u64>::into(res64);
+    res
 }
 
-/// Divide two field elements modulo the secp256k1 prime.
-fn div_mod(a: u256, b: u256) -> u256 {
-    let b_inv: u256 = jet::fe_invert(b);
-    mul_mod(a, b_inv)
+/// Accumulator for the extended Euclidean algorithm.
+/// (t, r, t', r')
+type ExtendedEuclideanAcc = (u32, u32, u32, u32);
+
+/// Extended Euclidean algorithm step.
+fn div_mod_step(acc: ExtendedEuclideanAcc, context: (), counter: u16) -> Either<u32, ExtendedEuclideanAcc> {
+    let (t, r, new_t, new_r): ExtendedEuclideanAcc = acc;
+    match jet::is_zero_32(new_r) {
+        true => {
+            assert!(jet::eq_32(r, 1));
+            Left(t)
+        }
+        false => {
+            let q: u32 = jet::divide_32(r, new_r);
+            let (t, new_t): (u32, u32) = (new_t, sub_mod(t, mul_mod(q, new_t)));
+            let (r, new_r): (u32, u32) = (new_r, sub_mod(r, mul_mod(q, new_r)));
+            Right((t, r, new_t, new_r))
+        }
+    }
+}
+
+/// Divide two field elements modulo the field prime.
+fn div_mod(a: u32, b: u32) -> u32 {
+    let res: Either<u32, ExtendedEuclideanAcc> = for_while::<div_mod_step>((0, MODULUS, 1, b), ());
+    let t: u32 = unwrap_left::<ExtendedEuclideanAcc>(res);
+    mul_mod(a, t)
 }
 
 /// Accumulator for the modular exponentiation operation.
@@ -32,19 +64,19 @@ fn div_mod(a: u256, b: u256) -> u256 {
 /// - The result of the modular exponentiation operation.
 /// - The base of the modular exponentiation operation.
 /// - The exponent of the modular exponentiation operation.
-type ExpModAcc = (u256, u256, u32);
+type ExpModAcc = (u32, u32, u32);
 
 /// Implementation of the iterative square and multiply algorithm.
-fn exp_mod_step(acc: ExpModAcc, context: (), counter: u16) -> Either<u256, ExpModAcc> {
+fn exp_mod_step(acc: ExpModAcc, context: (), counter: u16) -> Either<u32, ExpModAcc> {
     let (res, base, exp): ExpModAcc = acc;
     match jet::is_zero_32(exp) {
         true => Left(res),
         false => {
-            let new_res: u256 = match jet::divides_32(2, exp) {
+            let new_res: u32 = match jet::divides_32(2, exp) {
                 true => res,
                 false => mul_mod(res, base),
             };
-            let new_base: u256 = jet::fe_square(base);
+            let new_base: u32 = mul_mod(base, base);
             let new_exp: u32 = jet::divide_32(exp, 2);
             Right((new_res, new_base, new_exp))
         }
@@ -52,34 +84,35 @@ fn exp_mod_step(acc: ExpModAcc, context: (), counter: u16) -> Either<u256, ExpMo
 }
 
 /// Raise a field element to a power modulo the secp256k1 prime.
-fn exp_mod(a: u256, b: u32) -> u256 {
-    let res: Either<u256, ExpModAcc> = for_while::<exp_mod_step>((1, a, b), ());
+fn exp_mod(a: u32, b: u32) -> u32 {
+    let res: Either<u32, ExpModAcc> = for_while::<exp_mod_step>((1, a, b), ());
     unwrap_left::<ExpModAcc>(res)
 }
 
 fn test_field() {
-    let a: u256 = 1;
-    let b: u256 = 1;
-    let c: u256 = add_mod(a, b);
-    assert!(jet::eq_256(c, 2));
+    let a: u32 = 1;
+    let b: u32 = 1;
+    let c: u32 = add_mod(a, b);
+    assert!(jet::eq_32(c, 2));
 
-    let a: u256 = 2;
-    let b: u256 = 1;
-    let c: u256 = sub_mod(a, b);
-    assert!(jet::eq_256(c, 1));
+    let a: u32 = 2;
+    let b: u32 = 1;
+    let c: u32 = sub_mod(a, b);
+    assert!(jet::eq_32(c, 1));
 
-    let a: u256 = 2;
-    let b: u256 = 2;
-    let c: u256 = mul_mod(a, b);
-    assert!(jet::eq_256(c, 4));
+    let a: u32 = 2;
+    let b: u32 = 2;
+    let c: u32 = mul_mod(a, b);
+    assert!(jet::eq_32(c, 4));
 
-    let a: u256 = 4;
-    let b: u256 = 2;
-    let c: u256 = div_mod(a, b);
-    assert!(jet::eq_256(c, 2));
+    let a: u32 = 124245436;
+    let b: u32 = 980943291;
+    let c: u32 = div_mod(a, b);
+    let d: u32 = mul_mod(c, b);
+    assert!(jet::eq_32(d, a));
 
-    let a: u256 = 2;
+    let a: u32 = 2;
     let b: u32 = 3;
-    let c: u256 = exp_mod(a, b);
-    assert!(jet::eq_256(c, 8));
+    let c: u32 = exp_mod(a, b);
+    assert!(jet::eq_32(c, 8));
 }
