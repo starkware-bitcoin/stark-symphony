@@ -1,0 +1,49 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
+//! Constraints for the Fibonacci square problem.
+//! See https://starkware.co/stark-101 for more details.
+
+#include "field.simf"
+
+#define DOMAIN_EX_SIZE 8192 // 8x
+#define CANONIC_COSET_GEN 1734477367 // field_gen ^ (3 * 2^30 / 8192))
+
+/// Calculate the x point given the index of the trace cell.
+fn fibsquare_calc_x(idx: u32) -> u32 {
+    mul_mod(FIELD_GEN, exp_mod(CANONIC_COSET_GEN, idx))
+}
+
+fn fibsquare_eval_p0(x: u32, f_x: u32) -> u32 {
+    // (f(x) - a0) / (x - g^0)
+    div_mod(sub_mod(f_x, 1), add_mod(x, 1))
+}
+
+fn fibsquare_eval_p1(x: u32, f_x: u32) -> u32 {
+    // (f(x) - a1022) / (x - g^1022)
+    div_mod(sub_mod(f_x, 2338775057), sub_mod(x, 2450347685))
+}
+
+fn fibsquare_eval_p2(x: u32, f_x: u32, f_gx: u32, f_ggx: u32) -> u32 {
+    // (f(ggx) - f(gx)^2 - f(x)^2)
+    let num0: u32 = sub_mod(f_ggx, add_mod(mul_mod(f_x, f_x), mul_mod(f_gx, f_gx)));
+    // (x - g^1021) * (x - g^1022) * (x - g^1023)
+    let num1: u32 = mul_mod(mul_mod(sub_mod(x, 2342081930), sub_mod(x, 2450347685)), sub_mod(x, 532203874));
+    // (x^1024 - 1)
+    let den: u32 = sub_mod(exp_mod(x, 1024), 1);
+    div_mod(mul_mod(num0, num1), den)
+}
+
+/// Evaluate the composition polynomial at the given x point
+fn fibsquare_eval_cp(x: u32, a0: u32, a1: u32, a2: u32, f_x: u32, f_gx: u32, f_ggx: u32) -> u32 {
+    let p0: u32 = fibsquare_eval_p0(x, f_x);
+    let p1: u32 = fibsquare_eval_p1(x, f_x);
+    let p2: u32 = fibsquare_eval_p2(x, f_x, f_gx, f_ggx);
+    add_mod(add_mod(mul_mod(p0, a0), mul_mod(p1, a1)), mul_mod(p2, a2))
+}
+
+fn test_fibsquare() {
+    let x: u32 = fibsquare_calc_x(0);
+    assert!(jet::eq_32(x, FIELD_GEN));
+}

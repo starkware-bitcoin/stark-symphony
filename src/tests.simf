@@ -2,10 +2,12 @@
 #include "channel.simf"
 #include "field.simf"
 #include "merkle.simf"
+#include "air.simf"
 
 fn main() {
     test_sha256();
     test_channel();
     test_field();
     test_merkle();
+    test_fibsquare();
 }
