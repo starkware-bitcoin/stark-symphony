@@ -1,0 +1,54 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
+//! STARK verifier for the Fibonacci squared AIR.
+
+#include "channel.simf"
+#include "fri.simf"
+#include "air.simf"
+#include "field.simf"
+
+/// STARK proof for the Fibonacci squared AIR.
+/// - Merkle root of the trace polynomial evaluation on extended domain
+/// - Coefficients of the composition polynomial
+/// - FRI decommitments
+/// - Evaluations of the trace polynomials in a given point, together with the corresponding Merkle proofs.
+type FibSquareProof = (u256, FibSquareCoeffs, FibSquareEvals, List<FriLayer, 32>);
+
+/// Evaluation of the trace polynomial in a given point, together with the corresponding Merkle proof.
+type Eval = (u32, MerkleProof32);
+
+/// Verify the proof that we know A_1 such that the Fibonacci squared sequence is correct and has
+/// the following boundaries: A_0 == 1, A_1022 == 2338775057.
+fn verify_proof(proof: FibSquareProof) {
+    let (p_mt_root, coeffs, evals, fri_layers): FibSquareProof = proof;
+    // Read Merkle root of the trace polynomial evaluation on extended domain
+    let state: ChannelState = channel_mix_256(0, p_mt_root);
+    // Read composition polynomial coefficients
+    let state: ChannelState = fibsquare_read_coefficients(state, coeffs);
+    // Read FRI commitments
+    let state: ChannelState = fri_read_commitments_32(fri_layers, state);
+    // Random query
+    let (state, idx): (ChannelState, u32) = channel_draw_32(state, FIELD_MODULUS);
+    // Read trace polynomial evaluations in specified point
+    let state: ChannelState = fibsquare_read_evaluations_checked(state, evals, idx, p_mt_root);
+    // Calculate x given the random query
+    let x: u32 = fibsquare_calc_x(idx);
+    // Evaluate composition polynomial
+    let cp_ev: u32 = fibsquare_compose(x, coeffs, evals);
+    // Verify FRI layers
+    fri_verify_32(fri_layers, idx, x, cp_ev);
+}
+
+fn test_verifier() {
+    let proof: FibSquareProof = (
+        0,
+        (0, 0, 0),
+        (0, 0, 0),
+        list![
+            (0, 0, 0, list![], 0, list![], false),
+        ],
+    );
+    verify_proof(proof);
+}

@@ -19,7 +19,7 @@ from hashlib import sha256
 from math import log2, ceil
 from typing import List
 
-from stark101.field import FieldElement
+from fibsquare.field import FieldElement
 
 
 class MerkleTree(object):
@@ -83,4 +83,5 @@ def verify_decommitment(leaf_id: int, leaf_elt: FieldElement, decommitment: List
         else:
             h = auth + cur
         cur = sha256(h).digest()
+        # print(f"cur: {int(cur.hex(), 16)}, bit: {bit}, auth: {int(auth.hex(), 16)}")
     return cur == root

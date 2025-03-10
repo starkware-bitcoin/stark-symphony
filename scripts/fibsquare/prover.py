@@ -16,10 +16,10 @@
 
 from typing import List
 
-from stark101.channel import Channel
-from stark101.field import FieldElement
-from stark101.merkle import MerkleTree
-from stark101.polynomial import interpolate_poly, Polynomial, X
+from fibsquare.channel import Channel
+from fibsquare.field import FieldElement
+from fibsquare.merkle import MerkleTree
+from fibsquare.polynomial import interpolate_poly, Polynomial, X
 
 
 def generate_trace() -> List[FieldElement]:
@@ -52,12 +52,16 @@ def build_constraints(p: Polynomial, domain: List[FieldElement]) -> List[Polynom
     return [p0, p1, p2]
 
 
-def build_composition_polynomial(constraints: List[Polynomial], channel: Channel) -> Polynomial:
+def build_composition_polynomial(constraints: List[Polynomial], channel: Channel) -> tuple[Polynomial, tuple[FieldElement, FieldElement, FieldElement]]:
     p0, p1, p2 = constraints
-    cp0 = p0.scalar_mul(channel.receive_random_field_element('composition polynomial coefficient #0'))
-    cp1 = p1.scalar_mul(channel.receive_random_field_element('composition polynomial coefficient #1'))
-    cp2 = p2.scalar_mul(channel.receive_random_field_element('composition polynomial coefficient #2'))
-    return cp0 + cp1 + cp2
+    a0 = channel.receive_random_field_element('composition polynomial coefficient #0')
+    a1 = channel.receive_random_field_element('composition polynomial coefficient #1')
+    a2 = channel.receive_random_field_element('composition polynomial coefficient #2')
+    cp0 = p0.scalar_mul(a0)
+    cp1 = p1.scalar_mul(a1)
+    cp2 = p2.scalar_mul(a2)
+    cp = cp0 + cp1 + cp2
+    return cp, (a0, a1, a2)
 
 
 def next_fri_domain(domain: List[FieldElement]) -> List[FieldElement]:
@@ -80,13 +84,16 @@ def next_fri_layer(prev_poly, prev_domain, beta: FieldElement) -> tuple:
     return fri_poly, fri_domain, fri_layer, fri_mt
 
 
-def decommit(channel: Channel, poly_ev: List[FieldElement], poly_mt: MerkleTree, idx: int, comment: str):
+def decommit(channel: Channel, poly_ev: List[FieldElement], poly_mt: MerkleTree, idx: int, comment: str) -> tuple[FieldElement, list[bytes]]:
+    auth_path = poly_mt.get_authentication_path(idx)
     channel.send(poly_ev[idx], comment)
-    channel.send(poly_mt.get_authentication_path(idx), f'{comment} auth')
+    channel.send(auth_path, f'{comment} auth')
+    return poly_ev[idx], auth_path
 
 
-def prove(domain_size=1024, domain_ex_mult=8) -> list:
+def prove(domain_size=1024, domain_ex_mult=8) -> tuple[list, dict]:
     channel = Channel()
+    res = {}
 
     # Generate FibonacciSq Trace, multiplicative subgroup, and extended evaluation domain
     trace = generate_trace()
@@ -98,13 +105,15 @@ def prove(domain_size=1024, domain_ex_mult=8) -> list:
     p_ev = [p.eval(d) for d in domain_ex]
     p_mt = MerkleTree(p_ev)
     channel.send(p_mt.root, 'trace polynomial merkle root', mix=True)
+    res['p_mt_root'] = int.from_bytes(p_mt.root, 'big')
 
     # Produce constraint polynomials and composition polynomial out of them, then evaluate on extended domain
     constraints = build_constraints(p, domain)
-    cp = build_composition_polynomial(constraints, channel)
+    cp, coeffs = build_composition_polynomial(constraints, channel)
     cp_ev = [cp.eval(d) for d in domain_ex]
     cp_mt = MerkleTree(cp_ev)
     channel.send(cp_mt.root, 'composition polynomial merkle root', mix=True)
+    res['coeffs'] = [coeff.val for coeff in coeffs]
 
     # FRI layer commitments
     fri_poly = cp
@@ -125,18 +134,33 @@ def prove(domain_size=1024, domain_ex_mult=8) -> list:
     idx = channel.receive_random_int(0, len(domain_ex), 'query')
 
     # Decommit on trace polynomial
-    decommit(channel, p_ev, p_mt, idx, 'f(x)')
-    decommit(channel, p_ev, p_mt, idx + domain_ex_mult, 'f(gx)')
-    decommit(channel, p_ev, p_mt, idx + 2 * domain_ex_mult, 'f(ggx)')
+    f_x, f_x_auth = decommit(channel, p_ev, p_mt, idx, 'f(x)')
+    f_gx, f_gx_auth = decommit(channel, p_ev, p_mt, idx + domain_ex_mult, 'f(gx)')
+    f_ggx, f_ggx_auth = decommit(channel, p_ev, p_mt, idx + 2 * domain_ex_mult, 'f(ggx)')
+    res['evals'] = [
+        [f_x.val, [int.from_bytes(x, 'big') for x in f_x_auth]],
+        [f_gx.val, [int.from_bytes(x, 'big') for x in f_gx_auth]],
+        [f_ggx.val, [int.from_bytes(x, 'big') for x in f_ggx_auth]],
+    ]
 
     # Decommit on FRI layers (including initial composition polynomial, excluding the last one)
+    res['fri_layers'] = []
     for i in range(len(fri_layers) - 1):
         length = len(fri_layers[i])
         fri_idx = idx % length  # x
         sib_idx = (idx + length // 2) % length  # -x
-        decommit(channel, fri_layers[i], fri_mts[i], fri_idx, f'cp_{i}')
-        decommit(channel, fri_layers[i], fri_mts[i], sib_idx, f'cp_{i} sibling')
+        cpa_ev, cpa_auth = decommit(channel, fri_layers[i], fri_mts[i], fri_idx, f'cp_{i}')
+        cpb_ev, cpb_auth = decommit(channel, fri_layers[i], fri_mts[i], sib_idx, f'cp_{i} sibling')
+        res['fri_layers'].append([
+            int.from_bytes(fri_mts[i].root, 'big'),
+            fri_layers[i][0].val,
+            cpa_ev.val,
+            [int.from_bytes(x, 'big') for x in cpa_auth],
+            cpb_ev.val,
+            [int.from_bytes(x, 'big') for x in cpb_auth],
+            i == len(fri_layers) - 2,
+        ])
 
     # Decommit on last polynomial
     channel.send(fri_layers[-1][0], 'last FRI polynomial free term')
-    return channel.proof
+    return channel.proof, res

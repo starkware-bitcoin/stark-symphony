@@ -5,6 +5,9 @@
 //! Constraints for the Fibonacci square problem.
 //! See https://starkware.co/stark-101 for more details.
 
+#ifndef AIR_SIMF
+#define AIR_SIMF
+
 #include "field.simf"
 #include "channel.simf"
 #include "merkle.simf"
@@ -15,17 +18,17 @@
 #define CANONIC_COSET_GEN 1734477367 // field_gen ^ (3 * 2^30 / 8192))
 
 /// Coefficients of the composition polynomial.
-type Coeffs = (u32, u32, u32);
+type FibSquareCoeffs = (u32, u32, u32);
 
 /// Evaluation of a trace polynomial in a given point, together with the corresponding Merkle proof.
 type Eval = (u32, MerkleProof32);
 
 /// Evaluations of the trace polynomials in a given point, together with the corresponding Merkle proofs.
-type Evals = (Eval, Eval, Eval);
+type FibSquareEvals = (Eval, Eval, Eval);
 
 /// Read the coefficients of the composition polynomial from the channel.
-fn fibsquare_read_coefficients(state: ChannelState, coeffs: Coeffs) -> ChannelState {
-    let (alpha0, alpha1, alpha2): Coeffs = coeffs;
+fn fibsquare_read_coefficients(state: ChannelState, coeffs: FibSquareCoeffs) -> ChannelState {
+    let (alpha0, alpha1, alpha2): FibSquareCoeffs = coeffs;
     let state: ChannelState = channel_mix_32(state, alpha0);
     let state: ChannelState = channel_mix_32(state, alpha1);
     let state: ChannelState = channel_mix_32(state, alpha2);
@@ -35,14 +38,15 @@ fn fibsquare_read_coefficients(state: ChannelState, coeffs: Coeffs) -> ChannelSt
 /// Verify the evaluation of a trace polynomial using the Merkle proof and update the channel state.
 fn read_eval_checked(state: ChannelState, eval: Eval, idx: u32, p_mt_root: u256) -> ChannelState {
     let (p_ev, p_proof): Eval = eval;
-    merkle_verify_32(sha256_32(p_ev), idx, p_proof, p_mt_root);
+    let (_, leaf_id): (bool, u32) = jet::add_32(idx, DOMAIN_EX_SIZE);
+    merkle_verify_32(sha256_32(p_ev), leaf_id, p_proof, p_mt_root);
     channel_mix_32(state, p_ev)
 }
 
 /// Read the evaluations of the trace polynomials from the channel.
 /// Also verify the evaluations using the Merkle proof.
-fn fibsquare_read_evaluations_checked(state: ChannelState, evals: Evals, idx: u32, p_mt_root: u256) -> ChannelState {
-    let (f_x, f_gx, f_ggx): Evals = evals;
+fn fibsquare_read_evaluations_checked(state: ChannelState, evals: FibSquareEvals, idx: u32, p_mt_root: u256) -> ChannelState {
+    let (f_x, f_gx, f_ggx): FibSquareEvals = evals;
     let state: ChannelState = read_eval_checked(state, f_x, idx, p_mt_root);
     let (_, idx): (bool, u32) = jet::add_32(idx, IDX_OFFSET);
     let state: ChannelState = read_eval_checked(state, f_gx, idx, p_mt_root);
@@ -88,9 +92,9 @@ fn fibsquare_eval_cp(x: u32, a0: u32, a1: u32, a2: u32, f_x: u32, f_gx: u32, f_g
 }
 
 /// Evaluate the composition polynomial at the given x point
-fn fibsquare_compose(x: u32, coeffs: Coeffs, evals: Evals) -> u32 {
-    let (a0, a1, a2): Coeffs = coeffs;
-    let (e0, e1, e2): Evals = evals;
+fn fibsquare_compose(x: u32, coeffs: FibSquareCoeffs, evals: FibSquareEvals) -> u32 {
+    let (a0, a1, a2): FibSquareCoeffs = coeffs;
+    let (e0, e1, e2): FibSquareEvals = evals;
     let (f_x, _): Eval = e0;
     let (f_gx, _): Eval = e1;
     let (f_ggx, _): Eval = e2;
@@ -101,3 +105,5 @@ fn test_fibsquare() {
     let x: u32 = fibsquare_calc_x(0);
     assert!(jet::eq_32(x, FIELD_GEN));
 }
+
+#endif // AIR_SIMF

@@ -11,6 +11,14 @@ One of the key concepts of Simplicity is **Jets**:
 
 STARKs are perfect candidate for this approach!
 
+## Roadmap
+
+- [ ] Fibonacci square over toy field PoC
+- [ ] Liquid testnet deployment
+- [ ] QM31 extension field
+- [ ] Circle polynomial
+- [ ] Stwo verifier core
+
 ## Dev quickstart
 
 0. Clone this repo
@@ -25,7 +33,7 @@ This is a small CLI tool that helps with the development of Simfony programs.
 Install `simfony` binary:
 
 ```bash
-cargo install --git https://github.com/m-kus/simfony-stark-verifier simfony-cli
+cargo install --git https://github.com/keep-starknet-strange/stark-symphony simfony-cli
 ```
 
 Build a Simfony program:

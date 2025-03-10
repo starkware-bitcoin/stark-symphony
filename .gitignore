@@ -1,2 +1,4 @@
 target
 *.vsix
+__pycache__
+.pytest_cache

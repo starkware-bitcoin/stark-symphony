@@ -16,10 +16,10 @@
 
 import math
 
-from stark101.channel import Channel
-from stark101.prover import prove
-from stark101.field import FieldElement
-from stark101.merkle import verify_decommitment
+from fibsquare.channel import Channel
+from fibsquare.prover import prove
+from fibsquare.field import FieldElement
+from fibsquare.merkle import verify_decommitment
 
 
 def receive_and_verify_field_element(channel: Channel, idx: int, mt_root: bytes, comment: str = '') -> FieldElement:
@@ -31,7 +31,7 @@ def receive_and_verify_field_element(channel: Channel, idx: int, mt_root: bytes,
 
 def test_prover(domain_size=1024, domain_ex_mult=8):
     print("\n===================== Prover log =====================")
-    proof = prove(domain_size=domain_size, domain_ex_mult=domain_ex_mult)
+    proof, _ = prove(domain_size=domain_size, domain_ex_mult=domain_ex_mult)
 
     print("\n==================== Verifier log ====================")
     channel = Channel(proof)

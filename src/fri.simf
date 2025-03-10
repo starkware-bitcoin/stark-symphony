@@ -4,6 +4,9 @@
 
 //! FRI protocol.
 
+#ifndef FRI_SIMF
+#define FRI_SIMF
+
 #include "field.simf"
 #include "merkle.simf"
 #include "channel.simf"
@@ -90,3 +93,5 @@ fn fri_verify_32(layers: List<FriLayer, 32>, idx: u32, x0: u32, cp_ev: u32) {
 
 fn test_fri() {
 }
+
+#endif // FRI_SIMF

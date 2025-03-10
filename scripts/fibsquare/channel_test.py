@@ -20,7 +20,7 @@ from functools import reduce
 from math import sqrt
 from random import randint
 
-from stark101.channel import Channel
+from fibsquare.channel import Channel
 
 
 def test_reproducability():

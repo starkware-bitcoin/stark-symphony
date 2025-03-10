@@ -4,12 +4,16 @@
 #include "merkle.simf"
 #include "air.simf"
 #include "fri.simf"
+//#include "verifier.simf"
 
 fn main() {
     test_sha256();
+    test_sha256_32();
     test_channel();
     test_field();
     test_merkle();
+    test_decommitment();
     test_fibsquare();
     test_fri();
+    //test_verifier();
 }

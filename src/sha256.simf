@@ -35,4 +35,10 @@ fn test_sha256() {
     assert!(jet::eq_256(result, 0x66687aadf862bd776c8fc18b8e9f8e20089714856ee233b3902a591d0d5f2925));
 }
 
+fn test_sha256_32() {
+    let input: u32 = 2915689030;
+    let result: u256 = sha256_32(input);
+    assert!(jet::eq_256(result, 64711419806867828842001989061968035503454892533703351743109315571114974747662));
+}
+
 #endif

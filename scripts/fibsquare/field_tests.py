@@ -15,7 +15,7 @@
 ###############################################################################
 
 
-from stark101.field import FieldElement
+from fibsquare.field import FieldElement
 
 
 def test_field_operations():

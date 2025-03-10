@@ -16,15 +16,15 @@
 
 
 """
-A polynomial interface with the functionality required for STARK101.
+A polynomial interface with the functionality required for fibsquare.
 """
 
 import operator
 from functools import reduce
 from tqdm import tqdm
 
-from stark101.field import FieldElement
-from stark101.list_utils import remove_trailing_elements, scalar_operation, two_lists_tuple_operation
+from fibsquare.field import FieldElement
+from fibsquare.list_utils import remove_trailing_elements, scalar_operation, two_lists_tuple_operation
 
 
 def trim_trailing_zeros(p):

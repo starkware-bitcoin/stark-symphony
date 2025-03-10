@@ -18,7 +18,7 @@
 from hashlib import sha256
 from typing import List, Union
 
-from stark101.field import FieldElement
+from fibsquare.field import FieldElement
 
 
 def message_repr(message: Union[bytes, FieldElement, List[bytes]]) -> str:

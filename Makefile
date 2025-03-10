@@ -11,3 +11,9 @@ test:
 
 vsix:
 	cd simfony-vsix && vsce package
+
+proof:
+	cd scripts && python -m fibsquare
+
+test-prover:
+	cd scripts && PYTHONPATH=. pytest -s fibsquare
