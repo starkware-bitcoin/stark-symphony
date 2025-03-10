@@ -6,9 +6,50 @@
 //! See https://starkware.co/stark-101 for more details.
 
 #include "field.simf"
+#include "channel.simf"
+#include "merkle.simf"
+#include "sha256.simf"
 
+#define IDX_OFFSET 8
 #define DOMAIN_EX_SIZE 8192 // 8x
 #define CANONIC_COSET_GEN 1734477367 // field_gen ^ (3 * 2^30 / 8192))
+
+/// Coefficients of the composition polynomial.
+type Coeffs = (u32, u32, u32);
+
+/// Evaluation of a trace polynomial in a given point, together with the corresponding Merkle proof.
+type Eval = (u32, MerkleProof32);
+
+/// Evaluations of the trace polynomials in a given point, together with the corresponding Merkle proofs.
+type Evals = (Eval, Eval, Eval);
+
+/// Read the coefficients of the composition polynomial from the channel.
+fn fibsquare_read_coefficients(state: ChannelState, coeffs: Coeffs) -> ChannelState {
+    let (alpha0, alpha1, alpha2): Coeffs = coeffs;
+    let state: ChannelState = channel_mix_32(state, alpha0);
+    let state: ChannelState = channel_mix_32(state, alpha1);
+    let state: ChannelState = channel_mix_32(state, alpha2);
+    state
+}
+
+/// Verify the evaluation of a trace polynomial using the Merkle proof and update the channel state.
+fn read_eval_checked(state: ChannelState, eval: Eval, idx: u32, p_mt_root: u256) -> ChannelState {
+    let (p_ev, p_proof): Eval = eval;
+    merkle_verify_32(sha256_32(p_ev), idx, p_proof, p_mt_root);
+    channel_mix_32(state, p_ev)
+}
+
+/// Read the evaluations of the trace polynomials from the channel.
+/// Also verify the evaluations using the Merkle proof.
+fn fibsquare_read_evaluations_checked(state: ChannelState, evals: Evals, idx: u32, p_mt_root: u256) -> ChannelState {
+    let (f_x, f_gx, f_ggx): Evals = evals;
+    let state: ChannelState = read_eval_checked(state, f_x, idx, p_mt_root);
+    let (_, idx): (bool, u32) = jet::add_32(idx, IDX_OFFSET);
+    let state: ChannelState = read_eval_checked(state, f_gx, idx, p_mt_root);
+    let (_, idx): (bool, u32) = jet::add_32(idx, IDX_OFFSET);
+    let state: ChannelState = read_eval_checked(state, f_ggx, idx, p_mt_root);
+    state
+}
 
 /// Calculate the x point given the index of the trace cell.
 fn fibsquare_calc_x(idx: u32) -> u32 {
@@ -44,6 +85,16 @@ fn fibsquare_eval_cp(x: u32, a0: u32, a1: u32, a2: u32, f_x: u32, f_gx: u32, f_g
     let p1: u32 = fibsquare_eval_p1(x, f_x);
     let p2: u32 = fibsquare_eval_p2(x, f_x, f_gx, f_ggx);
     add_mod(add_mod(mul_mod(p0, a0), mul_mod(p1, a1)), mul_mod(p2, a2))
+}
+
+/// Evaluate the composition polynomial at the given x point
+fn fibsquare_compose(x: u32, coeffs: Coeffs, evals: Evals) -> u32 {
+    let (a0, a1, a2): Coeffs = coeffs;
+    let (e0, e1, e2): Evals = evals;
+    let (f_x, _): Eval = e0;
+    let (f_gx, _): Eval = e1;
+    let (f_ggx, _): Eval = e2;
+    fibsquare_eval_cp(x, a0, a1, a2, f_x, f_gx, f_ggx)
 }
 
 fn test_fibsquare() {

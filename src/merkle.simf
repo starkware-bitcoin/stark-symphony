@@ -4,6 +4,9 @@
 
 //! Merkle tree helpers.
 
+#ifndef MERKLE_SIMF
+#define MERKLE_SIMF
+
 #include "sha256.simf"
 
 /// Merkle root, leaf, or intermediate node.
@@ -29,22 +32,24 @@ fn merkle_compute_step(sib_node: MerkleNode, acc: MerkleAcc) -> MerkleAcc {
 ///
 /// # Arguments
 ///
-/// * `leaf` - The leaf value to verify.
+/// * `leaf` - The hash of the leaf value to verify.
 /// * `leaf_idx` - The leaf index (counting from the root) which is effectively authentication path.
 /// * `proof` - The proof of inclusion, which is a list of sibling nodes required to reconstruct the root.
 /// * `root` - The root of the Merkle tree.
 fn merkle_verify_32(leaf: u256, leaf_idx: u32, proof: MerkleProof32, root: u256) {
-    let acc: MerkleAcc = (sha256(leaf), leaf_idx);
+    let acc: MerkleAcc = (leaf, leaf_idx);
     let (computed_root, _): MerkleAcc = fold::<merkle_compute_step, 32>(proof, acc);
     assert!(jet::eq_256(computed_root, root));
 }
 
 fn test_merkle() {
     let root: u256 = 0x875ef7b0a28899d85920fa5586628c27dd7f3ca3d221ee018ee34fc5d758a477;
-    let leaf: u256 = 0;
+    let leaf: u256 = sha256(0);
     let proof: MerkleProof32 = list![
         0xa665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3,
         0x114bd151f8fb0c58642d2170da4ae7d7c57977260ac2cc8905306cab6b2acabc,
     ];
     merkle_verify_32(leaf, 3, proof, root);
 }
+
+#endif

@@ -5,6 +5,9 @@
 //! A non-interactive channel for communication between the prover and the verifier.
 //! The channel is based on the SHA-256 hash function.
 
+#ifndef CHANNEL_SIMF
+#define CHANNEL_SIMF
+
 #include "sha256.simf"
 
 /// The channel state is a 256-bit value, initialized to 0.
@@ -19,6 +22,18 @@ type ChannelState = u256;
 fn channel_mix_32(state: ChannelState, input: u32) -> ChannelState {
     let ctx: Ctx8 = jet::sha_256_ctx_8_init();
     let ctx: Ctx8 = jet::sha_256_ctx_8_add_4(ctx, input);
+    jet::sha_256_ctx_8_finalize(ctx)
+}
+
+/// Mix a u256 value into the channel state.
+///
+/// # Arguments
+///
+/// * `state` - The current channel state.
+/// * `input` - The value to mix into the channel state.
+fn channel_mix_256(state: ChannelState, input: u256) -> ChannelState {
+    let ctx: Ctx8 = jet::sha_256_ctx_8_init();
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_32(ctx, input);
     jet::sha_256_ctx_8_finalize(ctx)
 }
 
@@ -56,3 +71,5 @@ fn test_channel() {
     let (state, value): (ChannelState, u32) = channel_draw_32(state, 10);
     let (state, value): (ChannelState, u256) = channel_draw_felt(state);
 }
+
+#endif

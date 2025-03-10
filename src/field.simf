@@ -93,32 +93,48 @@ fn exp_mod(a: u32, b: u32) -> u32 {
     unwrap_left::<ExpModAcc>(res)
 }
 
-fn test_field() {
-    let a: u32 = 1;
+fn test_add_mod() {
+    let a: u32 = 3221225473;
     let b: u32 = 1;
     let c: u32 = add_mod(a, b);
-    assert!(jet::eq_32(c, 2));
+    assert!(jet::eq_32(c, 1));
+}
 
-    let a: u32 = 2;
+fn test_sub_mod() {
+    let a: u32 = 3221225473;
     let b: u32 = 1;
     let c: u32 = sub_mod(a, b);
-    assert!(jet::eq_32(c, 1));
+    assert!(jet::eq_32(c, 3221225472));
+}
 
-    let a: u32 = 2;
-    let b: u32 = 2;
+fn test_mul_mod() {
+    let a: u32 = 56756;
+    let b: u32 = 56756;
     let c: u32 = mul_mod(a, b);
-    assert!(jet::eq_32(c, 4));
+    assert!(jet::eq_32(c, 18063));
+}
 
+fn test_div_mod() {
     let a: u32 = 124245436;
     let b: u32 = 980943291;
     let c: u32 = div_mod(a, b);
     let d: u32 = mul_mod(c, b);
     assert!(jet::eq_32(d, a));
+}
 
+fn test_exp_mod() {
     let a: u32 = 2;
-    let b: u32 = 3;
+    let b: u32 = 32;
     let c: u32 = exp_mod(a, b);
-    assert!(jet::eq_32(c, 8));
+    assert!(jet::eq_32(c, 1073741823));
+}
+
+fn test_field() {
+    test_add_mod();
+    test_sub_mod();
+    test_mul_mod();
+    test_div_mod();
+    test_exp_mod();
 }
 
 #endif

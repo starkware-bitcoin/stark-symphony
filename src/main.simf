@@ -4,5 +4,41 @@
 
 //! Program entry point.
 
+#include "channel.simf"
+#include "fri.simf"
+#include "air.simf"
+#include "field.simf"
+
+/// STARK proof for the Fibonacci squared AIR.
+/// - Merkle root of the trace polynomial evaluation on extended domain
+/// - Coefficients of the composition polynomial
+/// - FRI commitments
+/// - Evaluations of the trace polynomials in a given point, together with the corresponding Merkle proofs.
+type Proof = (u256, Coeffs, List<FriLayer, 32>, Evals);
+
+/// Evaluation of the trace polynomial in a given point, together with the corresponding Merkle proof.
+type Eval = (u32, MerkleProof32);
+
+fn verify_proof(state: ChannelState, proof: Proof) {
+    let (p_mt_root, coeffs, fri_layers, evals): Proof = proof;
+    // Read Merkle root of the trace polynomial evaluation on extended domain
+    let state: ChannelState = channel_mix_256(state, p_mt_root);
+    // Read composition polynomial coefficients
+    let state: ChannelState = fibsquare_read_coefficients(state, coeffs);
+    // Read FRI commitments
+    let state: ChannelState = fri_read_commitments_32(fri_layers, state);
+    // Random query
+    let (state, idx): (ChannelState, u32) = channel_draw_32(state, FIELD_MODULUS);
+    // Read trace polynomial evaluation in specified point
+    let state: ChannelState = fibsquare_read_evaluations_checked(state, evals, idx, p_mt_root);
+    // Calculate x point
+    let x: u32 = fibsquare_calc_x(idx);
+    // Evaluate composition polynomial
+    let cp_ev: u32 = fibsquare_compose(x, coeffs, evals);
+    // Verify FRI layers
+    fri_verify_32(fri_layers, idx, x, cp_ev);
+}
+
 fn main() {
+    let state: ChannelState = 0;
 }

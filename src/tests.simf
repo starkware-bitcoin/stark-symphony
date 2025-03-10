@@ -3,6 +3,7 @@
 #include "field.simf"
 #include "merkle.simf"
 #include "air.simf"
+#include "fri.simf"
 
 fn main() {
     test_sha256();
@@ -10,4 +11,5 @@ fn main() {
     test_field();
     test_merkle();
     test_fibsquare();
+    test_fri();
 }

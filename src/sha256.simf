@@ -14,6 +14,13 @@ fn sha256(input: u256) -> u256 {
     jet::sha_256_ctx_8_finalize(ctx)
 }
 
+/// SHA256 hash of a 32-bit value (big-endian).
+fn sha256_32(input: u32) -> u256 {
+    let ctx: Ctx8 = jet::sha_256_ctx_8_init();
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_4(ctx, input);
+    jet::sha_256_ctx_8_finalize(ctx)
+}
+
 /// SHA256 hash of a concatenation of two 256-bit values (big-endian).
 fn sha256_pair(left: u256, right: u256) -> u256 {
     let ctx: Ctx8 = jet::sha_256_ctx_8_init();
