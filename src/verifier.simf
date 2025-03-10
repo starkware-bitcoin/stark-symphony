@@ -41,7 +41,7 @@ fn verify_proof(proof: FibSquareProof) {
     fri_verify_32(fri_layers, idx, x, cp_ev);
 }
 
-fn test_verifier() {
+fn _test_verifier() {
     let proof: FibSquareProof = (
         0,
         (0, 0, 0),

@@ -129,12 +129,4 @@ fn test_exp_mod() {
     assert!(jet::eq_32(c, 1073741823));
 }
 
-fn test_field() {
-    test_add_mod();
-    test_sub_mod();
-    test_mul_mod();
-    test_div_mod();
-    test_exp_mod();
-}
-
 #endif

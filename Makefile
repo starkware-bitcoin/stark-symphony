@@ -6,8 +6,7 @@ build:
 	simfony build target/main.out.simf
 
 test:
-	mcpp -P src/tests.simf -o target/tests.out.simf
-	simfony run target/tests.out.simf
+	bash scripts/unit_tests.sh
 
 vsix:
 	cd simfony-vsix && vsce package

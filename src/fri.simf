@@ -11,6 +11,7 @@
 #include "merkle.simf"
 #include "channel.simf"
 #include "sha256.simf"
+#include "air.simf"
 
 /// Accumulator for the FRI protocol.
 /// * (random) index
