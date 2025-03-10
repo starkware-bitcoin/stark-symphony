@@ -8,7 +8,7 @@
 #define FIELD_H
 
 #define FIELD_MODULUS 3221225473
-#define FIELD_GEN 1734477367
+#define FIELD_GEN 5
 
 /// Add two field elements modulo the field prime.
 fn add_mod(a: u32, b: u32) -> u32 {
@@ -114,6 +114,13 @@ fn test_mul_mod() {
     assert!(jet::eq_32(c, 18063));
 }
 
+fn test_mul_mod_2() {
+    let a: u32 = 1734477367;
+    let b: u32 = 1033050121;
+    let c: u32 = mul_mod(a, b);
+    assert!(jet::eq_32(c, 510964216));
+}
+
 fn test_div_mod() {
     let a: u32 = 124245436;
     let b: u32 = 980943291;
@@ -122,11 +129,25 @@ fn test_div_mod() {
     assert!(jet::eq_32(d, a));
 }
 
+fn test_div_mod_2() {
+    let a: u32 = 2915689029;
+    let b: u32 = 1944025131;
+    let c: u32 = div_mod(a, b);
+    assert!(jet::eq_32(c, 3199116755));
+}
+
 fn test_exp_mod() {
     let a: u32 = 2;
     let b: u32 = 32;
     let c: u32 = exp_mod(a, b);
     assert!(jet::eq_32(c, 1073741823));
+}
+
+fn test_exp_mod_2() {
+    let a: u32 = 1734477367;
+    let b: u32 = 365;
+    let c: u32 = exp_mod(a, b);
+    assert!(jet::eq_32(c, 1033050121));
 }
 
 #endif

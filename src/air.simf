@@ -63,7 +63,7 @@ fn fibsquare_calc_x(idx: u32) -> u32 {
 /// Evaluate the p0 constraint polynomial at the given x point
 fn fibsquare_eval_p0(x: u32, f_x: u32) -> u32 {
     // (f(x) - a0) / (x - g^0)
-    div_mod(sub_mod(f_x, 1), add_mod(x, 1))
+    div_mod(sub_mod(f_x, 1), sub_mod(x, 1))
 }
 
 /// Evaluate the p1 constraint polynomial at the given x point
@@ -101,9 +101,32 @@ fn fibsquare_compose(x: u32, coeffs: FibSquareCoeffs, evals: FibSquareEvals) -> 
     fibsquare_eval_cp(x, a0, a1, a2, f_x, f_gx, f_ggx)
 }
 
-fn test_fibsquare() {
-    let x: u32 = fibsquare_calc_x(0);
-    assert!(jet::eq_32(x, FIELD_GEN));
+fn test_fibsquare_calc_x() {
+    let x: u32 = fibsquare_calc_x(365);
+    assert!(jet::eq_32(x, 1944025132));
+}
+
+fn test_fibsquare_eval_p0() {
+    let x: u32 = 1944025132;
+    let f_x: u32 = 2915689030;
+    let p0: u32 = fibsquare_eval_p0(x, f_x);
+    assert!(jet::eq_32(p0, 3199116755));
+}
+
+fn test_fibsquare_eval_cp() {
+    let (a0, a1, a2): FibSquareCoeffs = (
+        2843266690,
+        519917353,
+        1882164991
+    );
+    let (f_x, f_gx, f_ggx): (u32, u32, u32) = (
+        2915689030,
+        2938213560,
+        2430756332
+    );
+    let x: u32 = 1944025132;
+    let cp: u32 = fibsquare_eval_cp(x, a0, a1, a2, f_x, f_gx, f_ggx);
+    assert!(jet::eq_32(cp, 587367660));
 }
 
 #endif // AIR_SIMF

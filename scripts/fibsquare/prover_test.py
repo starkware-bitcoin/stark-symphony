@@ -76,11 +76,13 @@ def test_prover(domain_size=1024, domain_ex_mult=8):
 
     h = FieldElement.generator() ** ((3 * 2 ** 30) // (domain_size * domain_ex_mult))
     x = FieldElement.generator() * (h ** idx)
+    # print(f">>>>>>>>> x: {x}, h: {h}, g: {FieldElement.generator()}, e: {h ** idx} <<<<<<<<")
 
     p0 = (f_x - 1) / (x - 1)
     p1 = (f_x - 2338775057) / (x - points[1])
     p2 = (f_ggx - f_gx**2 - f_x**2) * (x - points[0]) * (x - points[1]) * (x - points[2]) / (x**1024 - 1)
     assert cp[0] == (cp_alpha[0] * p0 + cp_alpha[1] * p1 + cp_alpha[2] * p2), 'Composition polynomial invalid'
+    # print(f">>>>>>>>> cp[0]: {cp[0]}, p0: {p0}, p1: {p1}, p2: {p2} <<<<<<<<")
 
     # Check that polynomial is of low degree
     fri_x = x
