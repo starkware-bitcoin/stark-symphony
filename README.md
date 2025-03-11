@@ -13,7 +13,7 @@ STARKs are perfect candidate for this approach!
 
 ## Roadmap
 
-- [ ] Fibonacci square over toy field PoC
+- [x] Fibonacci square over toy field PoC
 - [ ] Liquid testnet deployment
 - [ ] QM31 extension field
 - [ ] Circle polynomial
@@ -49,3 +49,9 @@ Run a Simfony program:
 ```bash
 simfony run src/simple_fib.simf --witness src/simple_fib.wit --param src/simple_fib.param
 ```
+
+## Simfony VSIX
+
+VSCode extension providing syntax highlighting and autocompletion for the Simfony programming language.
+
+Read the [instructions](./simfony-vsix/README.md).

@@ -5,7 +5,7 @@ use anyhow::{Context, Result};
 use base64::display::Base64Display;
 use base64::engine::general_purpose::STANDARD;
 use simfony::{
-    dummy_env, parse::ParseFromStr, simplicity::BitMachine,
+    dummy_env, simplicity::BitMachine,
     Arguments, CompiledProgram, WitnessValues,
 };
 
