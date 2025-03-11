@@ -13,6 +13,7 @@ vsix:
 
 proof:
 	cd scripts && python -m fibsquare
+	python ./scripts/format_proof.py target/proof.json > target/proof.simf
 
 test-prover:
 	cd scripts && PYTHONPATH=. pytest -s fibsquare

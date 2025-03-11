@@ -109,11 +109,10 @@ def prove(domain_size=1024, domain_ex_mult=8) -> tuple[list, dict]:
 
     # Produce constraint polynomials and composition polynomial out of them, then evaluate on extended domain
     constraints = build_constraints(p, domain)
-    cp, coeffs = build_composition_polynomial(constraints, channel)
+    cp, _ = build_composition_polynomial(constraints, channel)
     cp_ev = [cp.eval(d) for d in domain_ex]
     cp_mt = MerkleTree(cp_ev)
     channel.send(cp_mt.root, 'composition polynomial merkle root', mix=True)
-    res['coeffs'] = [coeff.val for coeff in coeffs]
 
     # FRI layer commitments
     fri_poly = cp
@@ -163,6 +162,11 @@ def prove(domain_size=1024, domain_ex_mult=8) -> tuple[list, dict]:
             [int.from_bytes(x, 'big') for x in cpb_auth[::-1]],
             i == len(fri_layers) - 2,
         ])
+
+    res['last_layer'] = [
+        int.from_bytes(fri_mts[-1].root, 'big'),
+        fri_layers[-1][0].val,
+    ]
 
     # Decommit on last polynomial
     channel.send(fri_layers[-1][0], 'last FRI polynomial free term')

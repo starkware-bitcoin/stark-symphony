@@ -38,6 +38,7 @@ def test_prover(domain_size=1024, domain_ex_mult=8):
 
     # Restore commitments
     p_mt_root = channel.receive('p_mt_root', mix=True)
+    # print(f">>>>>>>>> channel state: {int.from_bytes(channel.state, 'big')} <<<<<<<<")
     cp_alpha = [channel.send_random_field_element(f'cp_alpha_{i}') for i in range(3)]
 
     fri_mt_roots = []
@@ -45,14 +46,19 @@ def test_prover(domain_size=1024, domain_ex_mult=8):
     num_fri_layers = int(math.log2(domain_size)) + 1
 
     for i in range(num_fri_layers):
+        # print(f">>>>>>>>> channel state: {int.from_bytes(channel.state, 'big')} <<<<<<<<")
         fri_mt_roots.append(channel.receive(f'cp_{i}_mt_root', mix=True))
         if i < num_fri_layers - 1:
             fri_beta.append(channel.receive_random_field_element(f'cp_{i+1}_beta'))
 
+    # print(f">>>>>>>>> channel state: {int.from_bytes(channel.state, 'big')} <<<<<<<<")
+
     fri_last = channel.receive('last fri layer', mix=True)
+
+    # print(f">>>>>>>>> fri_last: {fri_last.val} <<<<<<<<")
     # print(f">>>>>>>>> channel state: {int.from_bytes(channel.state, 'big')} <<<<<<<<")
     idx = channel.send_random_int(0, domain_size * domain_ex_mult, 'query')
-    # print(f">>>>>>>>> new channel state: {int.from_bytes(channel.state, 'big')} <<<<<<<<")
+    #print(f">>>>>>>>> new channel state: {int.from_bytes(channel.state, 'big')} <<<<<<<<")
 
     # Receive and authenticate trace polynomial evaluations
     f_x = receive_and_verify_field_element(channel, idx, p_mt_root, 'f(x)')

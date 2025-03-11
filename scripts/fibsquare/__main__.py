@@ -2,16 +2,8 @@ from os.path import dirname, join
 import json
 
 from fibsquare.prover import prove
-from fibsquare.field import FieldElement
 
 project_dir = dirname(dirname(__file__))
-
-
-def serialize(item) -> bytes:
-    if isinstance(item, bytes):
-        return item
-    elif isinstance(item, list):
-        return 
 
 _, res = prove()
 

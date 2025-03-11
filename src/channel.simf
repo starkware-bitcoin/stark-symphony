@@ -21,6 +21,7 @@ type ChannelState = u256;
 /// * `input` - The value to mix into the channel state.
 fn channel_mix_32(state: ChannelState, input: u32) -> ChannelState {
     let ctx: Ctx8 = jet::sha_256_ctx_8_init();
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_32(ctx, state);
     let ctx: Ctx8 = jet::sha_256_ctx_8_add_4(ctx, input);
     jet::sha_256_ctx_8_finalize(ctx)
 }
@@ -33,6 +34,7 @@ fn channel_mix_32(state: ChannelState, input: u32) -> ChannelState {
 /// * `input` - The value to mix into the channel state.
 fn channel_mix_256(state: ChannelState, input: u256) -> ChannelState {
     let ctx: Ctx8 = jet::sha_256_ctx_8_init();
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_32(ctx, state);
     let ctx: Ctx8 = jet::sha_256_ctx_8_add_32(ctx, input);
     jet::sha_256_ctx_8_finalize(ctx)
 }

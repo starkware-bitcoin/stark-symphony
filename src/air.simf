@@ -27,12 +27,11 @@ type Eval = (u32, MerkleProof32);
 type FibSquareEvals = (Eval, Eval, Eval);
 
 /// Read the coefficients of the composition polynomial from the channel.
-fn fibsquare_read_coefficients(state: ChannelState, coeffs: FibSquareCoeffs) -> ChannelState {
-    let (alpha0, alpha1, alpha2): FibSquareCoeffs = coeffs;
-    let state: ChannelState = channel_mix_32(state, alpha0);
-    let state: ChannelState = channel_mix_32(state, alpha1);
-    let state: ChannelState = channel_mix_32(state, alpha2);
-    state
+fn fibsquare_read_coefficients(state: ChannelState) -> (ChannelState, FibSquareCoeffs) {
+    let (state, alpha0): (ChannelState, u32) = channel_draw_32(state, FIELD_MODULUS);
+    let (state, alpha1): (ChannelState, u32) = channel_draw_32(state, FIELD_MODULUS);
+    let (state, alpha2): (ChannelState, u32) = channel_draw_32(state, FIELD_MODULUS);
+    (state, (alpha0, alpha1, alpha2))
 }
 
 /// Verify the evaluation of a trace polynomial using the Merkle proof and update the channel state.
@@ -127,6 +126,14 @@ fn test_fibsquare_eval_cp() {
     let x: u32 = 1944025132;
     let cp: u32 = fibsquare_eval_cp(x, a0, a1, a2, f_x, f_gx, f_ggx);
     assert!(jet::eq_32(cp, 587367660));
+}
+
+fn test_fibsquare_read_coefficients() {
+    let state: ChannelState = 30579157067350379179940449776878177171877254029206216849297077040602409619412;
+    let (state, (alpha0, alpha1, alpha2)): (ChannelState, FibSquareCoeffs) = fibsquare_read_coefficients(state);
+    assert!(jet::eq_32(alpha0, 2843266690));
+    assert!(jet::eq_32(alpha1, 519917353));
+    assert!(jet::eq_32(alpha2, 1882164991));
 }
 
 #endif // AIR_SIMF
