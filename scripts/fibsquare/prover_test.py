@@ -50,7 +50,9 @@ def test_prover(domain_size=1024, domain_ex_mult=8):
             fri_beta.append(channel.receive_random_field_element(f'cp_{i+1}_beta'))
 
     fri_last = channel.receive('last fri layer', mix=True)
+    # print(f">>>>>>>>> channel state: {int.from_bytes(channel.state, 'big')} <<<<<<<<")
     idx = channel.send_random_int(0, domain_size * domain_ex_mult, 'query')
+    # print(f">>>>>>>>> new channel state: {int.from_bytes(channel.state, 'big')} <<<<<<<<")
 
     # Receive and authenticate trace polynomial evaluations
     f_x = receive_and_verify_field_element(channel, idx, p_mt_root, 'f(x)')

@@ -42,14 +42,53 @@ fn channel_mix(state: ChannelState) -> ChannelState {
     sha256(state)
 }
 
-/// Draw a field element from the channel state.
+/// Split a 256-bit value into 8 32-bit values.
+/// Returns the limbs as a tuple, from most significant to least significant limbs.
+fn split_256(value: u256) -> (u32, u32, u32, u32, u32, u32, u32, u32) {
+    let (abcd, efgh): (u128, u128) = <u256>::into(value);
+    let (ab, cd): (u64, u64) = <u128>::into(abcd);
+    let (ef, gh): (u64, u64) = <u128>::into(efgh);
+    let (a, b): (u32, u32) = <u64>::into(ab);
+    let (c, d): (u32, u32) = <u64>::into(cd);
+    let (e, f): (u32, u32) = <u64>::into(ef);
+    let (g, h): (u32, u32) = <u64>::into(gh);
+    (a, b, c, d, e, f, g, h)
+}
+
+/// Reduce a 32-bit limb modulo a 32-bit value.
 ///
 /// # Arguments
 ///
-/// * `state` - The current channel state.
-fn channel_draw_felt(state: ChannelState) -> (ChannelState, u256) {
-    let value: u256 = jet::fe_normalize(state);
-    (channel_mix(state), value)
+/// * `limb` - The limb to reduce.
+/// * `r` - The current reduction result.
+/// * `modulo` - The modulo.
+fn reduce_limb_32_mod_32(limb: u32, r: u32, modulo: u32) -> u32 {
+    let limb: u64 = <(u32, u32)>::into((0, limb));
+    let r: u64 = <(u32, u32)>::into((0, r));
+    let modulo: u64 = <(u32, u32)>::into((0, modulo));
+    let (_, r): (bool, u64) = jet::add_64(jet::left_shift_64(32, r), limb);
+    let r: u64 = jet::modulo_64(r, modulo);
+    let (_, res): (u32, u32) = <u64>::into(r);
+    res
+}
+
+/// Reduce a 256-bit value modulo a 32-bit value.
+///
+/// # Arguments
+///
+/// * `value` - The value to reduce.
+/// * `modulo` - The modulo.
+fn reduce_256_mod_32(value: u256, modulo: u32) -> u32 {
+    let (a, b, c, d, e, f, g, h): (u32, u32, u32, u32, u32, u32, u32, u32) = split_256(value);
+    let r: u32 = reduce_limb_32_mod_32(a, 0, modulo);
+    let r: u32 = reduce_limb_32_mod_32(b, r, modulo);
+    let r: u32 = reduce_limb_32_mod_32(c, r, modulo);
+    let r: u32 = reduce_limb_32_mod_32(d, r, modulo);
+    let r: u32 = reduce_limb_32_mod_32(e, r, modulo);
+    let r: u32 = reduce_limb_32_mod_32(f, r, modulo);
+    let r: u32 = reduce_limb_32_mod_32(g, r, modulo);
+    let r: u32 = reduce_limb_32_mod_32(h, r, modulo);
+    r
 }
 
 /// Draw a 32-bit value from the channel state.
@@ -59,17 +98,15 @@ fn channel_draw_felt(state: ChannelState) -> (ChannelState, u256) {
 /// * `state` - The current channel state.
 /// * `max` - The upper bound of the value to draw (exclusive).
 fn channel_draw_32(state: ChannelState, max: u32) -> (ChannelState, u32) {
-    let (_, lo128): (u128, u128) = <u256>::into(state);
-    let (_, lo64): (u64, u64) = <u128>::into(lo128);
-    let (_, lo32): (u32, u32) = <u64>::into(lo64);
-    let value: u32 = jet::modulo_32(lo32, max);
+    let value: u32 = reduce_256_mod_32(state, max);
     (channel_mix(state), value)
 }
 
-fn test_channel() {
-    let state: ChannelState = channel_mix_32(0, 1);
-    let (state, value): (ChannelState, u32) = channel_draw_32(state, 10);
-    let (state, value): (ChannelState, u256) = channel_draw_felt(state);
+fn test_channel_draw_32() {
+    let state: ChannelState = 53741377836084766287364085417998971256852254673610164556110591250061061441088;
+    let (state, value): (ChannelState, u32) = channel_draw_32(state, 8193);
+    assert!(jet::eq_32(value, 365));
+    assert!(jet::eq_256(state, 17257280192877315036328845329229606496919448857779645786470826404984163982688));
 }
 
 #endif

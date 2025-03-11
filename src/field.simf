@@ -93,6 +93,12 @@ fn exp_mod(a: u32, b: u32) -> u32 {
     unwrap_left::<ExpModAcc>(res)
 }
 
+fn test_endianness() {
+    let (hi, lo): (u32, u32) = <u64>::into(4294967296);
+    assert!(jet::eq_32(hi, 1));
+    assert!(jet::eq_32(lo, 0));
+}
+
 fn test_add_mod() {
     let a: u32 = 3221225473;
     let b: u32 = 1;

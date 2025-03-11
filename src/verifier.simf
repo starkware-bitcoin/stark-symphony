@@ -30,7 +30,7 @@ fn verify_proof(proof: FibSquareProof) {
     // Read FRI commitments
     let state: ChannelState = fri_read_commitments_32(fri_layers, state);
     // Random query
-    let (state, idx): (ChannelState, u32) = channel_draw_32(state, FIELD_MODULUS);
+    let (state, idx): (ChannelState, u32) = channel_draw_32(state, DOMAIN_EX_SIZE);
     // Read trace polynomial evaluations in specified point
     let state: ChannelState = fibsquare_read_evaluations_checked(state, evals, idx, p_mt_root);
     // Calculate x given the random query
