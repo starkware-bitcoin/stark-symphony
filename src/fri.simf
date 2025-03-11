@@ -14,7 +14,7 @@
 #include "air.simf"
 
 /// Accumulator for the FRI protocol.
-/// * (random) index
+/// * index (random query)
 /// * x point
 /// * composition polynomial evaluation at x
 /// * domain size
@@ -64,18 +64,26 @@ fn fri_eval_cp_next(cpa_ev: u32, cpb_ev: u32, x: u32, beta: u32) -> u32 {
     add_mod(op0, mul_mod(op1, beta))
 }
 
+/// Compute Merkle authentication paths for the decomposed polynomials (cpa and cpb).
+/// These paths are used determine whether the proof node is on the left or right.
+fn compute_auth_path(idx: u32, domain_size: u32) -> (u32, u32) {
+    let (_, cpa_path): (bool, u32) = jet::add_32(jet::modulo_32(idx, domain_size), domain_size);
+    let (_, cpb_idx): (bool, u32) = jet::add_32(idx, jet::divide_32(domain_size, 2));
+    let (_, cpb_path): (bool, u32) = jet::add_32(jet::modulo_32(cpb_idx, domain_size), domain_size);
+    (cpa_path, cpb_path)
+}
+
 /// Verify the current FRI layer.
 fn fri_verify_layer(layer: FriLayer, acc: FriAcc) -> FriAcc {
     let (cp_mt_root, beta, cpa_ev, cpa_proof, cpb_ev, cpb_proof, is_last): FriLayer = layer;
     let (idx, x, cp_ev, domain_size): FriAcc = acc;
     match is_last {
         false => {
-            let domain_size_next: u32 = jet::divide_32(domain_size, 2);
-            let (_, cpa_idx): (bool, u32) = jet::add_32(idx, domain_size);
-            let (_, cpb_idx): (bool, u32) = jet::add_32(cpa_idx, domain_size_next);
-            merkle_verify_32(sha256_32(cpa_ev), cpa_idx, cpa_proof, cp_mt_root);
-            merkle_verify_32(sha256_32(cpb_ev), cpb_idx, cpb_proof, cp_mt_root);
+            let (cpa_path, cpb_path): (u32, u32) = compute_auth_path(idx, domain_size);
+            merkle_verify_32(sha256_32(cpa_ev), cpa_path, cpa_proof, cp_mt_root);
+            merkle_verify_32(sha256_32(cpb_ev), cpb_path, cpb_proof, cp_mt_root);
             let cp_ev_next: u32 = fri_eval_cp_next(cpa_ev, cpb_ev, x, beta);
+            let domain_size_next: u32 = jet::divide_32(domain_size, 2);
             (idx, mul_mod(x, x), cp_ev_next, domain_size_next)
         },
         true => {
@@ -92,7 +100,73 @@ fn fri_verify_32(layers: List<FriLayer, 32>, idx: u32, x0: u32, cp_ev: u32) {
     let (_, _, _, _): FriAcc = fold::<fri_verify_layer, 32>(layers, acc);
 }
 
-fn test_fri() {
+fn test_fri_eval_cp_next() {
+    let cp_next: u32 = fri_eval_cp_next(587367660, 786239131, 1944025132, 593409582);
+    assert!(jet::eq_32(cp_next, 866481694));
+}
+
+fn test_compute_auth_path() {
+    let (cpa_path, cpb_path): (u32, u32) = compute_auth_path(365, 8192);
+    assert!(jet::eq_32(cpa_path, 8557));
+    assert!(jet::eq_32(cpb_path, 12653));
+
+    let (cpa_path, cpb_path): (u32, u32) = compute_auth_path(365, 4096);
+    assert!(jet::eq_32(cpa_path, 4461));
+    assert!(jet::eq_32(cpb_path, 6509));
+
+    let (cpa_path, cpb_path): (u32, u32) = compute_auth_path(365, 32);
+    assert!(jet::eq_32(cpa_path, 45));
+    assert!(jet::eq_32(cpb_path, 61));
+
+    let (cpa_path, cpb_path): (u32, u32) = compute_auth_path(365, 16);
+    assert!(jet::eq_32(cpa_path, 29));
+    assert!(jet::eq_32(cpb_path, 21));
+}
+
+fn test_fri_verify_layer() {
+    let layer: FriLayer = (
+        111946434827258922207533214337541842175192226593200877216295834618633792652802,
+        593409582,
+        587367660,
+        list![
+            12040790018255253175734513070385891264458577851465876860936625204887853284043,
+            99865809026660730312994302880289471985031736066390571629669459464718115527345,
+            88995554626350955378860981084283361291560731884244610333940254954654167069930,
+            17985667570212032649526420570784905529971353612358213550372984872408880387065,
+            89885095617417087437198489921424224025664554684691257572928001555804052215038,
+            99215924517003196972396973610338345201395393836556904540617155425958536317764,
+            18401876500249834491932711762699271007051640770552496964093770770497235480505,
+            50223089930766780648420962905028756868696889295739221059412442121062848103044,
+            105316851875274344497535382207946823589517861462074844933814328311870654607102,
+            90558419880652824662774599022959758016669182953902165289838287488354051391324,
+            111556343781670588905254023372006829452146356493128635618927123084160652957095,
+            42116764288072310070672189276989507429562415039346819313514627634725942212400,
+            73532842762720789267106903508676014702951899518336472895610872065937466577305
+        ],
+        786239131,
+        list![
+            85475504623908101875097113966681555408559933505116277276576624951195740584713,
+            108107397214980313376256773390857464975866136096730579741619284904226576913272,
+            51843581238062463376031129419081532564716131966353584778199098039604241699292,
+            69708238972217748209751425503647928672072008431847602430268807076458131995205,
+            77075551199410743177521475043360903946546791484017068375284472830917757117605,
+            66523985164989991049161367494144013257559507554389272617799946101965178824876,
+            73100625120686294751869213623779358555321217231919006712839046079235728439908,
+            43290136058448504611523123024069582666608226545893721447367329606582546127602,
+            103004083884704634319210563910424111938190889300975410568502348862800487734680,
+            9324707157397250316452383511882720561290835983194440705133352769183646080854,
+            14280810575841645961857793115841251637410386113587664395152174405702209382316,
+            21943457295434020271389422071548966147606711680691687391960551525548151490561,
+            108116531307910424503647974058998454900889561312254412332578839325377658707085
+        ],
+        false
+    );
+    let acc: FriAcc = (365, 1944025132, 587367660, 8192);
+    let (idx, x, cp_ev, domain_size): FriAcc = fri_verify_layer(layer, acc);
+    assert!(jet::eq_32(idx, 365));
+    assert!(jet::eq_32(x, 388184963));
+    assert!(jet::eq_32(cp_ev, 866481694));
+    assert!(jet::eq_32(domain_size, 4096));
 }
 
 #endif // FRI_SIMF

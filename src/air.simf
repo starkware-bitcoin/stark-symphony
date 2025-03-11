@@ -38,8 +38,8 @@ fn fibsquare_read_coefficients(state: ChannelState, coeffs: FibSquareCoeffs) -> 
 /// Verify the evaluation of a trace polynomial using the Merkle proof and update the channel state.
 fn read_eval_checked(state: ChannelState, eval: Eval, idx: u32, p_mt_root: u256) -> ChannelState {
     let (p_ev, p_proof): Eval = eval;
-    let (_, leaf_id): (bool, u32) = jet::add_32(idx, DOMAIN_EX_SIZE);
-    merkle_verify_32(sha256_32(p_ev), leaf_id, p_proof, p_mt_root);
+    let (_, auth_path): (bool, u32) = jet::add_32(idx, DOMAIN_EX_SIZE);
+    merkle_verify_32(sha256_32(p_ev), auth_path, p_proof, p_mt_root);
     channel_mix_32(state, p_ev)
 }
 

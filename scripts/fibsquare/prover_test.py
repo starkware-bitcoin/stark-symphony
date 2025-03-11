@@ -66,6 +66,7 @@ def test_prover(domain_size=1024, domain_ex_mult=8):
     for i in range(num_fri_layers - 1):
         fri_idx = idx % fri_domain_size
         fri_sib = (idx + fri_domain_size // 2) % fri_domain_size
+        # print(f">>>>>>>>> fri_idx: {fri_idx}, fri_sib: {fri_sib}, domain_size: {fri_domain_size}, idx: {idx} <<<<<<<<")
         cp.append(receive_and_verify_field_element(channel, fri_idx, fri_mt_roots[i], f'cp_{i}'))
         cp.append(receive_and_verify_field_element(channel, fri_sib, fri_mt_roots[i], f'cp_{i} sibling'))
         fri_domain_size >>= 1
@@ -93,5 +94,6 @@ def test_prover(domain_size=1024, domain_ex_mult=8):
         op1 = (cp[2 * i] + cp[2 * i + 1]) / FieldElement(2)
         op2 = (cp[2 * i] - cp[2 * i + 1]) / (FieldElement(2) * fri_x)
         rhs = op1 + fri_beta[i] * op2
+        # print(f">>>>>>>>> rhs: {rhs}, x: {fri_x}, beta: {fri_beta[i]}, cpa: {cp[2 * i]}, cpb: {cp[2 * i + 1]} <<<<<<<<")
         assert cp[2 * (i + 1)] == rhs, f'FRI layer #{i} invalid'
         fri_x = fri_x**2

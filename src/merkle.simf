@@ -33,11 +33,11 @@ fn merkle_compute_step(sib_node: MerkleNode, acc: MerkleAcc) -> MerkleAcc {
 /// # Arguments
 ///
 /// * `leaf` - The hash of the leaf value to verify.
-/// * `leaf_id` - The leaf index (counting from the root = 1) which is effectively authentication path.
+/// * `auth_path` - The authentication path, whose bits tell whether the sibling node is on the left or right.
 /// * `proof` - The proof of inclusion, which is a list of sibling nodes required to reconstruct the root.
 /// * `root` - The root of the Merkle tree.
-fn merkle_verify_32(leaf: u256, leaf_id: u32, proof: MerkleProof32, root: u256) {
-    let acc: MerkleAcc = (leaf, leaf_id);
+fn merkle_verify_32(leaf: u256, auth_path: u32, proof: MerkleProof32, root: u256) {
+    let acc: MerkleAcc = (leaf, auth_path);
     let (computed_root, _): MerkleAcc = fold::<merkle_compute_step, 32>(proof, acc);
     assert!(jet::eq_256(computed_root, root));
 }
@@ -71,9 +71,9 @@ fn test_decommitment() {
         68599396864515883651939550638527607595242626780681277342646949156789742939178,
         56974666195930694403713290580441264812544914556973432228768127355537336583012
     ];
-    // leaf_id + num_leaves
-    let (_, path): (bool, u32) = jet::add_32(leaf_id, 8192);
-    merkle_verify_32(leaf, path, proof, root);
+    // auth_path = leaf_id + num_leaves
+    let (_, auth_path): (bool, u32) = jet::add_32(leaf_id, 8192);
+    merkle_verify_32(leaf, auth_path, proof, root);
 }
 
 #endif

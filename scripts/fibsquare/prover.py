@@ -120,6 +120,7 @@ def prove(domain_size=1024, domain_ex_mult=8) -> tuple[list, dict]:
     fri_domain = domain_ex
     fri_layers = [cp_ev]
     fri_mts = [cp_mt]
+    fri_betas = []
 
     while fri_poly.degree() > 0:
         beta = channel.receive_random_field_element(f'fri polynomial beta #{len(fri_layers)}')
@@ -127,6 +128,7 @@ def prove(domain_size=1024, domain_ex_mult=8) -> tuple[list, dict]:
         channel.send(fri_mt.root, f'fri layer merkle root #{len(fri_layers)}', mix=True)
         fri_layers.append(fri_layer)
         fri_mts.append(fri_mt)
+        fri_betas.append(beta)
 
     channel.send(fri_poly.poly[0], 'last fri layer', mix=True)
 
@@ -138,9 +140,9 @@ def prove(domain_size=1024, domain_ex_mult=8) -> tuple[list, dict]:
     f_gx, f_gx_auth = decommit(channel, p_ev, p_mt, idx + domain_ex_mult, 'f(gx)')
     f_ggx, f_ggx_auth = decommit(channel, p_ev, p_mt, idx + 2 * domain_ex_mult, 'f(ggx)')
     res['evals'] = [
-        [f_x.val, [int.from_bytes(x, 'big') for x in f_x_auth]],
-        [f_gx.val, [int.from_bytes(x, 'big') for x in f_gx_auth]],
-        [f_ggx.val, [int.from_bytes(x, 'big') for x in f_ggx_auth]],
+        [f_x.val, [int.from_bytes(x, 'big') for x in f_x_auth[::-1]]],
+        [f_gx.val, [int.from_bytes(x, 'big') for x in f_gx_auth[::-1]]],
+        [f_ggx.val, [int.from_bytes(x, 'big') for x in f_ggx_auth[::-1]]],
     ]
 
     # Decommit on FRI layers (including initial composition polynomial, excluding the last one)
@@ -150,14 +152,15 @@ def prove(domain_size=1024, domain_ex_mult=8) -> tuple[list, dict]:
         fri_idx = idx % length  # x
         sib_idx = (idx + length // 2) % length  # -x
         cpa_ev, cpa_auth = decommit(channel, fri_layers[i], fri_mts[i], fri_idx, f'cp_{i}')
+        # print(f'>>>>>>>>> cpa_ev: {cpa_ev.val}, mt: {int.from_bytes(fri_mts[i].root, "big")}, cpa_idx: {fri_idx} <<<<<<<<')
         cpb_ev, cpb_auth = decommit(channel, fri_layers[i], fri_mts[i], sib_idx, f'cp_{i} sibling')
         res['fri_layers'].append([
             int.from_bytes(fri_mts[i].root, 'big'),
-            fri_layers[i][0].val,
+            fri_betas[i].val,
             cpa_ev.val,
-            [int.from_bytes(x, 'big') for x in cpa_auth],
+            [int.from_bytes(x, 'big') for x in cpa_auth[::-1]],
             cpb_ev.val,
-            [int.from_bytes(x, 'big') for x in cpb_auth],
+            [int.from_bytes(x, 'big') for x in cpb_auth[::-1]],
             i == len(fri_layers) - 2,
         ])
 
