@@ -50,10 +50,7 @@ let proof: FibSquareProof = (
     list![
         {layers}
     ],
-    (
-        {proof['last_layer'][0]},
-        {proof['last_layer'][1]}
-    )
+    {proof['fri_last_layer']}
 );
 """
 

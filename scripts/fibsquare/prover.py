@@ -124,7 +124,9 @@ def prove(domain_size=1024, domain_ex_mult=8) -> tuple[list, dict]:
     while fri_poly.degree() > 0:
         beta = channel.receive_random_field_element(f'fri polynomial beta #{len(fri_layers)}')
         fri_poly, fri_domain, fri_layer, fri_mt = next_fri_layer(fri_poly, fri_domain, beta)
-        channel.send(fri_mt.root, f'fri layer merkle root #{len(fri_layers)}', mix=True)
+        if fri_poly.degree() > 0:
+            # do not send for the last layer (free term)
+            channel.send(fri_mt.root, f'fri layer merkle root #{len(fri_layers)}', mix=True)
         fri_layers.append(fri_layer)
         fri_mts.append(fri_mt)
         fri_betas.append(beta)
@@ -162,10 +164,7 @@ def prove(domain_size=1024, domain_ex_mult=8) -> tuple[list, dict]:
             [int.from_bytes(x, 'big') for x in cpb_auth[::-1]],
         ])
 
-    res['last_layer'] = [
-        int.from_bytes(fri_mts[-1].root, 'big'),
-        fri_layers[-1][0].val,
-    ]
+    res['fri_last_layer'] = fri_layers[-1][0].val
 
     # Decommit on last polynomial
     channel.send(fri_layers[-1][0], 'last FRI polynomial free term')

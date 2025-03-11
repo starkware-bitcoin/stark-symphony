@@ -45,11 +45,10 @@ def test_prover(domain_size=1024, domain_ex_mult=8):
     fri_beta = []
     num_fri_layers = int(math.log2(domain_size)) + 1
 
-    for i in range(num_fri_layers):
+    for i in range(num_fri_layers - 1):
         # print(f">>>>>>>>> channel state: {int.from_bytes(channel.state, 'big')} <<<<<<<<")
         fri_mt_roots.append(channel.receive(f'cp_{i}_mt_root', mix=True))
-        if i < num_fri_layers - 1:
-            fri_beta.append(channel.receive_random_field_element(f'cp_{i+1}_beta'))
+        fri_beta.append(channel.receive_random_field_element(f'cp_{i+1}_beta'))
 
     # print(f">>>>>>>>> channel state: {int.from_bytes(channel.state, 'big')} <<<<<<<<")
 

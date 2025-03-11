@@ -30,9 +30,8 @@ type FriAcc = (u32, u32, u32, u32);
 type FriLayer = (u256, u32, u32, MerkleProof32, u32, MerkleProof32);
 
 /// Last FRI layer.
-/// * merkle root of the commitment to the last FRI layer
 /// * free term (for the last FRI polynomial)
-type FriLastLayer = (u256, u32);
+type FriLastLayer = u32;
 
 /// Read the commitment to the current FRI layer and update the channel state accordingly.
 fn fri_read_commitment(layer: FriLayer, state: ChannelState) -> ChannelState {
@@ -50,10 +49,8 @@ fn fri_read_commitment(layer: FriLayer, state: ChannelState) -> ChannelState {
 /// to ensure the prover does not cheat.
 fn fri_read_commitments_32(layers: List<FriLayer, 32>, last_layer: FriLastLayer, state: ChannelState) -> ChannelState {
     let state: ChannelState = fold::<fri_read_commitment, 32>(layers, state);
-    // Mix last layer into the channel state
-    let (last_mt_root, free_term): FriLastLayer = last_layer;
-    let state: ChannelState = channel_mix_256(state, last_mt_root);
-    channel_mix_32(state, free_term)
+    // Mix free term into the channel state
+    channel_mix_32(state, last_layer)
 }
 
 /// Evaluate the next FRI polynomial at a given point,
@@ -89,8 +86,7 @@ fn fri_verify_layer(layer: FriLayer, acc: FriAcc) -> FriAcc {
 fn fri_verify_32(fri_layers: List<FriLayer, 32>, last_layer: FriLastLayer, idx: u32, x0: u32, cp_ev: u32) {
     let acc: FriAcc = (idx, x0, cp_ev, DOMAIN_EX_SIZE);
     let (_, _, cp_last, _): FriAcc = fold::<fri_verify_layer, 32>(fri_layers, acc);
-    let (_, free_term): FriLastLayer = last_layer;
-    assert!(jet::eq_32(cp_last, free_term));
+    assert!(jet::eq_32(cp_last, last_layer));
 }
 
 fn test_fri_eval_cp_next() {
