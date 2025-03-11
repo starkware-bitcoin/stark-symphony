@@ -11,4 +11,5 @@ path = "src/main.rs"
 anyhow = "1.0"
 clap = { version = "4.4", features = ["derive"] }
 base64 = "0.21"
-simfony = { git = "https://github.com/m-kus/simfony", rev = "a79cc9ef816b2f1bf8c905a964ccbc53a5f01305" }
+simfony = { git = "https://github.com/m-kus/simfony", rev = "a79cc9ef816b2f1bf8c905a964ccbc53a5f01305", features = ["serde"] }
+serde_json = "1.0"

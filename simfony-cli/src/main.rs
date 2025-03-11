@@ -51,13 +51,13 @@ enum Commands {
 fn parse_witness(content: Option<&str>) -> Result<WitnessValues> {
     content
         .map_or(Ok(WitnessValues::default()), |s| 
-            WitnessValues::parse_from_str(s).map_err(|e| anyhow::anyhow!(e)))
+            serde_json::from_str(s).with_context(|| "Failed to parse witness"))
 }
 
 fn parse_arguments(content: Option<&str>) -> Result<Arguments> {
     content
         .map_or(Ok(Arguments::default()), |s| 
-            Arguments::parse_from_str(s).map_err(|e| anyhow::anyhow!(e)))
+            serde_json::from_str(s).with_context(|| "Failed to parse arguments"))
 }
 
 fn write_build_output(output_path: Option<PathBuf>, program_bytes: &[u8], witness_bytes: Option<&[u8]>) -> Result<()> {
@@ -81,14 +81,17 @@ fn handle_build(path: PathBuf, witness: Option<PathBuf>, output_path: Option<Pat
         .with_context(|| format!("Failed to read source file: {}", path.display()))?;
     
     let compiled = CompiledProgram::new(source, Arguments::default())
-        .map_err(|e| anyhow::anyhow!(e))?;
+        .map_err(|e| anyhow::anyhow!(e))
+        .with_context(|| "Failed to compile program")?;
 
     if let Some(witness_path) = witness {
         let witness_content = fs::read_to_string(&witness_path)
             .with_context(|| format!("Failed to read witness file: {}", witness_path.display()))?;
         
         let witness = parse_witness(Some(&witness_content))?;
-        let satisfied = compiled.satisfy(witness).map_err(|e| anyhow::anyhow!(e))?;
+        let satisfied = compiled.satisfy(witness)
+            .map_err(|e| anyhow::anyhow!(e))
+            .with_context(|| "Failed to satisfy witness")?;
         let (program_bytes, witness_bytes) = satisfied.redeem().encode_to_vec();
         
         write_build_output(output_path, &program_bytes, Some(&witness_bytes))

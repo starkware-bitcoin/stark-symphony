@@ -5,6 +5,14 @@
 //! Program entry point.
 
 #include "verifier.simf"
+#include "fri.simf"
+#include "air.simf"
 
 fn main() {
+    let p_mt_root: u256 = witness::P_MT_ROOT;
+    let p_evals: FibSquareEvals = witness::P_EVALS;
+    let fri_layers: List<FriLayer, 32> = witness::FRI_LAYERS;
+    let fri_last_layer: FriLastLayer = witness::FRI_LAST_LAYER;
+    let proof: FibSquareProof = (p_mt_root, p_evals, fri_layers, fri_last_layer);
+    verify_proof(proof);
 }

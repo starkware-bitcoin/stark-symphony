@@ -23,8 +23,10 @@ STARKs are perfect candidate for this approach!
 
 0. Clone this repo
 1. Install `simfony` CLI tool with `make install`
-2. Build Simfony programs with `make build`
-3. Run tests with `make test`
+2. Run tests with `make test`
+3. Generate proof with `make proof`
+4. Build STARK verifier program with `make build`
+5. Run the program using the generated witness with `make run`
 
 ## Simfony CLI
 
