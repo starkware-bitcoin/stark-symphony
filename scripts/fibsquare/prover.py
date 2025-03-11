@@ -132,7 +132,7 @@ def prove(domain_size=1024, domain_ex_mult=8) -> tuple[list, dict]:
     channel.send(fri_poly.poly[0], 'last fri layer', mix=True)
 
     # Query
-    idx = channel.receive_random_int(0, len(domain_ex), 'query')
+    idx = channel.receive_random_int(0, len(domain_ex) - 1, 'query')
 
     # Decommit on trace polynomial
     f_x, f_x_auth = decommit(channel, p_ev, p_mt, idx, 'f(x)')
@@ -160,7 +160,6 @@ def prove(domain_size=1024, domain_ex_mult=8) -> tuple[list, dict]:
             [int.from_bytes(x, 'big') for x in cpa_auth[::-1]],
             cpb_ev.val,
             [int.from_bytes(x, 'big') for x in cpb_auth[::-1]],
-            i == len(fri_layers) - 2,
         ])
 
     res['last_layer'] = [

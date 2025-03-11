@@ -19,8 +19,7 @@ def format_layer(layer):
             {layer[4]},
             list![
                 {sep0.join(str(x) for x in layer[5])}
-            ],
-            {str(layer[6]).lower()}
+            ]
         )"""
 
 layers = sep1.join(format_layer(x) for x in proof['fri_layers'])

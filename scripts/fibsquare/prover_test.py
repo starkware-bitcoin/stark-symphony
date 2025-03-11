@@ -57,7 +57,7 @@ def test_prover(domain_size=1024, domain_ex_mult=8):
 
     # print(f">>>>>>>>> fri_last: {fri_last.val} <<<<<<<<")
     # print(f">>>>>>>>> channel state: {int.from_bytes(channel.state, 'big')} <<<<<<<<")
-    idx = channel.send_random_int(0, domain_size * domain_ex_mult, 'query')
+    idx = channel.send_random_int(0, domain_size * domain_ex_mult - 1, 'query')
     #print(f">>>>>>>>> new channel state: {int.from_bytes(channel.state, 'big')} <<<<<<<<")
 
     # Receive and authenticate trace polynomial evaluations
