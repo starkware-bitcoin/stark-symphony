@@ -1,0 +1,16 @@
+[package]
+name = "elementsd-tests"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+simfony.workspace = true
+elements = { version = "0.25" }
+actual-rand = { package = "rand", version = "0.8.4" }
+secp256k1 = { version = "0.29.0", features = ["rand-std"] }
+clap = { version = "4.4.11", features = ["derive"] }
+hex = "0.4.3"
+bip39 = "2.0.0"
+dotenv = "0.15.0"
+anyhow = "1.0.75"
+serde_json = "1.0"
