@@ -1,8 +1,8 @@
 use elements::secp256k1_zkp as secp256k1;
 use elements::taproot::{TapTweakHash, TaprootSpendInfo};
 
-/// Sign a P2TR/key path transaction
-pub fn sign_transaction_p2tr(
+/// Sign a P2TR/key path
+pub fn sign_taproot_keypath(
     sighash_all: &[u8],
     key_pair: secp256k1::Keypair,
     spend_info: TaprootSpendInfo,
@@ -21,10 +21,13 @@ pub fn sign_transaction_p2tr(
 }
 
 /// Derive a keypair from a mnemonic
-pub fn derive_keypair_from_mnemonic(mnemonic_str: &str) -> anyhow::Result<secp256k1::Keypair> {
+pub fn derive_keypair_from_mnemonic(
+    mnemonic_str: &str,
+    index: u32,
+) -> anyhow::Result<secp256k1::Keypair> {
     use anyhow::anyhow;
     use bip39::Mnemonic;
-    use elements::bitcoin::bip32::{DerivationPath, ExtendedPrivKey};
+    use elements::bitcoin::bip32::{DerivationPath, Xpriv};
     use elements::bitcoin::secp256k1::Secp256k1;
     use std::str::FromStr;
 
@@ -37,11 +40,11 @@ pub fn derive_keypair_from_mnemonic(mnemonic_str: &str) -> anyhow::Result<secp25
 
     // Derive master key
     let secp = Secp256k1::new();
-    let master_key = ExtendedPrivKey::new_master(elements::bitcoin::Network::Bitcoin, &seed)
+    let master_key = Xpriv::new_master(elements::bitcoin::Network::Bitcoin, &seed)
         .map_err(|e| anyhow!("Failed to derive master key: {}", e))?;
 
     // Derive child key (using m/84'/0'/0'/0/0 for example)
-    let path = DerivationPath::from_str("m/84'/0'/0'/0/0")
+    let path = DerivationPath::from_str(&format!("m/84'/0'/0'/0/{}", index))
         .map_err(|e| anyhow!("Invalid derivation path: {}", e))?;
     let child_key = master_key
         .derive_priv(&secp, &path)

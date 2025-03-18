@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use anyhow::anyhow;
 use elements::secp256k1_zkp as secp256k1;
 use elements::{
@@ -7,7 +9,7 @@ use elements::{
 use simfony::{Arguments, CompiledProgram, WitnessValues};
 
 /// Load Simfony program from .simf file and compile it to a Simplicity program
-pub fn load_program(path: &str) -> anyhow::Result<CompiledProgram> {
+pub fn load_program(path: &Path) -> anyhow::Result<CompiledProgram> {
     let src = std::fs::read_to_string(path)?;
     let compiled = simfony::CompiledProgram::new(src, Arguments::default())
         .map_err(|e| anyhow!("Failed to compile Simfony program: {}", e))?;
@@ -20,13 +22,33 @@ pub fn create_script(program: &CompiledProgram) -> anyhow::Result<Script> {
     Ok(script)
 }
 
+/// Generate a (non-confidential) P2TR address from a Simfony program and a key pair
+pub fn create_p2tr_address(
+    program: CompiledProgram,
+    key_pair: secp256k1::Keypair,
+) -> anyhow::Result<Address> {
+    let (x_only_public_key, _) = key_pair.x_only_public_key();
+
+    let script = create_script(&program)?;
+    let spend_info = taproot_spending_info(script, x_only_public_key)?;
+
+    let address = Address::p2tr(
+        secp256k1::SECP256K1,
+        spend_info.internal_key(),
+        spend_info.merkle_root(),
+        None, // TODO: use different blinding pubkey
+        &AddressParams::LIQUID_TESTNET,
+    );
+    Ok(address)
+}
+
 /// Taproot leaf version for Simplicity (Simfony) programs
 pub fn simplicity_leaf_version() -> LeafVersion {
     LeafVersion::from_u8(0xbe).expect("constant leaf version")
 }
 
 /// Parse a .wit file into a WitnessValues struct
-pub fn parse_witness(path: &str) -> anyhow::Result<WitnessValues> {
+pub fn parse_witness(path: &Path) -> anyhow::Result<WitnessValues> {
     let witness_bytes = std::fs::read(path)?;
     let witness = serde_json::from_slice(&witness_bytes)
         .map_err(|e| anyhow!("Failed to parse witness: {}", e))?;
@@ -34,7 +56,7 @@ pub fn parse_witness(path: &str) -> anyhow::Result<WitnessValues> {
 }
 
 /// Create a TaprootSpendInfo struct for a given Simfony program and public key
-pub fn create_taproot_script_path(
+pub fn taproot_spending_info(
     script: Script,
     public_key: secp256k1::XOnlyPublicKey,
 ) -> anyhow::Result<TaprootSpendInfo> {
@@ -49,26 +71,4 @@ pub fn create_taproot_script_path(
         .finalize(&secp256k1::SECP256K1, public_key)
         .map_err(|e| anyhow!("Failed to finalize taproot builder: {}", e))?;
     Ok(spend_info)
-}
-
-pub fn create_taproot_key_path(
-    public_key: secp256k1::XOnlyPublicKey,
-) -> anyhow::Result<TaprootSpendInfo> {
-    let builder = TaprootBuilder::new();
-    let spend_info = builder
-        .finalize(&secp256k1::SECP256K1, public_key)
-        .map_err(|e| anyhow!("Failed to finalize taproot builder: {}", e))?;
-    Ok(spend_info)
-}
-
-/// Create a P2TR address for a given spend info
-pub fn create_p2tr_address(spend_info: &TaprootSpendInfo) -> anyhow::Result<Address> {
-    let address = Address::p2tr(
-        secp256k1::SECP256K1,
-        spend_info.internal_key(),
-        spend_info.merkle_root(),
-        None,
-        &AddressParams::LIQUID_TESTNET,
-    );
-    Ok(address)
 }

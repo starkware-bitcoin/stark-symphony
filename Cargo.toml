@@ -1,5 +1,5 @@
 [workspace]
-members = ["simfony-cli", "elementsd-tests"]
+members = ["simfony-cli", "stark-vault"]
 resolver = "2"
 
 [workspace.dependencies]
