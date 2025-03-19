@@ -2,7 +2,11 @@ use anyhow::{Context, Result};
 use base64::display::Base64Display;
 use base64::engine::general_purpose::STANDARD;
 use clap::{Parser, Subcommand};
-use simfony::{dummy_env, Arguments, CompiledProgram, WitnessValues, simplicity::BitMachine, tracker::Tracker};
+use simfony::{dummy_env, Arguments, CompiledProgram, WitnessValues};
+use simplicity::ffi::tests::{run_program, TestUpTo};
+use simplicity::human_encoding::Forest;
+use simplicity::node::CommitNode;
+use simplicity::{self, BitIter};
 use std::fs;
 use std::path::PathBuf;
 
@@ -28,6 +32,14 @@ enum Commands {
         /// Path to write the compiled program
         #[arg(long, name = "output-path")]
         output_path: Option<PathBuf>,
+
+        /// Output format
+        ///
+        /// - base64: Base64 encoding
+        /// - hex: Hex encoding
+        /// - simpl: Disassembled Simplicity source code
+        #[arg(long, name = "output-format", default_value = "base64")]
+        output_format: String,
     },
 
     /// Run a Simfony program
@@ -59,19 +71,31 @@ fn parse_arguments(content: Option<&str>) -> Result<Arguments> {
 
 fn write_build_output(
     output_path: Option<PathBuf>,
-    program_bytes: &[u8],
-    witness_bytes: Option<&[u8]>,
+    program_bytes: Vec<u8>,
+    output_format: String,
 ) -> Result<()> {
+    let program_output = match output_format.as_str() {
+        "hex" => format!("Program:\n{}", hex::encode(program_bytes)),
+        "simpl" => {
+            let iter = BitIter::from(program_bytes.into_iter());
+            let commit = CommitNode::decode(iter)
+                .map_err(|e| anyhow::anyhow!("failed to decode program: {}", e))?;
+            let prog = Forest::<simplicity::jet::Elements>::from_program(commit);
+            prog.string_serialize()
+        }
+        _ => format!(
+            "Program:\n{}",
+            Base64Display::new(&program_bytes, &STANDARD)
+        ), // Default to base64
+    };
+
     match output_path {
         Some(path) => {
-            fs::write(&path, program_bytes)
+            fs::write(&path, program_output)
                 .with_context(|| format!("Failed to write output file: {}", path.display()))?;
         }
         None => {
-            println!("Program:\n{}", Base64Display::new(program_bytes, &STANDARD));
-            if let Some(witness) = witness_bytes {
-                println!("Witness:\n{}", Base64Display::new(witness, &STANDARD));
-            }
+            println!("{}", program_output);
         }
     }
     Ok(())
@@ -81,6 +105,7 @@ fn handle_build(
     path: PathBuf,
     witness: Option<PathBuf>,
     output_path: Option<PathBuf>,
+    output_format: String,
 ) -> Result<()> {
     let source = fs::read_to_string(&path)
         .with_context(|| format!("Failed to read source file: {}", path.display()))?;
@@ -94,16 +119,25 @@ fn handle_build(
             .with_context(|| format!("Failed to read witness file: {}", witness_path.display()))?;
 
         let witness = parse_witness(Some(&witness_content))?;
-        let satisfied = compiled
-            .satisfy(witness)
-            .map_err(|e| anyhow::anyhow!(e))
-            .with_context(|| "Failed to satisfy witness")?;
-        let (program_bytes, witness_bytes) = satisfied.redeem().encode_to_vec();
+        let satisfied = compiled.satisfy(witness).map_err(|e| anyhow::anyhow!(e))?;
 
-        write_build_output(output_path, &program_bytes, Some(&witness_bytes))
+        let node = satisfied.redeem();
+        println!("Node bounds: {:?}", node.bounds());
+
+        let (program_bytes, witness_bytes) = node.encode_to_vec();
+
+        let padding_size = node
+            .bounds()
+            .cost
+            .get_padding(&vec![witness_bytes, program_bytes.clone()])
+            .unwrap_or_default()
+            .len();
+        println!("Padding size: {}", padding_size);
+
+        write_build_output(output_path, program_bytes, output_format)
     } else {
         let program_bytes = compiled.commit().encode_to_vec();
-        write_build_output(output_path, &program_bytes, None)
+        write_build_output(output_path, program_bytes, output_format)
     }
 }
 
@@ -132,13 +166,26 @@ fn handle_run(path: PathBuf, witness: Option<PathBuf>, param: Option<PathBuf>) -
     let arguments = parse_arguments(param_content.as_deref())?;
     let compiled = CompiledProgram::new(source, arguments).map_err(|e| anyhow::anyhow!(e))?;
     let witness = parse_witness(witness_content.as_deref())?;
-    let satisfied = compiled.satisfy(witness).map_err(|e| anyhow::anyhow!(e))?;
+    let satisfied = compiled
+        .satisfy_with_env(witness, Some(dummy_env::dummy()))
+        .map_err(|e| anyhow::anyhow!(e))?;
 
-    let mut machine = BitMachine::for_program(satisfied.redeem())?;
-    let env = dummy_env::dummy();
-    let res = machine.exec_with_tracker(satisfied.redeem(), &env, &mut Tracker)?;
+    let node = satisfied.redeem();
+    println!("Node bounds: {:?}", node.bounds());
 
-    println!("Result: {}", res);
+    let (program_bytes, witness_bytes) = node.encode_to_vec();
+
+    let padding_size = node
+        .bounds()
+        .cost
+        .get_padding(&vec![witness_bytes.clone(), program_bytes.clone()])
+        .unwrap_or_default()
+        .len();
+    println!("Padding size: {}", padding_size);
+
+    let _ = run_program(&program_bytes, &witness_bytes, TestUpTo::Everything)
+        .map_err(|e| anyhow::anyhow!("Failed to run program: {}", e))?;
+
     Ok(())
 }
 
@@ -150,7 +197,8 @@ fn main() {
             path,
             witness,
             output_path,
-        } => handle_build(path, witness, output_path),
+            output_format,
+        } => handle_build(path, witness, output_path, output_format),
         Commands::Run {
             path,
             witness,

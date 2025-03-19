@@ -35,14 +35,14 @@ spend-keypath:
 	cargo run --bin simfony-wallet spend \
 		--simf-file $(SIMF_FILE) \
 		--account 0 \
-		--address tex1ps2y3ut204geww4fklgnh07xe2pu3wqjrns9gsxra9pjflpjlkfysfsn389 \
-		--txid af506fb383f4e70c9ccf56a59779792fed19601e8fd175af5d49fa3d14bf7645
+		--address tex1pp8lydxfev5w2fxury77z25r222v4llm78xgr3cdh4f5c26sypfeqnytzje \
+		--txid 40765d6cc77396989f8f8a4ba59e61558a8ea440b9c6dbb6197d09784af35909
 
 spend-scriptpath:
 	cargo run --bin simfony-wallet spend \
 		--simf-file $(SIMF_FILE) \
 		--account 0 \
-		--address tex1ps2y3ut204geww4fklgnh07xe2pu3wqjrns9gsxra9pjflpjlkfysfsn389 \
-		--txid af506fb383f4e70c9ccf56a59779792fed19601e8fd175af5d49fa3d14bf7645 \
-		--vout 0 \
+		--address tex1pp8lydxfev5w2fxury77z25r222v4llm78xgr3cdh4f5c26sypfeqnytzje \
+		--txid 40765d6cc77396989f8f8a4ba59e61558a8ea440b9c6dbb6197d09784af35909 \
+		--vout 1 \
 		--wit-file $(WIT_FILE)

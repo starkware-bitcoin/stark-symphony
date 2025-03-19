@@ -8,7 +8,7 @@ use elements::{
     Address, AssetId, AssetIssuance, BlockHash, LockTime, OutPoint, SchnorrSighashType, Script,
     Sequence, Transaction, TxIn, TxInWitness, TxOut, TxOutWitness,
 };
-use simfony::{CompiledProgram, WitnessValues};
+use simfony::{dummy_env, CompiledProgram, WitnessValues};
 
 use crate::keys::sign_taproot_keypath;
 use crate::script::{create_script, simplicity_leaf_version, taproot_spending_info};
@@ -22,8 +22,11 @@ pub fn spend_script_path(
     program: CompiledProgram,
     witness_values: WitnessValues,
 ) -> anyhow::Result<Transaction> {
-    let value = utxo.value.explicit().ok_or(anyhow::anyhow!("UTXO value is not explicit"))?;
-    let tx = create_transaction(outpoint, address, value, 360);
+    let value = utxo
+        .value
+        .explicit()
+        .ok_or(anyhow::anyhow!("UTXO value is not explicit"))?;
+    let tx = create_transaction(outpoint, address, value, 2000);
 
     let script = create_script(&program)?;
     let (x_only_public_key, _) = key_pair.x_only_public_key();
@@ -34,11 +37,17 @@ pub fn spend_script_path(
         .unwrap();
 
     let satisfied_program = program
-        .satisfy(witness_values)
+        .satisfy_with_env(witness_values, Some(dummy_env::dummy()))
         .map_err(|e| anyhow::anyhow!("Failed to satisfy program: {}", e))?;
-    let (program_bytes, witness_bytes) = satisfied_program.redeem().encode_to_vec();
 
-    let final_script_witness = vec![
+    let redeem_node = satisfied_program.redeem();
+    let bounds = redeem_node.bounds();
+    // NOTE: Script cost is proportional to consumed resources but the budget depends on the witness size
+    // https://github.com/BlockstreamResearch/rust-simplicity/blob/bef2d0318a870c3aa9f399744ac1eef7ee271726/src/analysis.rs#L43
+
+    let (program_bytes, witness_bytes) = redeem_node.encode_to_vec();
+
+    let mut final_script_witness = vec![
         witness_bytes,
         program_bytes,
         script.into_bytes(),
@@ -46,6 +55,26 @@ pub fn spend_script_path(
     ];
     // (control[0] & TAPROOT_LEAF_MASK) == TAPROOT_LEAF_TAPSIMPLICITY)
     assert_eq!(final_script_witness[3][0] & 0xfe, 0xbe);
+
+    if !bounds.cost.is_consensus_valid() {
+        return Err(anyhow::anyhow!(
+            "Program cost exceeded the maximum allowed cost, cost = {}",
+            bounds.cost
+        ));
+    }
+
+    // Add padding to the script witness if budget is exceeded
+    if let Some(padding) = bounds.cost.get_padding(&final_script_witness) {
+        // Annex has to be removed from the stack
+        // https://github.com/ElementsProject/elements/blob/9748c00c3344b815d75c4b5c251b341fb34fa80f/src/script/interpreter.cpp#L3275
+        final_script_witness.push(padding);
+    } else {
+        println!("No padding needed");
+    }
+
+    if !bounds.cost.is_budget_valid(&final_script_witness) {
+        return Err(anyhow::anyhow!("Budget exceeded, cost = {}", bounds.cost));
+    }
 
     Ok(finalize_transaction(tx, final_script_witness))
 }
@@ -59,7 +88,7 @@ pub fn spend_key_path(
     program: CompiledProgram,
 ) -> anyhow::Result<Transaction> {
     let value = utxo.value.explicit().unwrap();
-    let tx = create_transaction(outpoint, address, value, 150);
+    let tx = create_transaction(outpoint, address, value, value - 100);
 
     let script = create_script(&program)?;
     let (x_only_public_key, _) = key_pair.x_only_public_key();

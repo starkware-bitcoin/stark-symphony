@@ -7,6 +7,7 @@
 #include "uni/verifier.simf"
 #include "uni/fri.simf"
 #include "uni/air.simf"
+#include "padding.simf"
 
 fn main() {
     let p_mt_root: u256 = witness::P_MT_ROOT;
@@ -15,4 +16,5 @@ fn main() {
     let fri_last_layer: FriLastLayer = witness::FRI_LAST_LAYER;
     let proof: FibSquareProof = (p_mt_root, p_evals, fri_layers, fri_last_layer);
     verify_proof(proof);
+    pad_60kb();
 }
