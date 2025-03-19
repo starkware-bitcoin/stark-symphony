@@ -1,12 +1,15 @@
+SIMF_FILE=target/main.out.simf
+WIT_FILE=target/proof.wit
+
 install:
 	cargo install --path simfony-cli simfony-cli
 
 build:
-	mcpp -P src/main.simf -o target/main.out.simf
-	simfony build target/main.out.simf --witness target/proof.wit
+	mcpp -P src/main.simf -o $(SIMF_FILE)
+	simfony build $(SIMF_FILE) --witness $(WIT_FILE)
 
 run:
-	simfony run target/main.out.simf --witness target/proof.wit
+	simfony run $(SIMF_FILE) --witness $(WIT_FILE)
 
 test:
 	bash scripts/unit_tests.sh
@@ -21,3 +24,25 @@ proof:
 
 test-prover:
 	cd scripts && PYTHONPATH=. pytest -s fibsquare
+
+address-0:
+	cargo run --bin simfony-wallet address --simf-file $(SIMF_FILE) --account 0
+
+address-1:
+	cargo run --bin simfony-wallet address --simf-file $(SIMF_FILE) --account 1
+
+spend-keypath:
+	cargo run --bin simfony-wallet spend \
+		--simf-file $(SIMF_FILE) \
+		--account 0 \
+		--address tex1ps2y3ut204geww4fklgnh07xe2pu3wqjrns9gsxra9pjflpjlkfysfsn389 \
+		--txid af506fb383f4e70c9ccf56a59779792fed19601e8fd175af5d49fa3d14bf7645
+
+spend-scriptpath:
+	cargo run --bin simfony-wallet spend \
+		--simf-file $(SIMF_FILE) \
+		--account 0 \
+		--address tex1ps2y3ut204geww4fklgnh07xe2pu3wqjrns9gsxra9pjflpjlkfysfsn389 \
+		--txid af506fb383f4e70c9ccf56a59779792fed19601e8fd175af5d49fa3d14bf7645 \
+		--vout 0 \
+		--wit-file $(WIT_FILE)

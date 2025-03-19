@@ -10,6 +10,7 @@ use std::str::FromStr;
 
 mod esplora;
 mod keys;
+mod rpc;
 mod script;
 mod transaction;
 
@@ -136,14 +137,11 @@ fn main() -> Result<()> {
             };
 
             if !dry_run {
-                let txid = esplora::broadcast_tx(tx)?;
+                let txid = rpc::broadcast_tx(tx)?;
                 println!("Transaction ID: {}", txid);
             } else {
-                println!("{:#?}", tx);
-                println!(
-                    "\nTransaction hex: {}",
-                    elements::encode::serialize_hex(&tx)
-                );
+                // println!("{:#?}", tx);
+                println!("Transaction hex: {}", elements::encode::serialize_hex(&tx));
             }
         }
     }

@@ -1,10 +1,10 @@
 [package]
-name = "stark-vault"
+name = "simfony-wallet"
 version = "0.1.0"
 edition = "2021"
 
 [[bin]]
-name = "stark-vault"
+name = "simfony-wallet"
 
 [dependencies]
 simfony.workspace = true

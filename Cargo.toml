@@ -1,5 +1,5 @@
 [workspace]
-members = ["simfony-cli", "stark-vault"]
+members = ["simfony-cli", "simfony-wallet"]
 resolver = "2"
 
 [workspace.dependencies]

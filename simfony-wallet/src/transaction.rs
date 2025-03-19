@@ -5,7 +5,6 @@ use elements::{
     hashes::Hash,
     pset::PartiallySignedTransaction,
     sighash::{Prevouts, SighashCache},
-    taproot::TapLeafHash,
     Address, AssetId, AssetIssuance, BlockHash, LockTime, OutPoint, SchnorrSighashType, Script,
     Sequence, Transaction, TxIn, TxInWitness, TxOut, TxOutWitness,
 };
@@ -14,6 +13,7 @@ use simfony::{CompiledProgram, WitnessValues};
 use crate::keys::sign_taproot_keypath;
 use crate::script::{create_script, simplicity_leaf_version, taproot_spending_info};
 
+/// Spend a transaction output using P2TR script path
 pub fn spend_script_path(
     outpoint: OutPoint,
     utxo: TxOut,
@@ -22,7 +22,7 @@ pub fn spend_script_path(
     program: CompiledProgram,
     witness_values: WitnessValues,
 ) -> anyhow::Result<Transaction> {
-    let value = utxo.value.explicit().unwrap();
+    let value = utxo.value.explicit().ok_or(anyhow::anyhow!("UTXO value is not explicit"))?;
     let tx = create_transaction(outpoint, address, value, 360);
 
     let script = create_script(&program)?;
@@ -33,34 +33,24 @@ pub fn spend_script_path(
         .control_block(&(script.clone(), simplicity_leaf_version()))
         .unwrap();
 
-    let mut sighash_cache = SighashCache::new(&tx);
-    let sighash_all = sighash_cache
-        .taproot_script_spend_signature_hash(
-            0,
-            &Prevouts::All(&[utxo]),
-            TapLeafHash::from_script(&script, simplicity_leaf_version()),
-            SchnorrSighashType::All,
-            liquid_testnet_genesis_hash(),
-        )
-        .map_err(|e| anyhow::anyhow!("Failed to compute sighash: {}", e))?;
-    let signature = sign_taproot_keypath(&sighash_all.to_byte_array(), key_pair, spend_info)?;
-
     let satisfied_program = program
         .satisfy(witness_values)
         .map_err(|e| anyhow::anyhow!("Failed to satisfy program: {}", e))?;
     let (program_bytes, witness_bytes) = satisfied_program.redeem().encode_to_vec();
 
     let final_script_witness = vec![
-        signature.serialize().to_vec(),
         witness_bytes,
         program_bytes,
         script.into_bytes(),
         control_block.serialize(),
     ];
+    // (control[0] & TAPROOT_LEAF_MASK) == TAPROOT_LEAF_TAPSIMPLICITY)
+    assert_eq!(final_script_witness[3][0] & 0xfe, 0xbe);
 
     Ok(finalize_transaction(tx, final_script_witness))
 }
 
+/// Spend a transaction output using P2TR key path
 pub fn spend_key_path(
     outpoint: OutPoint,
     utxo: TxOut,

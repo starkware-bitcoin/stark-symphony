@@ -12,6 +12,7 @@ pub fn fetch_utxo(outpoint: OutPoint) -> anyhow::Result<TxOut> {
 
 /// Broadcast a transaction to the network
 /// Returns the txid of the broadcasted transaction
+#[allow(dead_code)]
 pub fn broadcast_tx(tx: Transaction) -> anyhow::Result<String> {
     let client = reqwest::blocking::Client::new();
     let txid = client

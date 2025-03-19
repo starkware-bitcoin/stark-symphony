@@ -1423,6 +1423,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "simfony-wallet"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bip39",
+ "clap",
+ "dotenv",
+ "elements",
+ "hex",
+ "rand",
+ "reqwest",
+ "secp256k1",
+ "serde",
+ "serde_json",
+ "simfony",
+]
+
+[[package]]
 name = "simplicity-lang"
 version = "0.3.0"
 source = "git+https://github.com/m-kus/rust-simplicity?rev=d1b8a46aaee06808a66d859edf9e2fa701b725f1#d1b8a46aaee06808a66d859edf9e2fa701b725f1"
@@ -1477,24 +1495,6 @@ name = "stable_deref_trait"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
-
-[[package]]
-name = "stark-vault"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bip39",
- "clap",
- "dotenv",
- "elements",
- "hex",
- "rand",
- "reqwest",
- "secp256k1",
- "serde",
- "serde_json",
- "simfony",
-]
 
 [[package]]
 name = "strsim"
