@@ -15,9 +15,11 @@ STARKs are perfect candidate for this approach!
 
 - [x] Fibonacci square over toy field PoC
 - [ ] Liquid testnet deployment
-- [ ] QM31 extension field
-- [ ] Circle polynomial
-- [ ] Stwo verifier core
+- [ ] M31 field and its extensions
+- [ ] Merkle VCS verifier
+- [ ] Polynomial over QM31
+- [ ] Circle FRI
+- [ ] Single component Stwo verifier
 
 ## Dev quickstart
 
