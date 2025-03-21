@@ -1,0 +1,126 @@
+//! M31 field implementation
+
+#define M31_MODULUS 2147483647  // 2^31 - 1
+
+/// Add two elements modulo M31.
+fn m31_add(a: u32, b: u32) -> u32 {
+    // Note that the sum of two 31-bit integers fits in u32
+    let (_, sum): (bool, u32) = jet::add_32(a, b);
+    // Modulo jet is cheaper than the bitwise version:
+    // (a & 0x7f) + (a >> 31)
+    jet::modulo_32(sum, M31_MODULUS)
+}
+
+/// Subtract two elements modulo M31.
+fn m31_sub(a: u32, b: u32) -> u32 {
+    let (_, b_neg): (bool, u32) = jet::subtract_32(M31_MODULUS, b);
+    m31_add(a, b_neg)
+}
+
+/// Multiply two elements modulo M31.
+fn m31_mul(a: u32, b: u32) -> u32 {
+    let mul: u64 = jet::multiply_32(a, b);
+    let res64: u64 = jet::modulo_64(mul, M31_MODULUS);
+    let (_, res): (u32, u32) = <u64>::into(res64);
+    res
+}
+
+/// Accumulator for the modular exponentiation operation.
+///
+/// The accumulator is a tuple of three elements:
+/// - The result of the modular exponentiation operation.
+/// - The base of the modular exponentiation operation.
+/// - The exponent of the modular exponentiation operation.
+type ExpModAcc = (u32, u32, u32);
+
+/// Implementation of the iterative square and multiply algorithm.
+/// Note: context and counter are not used in this implementation,
+/// for more details see: https://github.com/BlockstreamResearch/simfony/blob/a522ee4fb271a8c5c9516dabf50b335a540042cd/src/compile.rs#L497
+fn m31_exp_step(acc: ExpModAcc, context: (), counter: u16) -> Either<u32, ExpModAcc> {
+    let (res, base, exp): ExpModAcc = acc;
+    match jet::is_zero_32(exp) {
+        true => Left(res),
+        false => {
+            let new_res: u32 = match jet::divides_32(2, exp) {
+                true => res,
+                false => m31_mul(res, base),
+            };
+            let new_base: u32 = m31_mul(base, base);
+            let new_exp: u32 = jet::divide_32(exp, 2);
+            Right((new_res, new_base, new_exp))
+        }
+    }
+}
+
+/// Raise a field element to a power modulo M31.
+fn m31_exp(a: u32, b: u32) -> u32 {
+    let res: Either<u32, ExpModAcc> = for_while::<m31_exp_step>((1, a, b), ());
+    unwrap_left::<ExpModAcc>(res)
+}
+
+/// Square a field element modulo M31.
+fn m31_pow2(a: u32) -> u32 {
+    m31_mul(a, a)
+}
+
+/// Raise a field element to the 4th power modulo M31.
+fn m31_pow4(a: u32) -> u32 {
+    m31_pow2(m31_pow2(a))
+}
+
+/// Raise a field element to the 8th power modulo M31.
+fn m31_pow8(a: u32) -> u32 {
+    m31_pow2(m31_pow4(a))
+}
+
+/// Raise a field element to the 16th power modulo M31.
+fn m31_pow16(a: u32) -> u32 {
+    m31_pow4(m31_pow4(a))
+}
+
+/// Invert a field element modulo M31.
+/// More specifically compute `v^((2^31-1)-2) = v^2147483645` (which is cheaper than euclidian division)
+/// See https://github.com/mmcloughlin/addchain for more details
+fn m31_inv(a: u32) -> u32 {
+    match jet::is_zero_32(a) {
+        true => {
+            assert!(false);
+            0
+        },
+        false => {
+            let t0: u32 = m31_mul(m31_pow4(a), a); // a^5
+            let t1: u32 = m31_mul(m31_pow2(t0), t0); // a^15
+            let t2: u32 = m31_mul(m31_pow8(t1), t0); // a^125
+            let t3: u32 = m31_mul(m31_pow2(t2), t0); // a^255
+            let t4: u32 = m31_mul(m31_pow16(m31_pow16(t3)), t3); // a^65535
+            let t5: u32 = m31_mul(m31_pow16(m31_pow16(t4)), t3); // a^16777215
+            m31_mul(m31_pow16(m31_pow8(t5)), t2) // a^2147483645
+        },
+    }
+}
+
+/// Divide two field elements modulo M31.
+fn m31_div(a: u32, b: u32) -> u32 {
+    m31_mul(a, m31_inv(b))
+}
+
+fn test_m31_inv() {
+    let a: u32 = 35;
+    let a_inv: u32 = m31_inv(a);
+    let a_inv_expected: u32 = m31_exp(a, 2147483645);
+    assert!(jet::eq_32(a_inv, a_inv_expected));
+}
+
+fn test_m31_add() {
+    let a: u32 = 2147483646;
+    let b: u32 = 1;
+    let c: u32 = m31_add(a, b);
+    assert!(jet::eq_32(c, 0));
+}
+
+fn test_m31_sub() {
+    let a: u32 = 0;
+    let b: u32 = 1;
+    let c: u32 = m31_sub(a, b);
+    assert!(jet::eq_32(c, 2147483646));
+}
