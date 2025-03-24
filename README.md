@@ -15,11 +15,13 @@ STARKs are perfect candidate for this approach!
 
 - [x] Fibonacci square over toy field PoC
 - [ ] Liquid testnet deployment
-- [ ] M31 field and its extensions
-- [ ] Merkle VCS verifier
-- [ ] Polynomial over QM31
+- [x] Operations in M31 field and its extensions
+- [ ] Circle point domain, canonic coset
+- [ ] Merkle commitments
+- [ ] Sha256 channel
+- [ ] Composition polynomial evaluation
+- [ ] Proof of work
 - [ ] Circle FRI
-- [ ] Single component Stwo verifier
 
 ## Dev quickstart
 
