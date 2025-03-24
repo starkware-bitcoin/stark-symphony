@@ -1,0 +1,157 @@
+//! 4th extension of M31 field
+
+#ifndef QM31_SIMF
+#define QM31_SIMF
+
+#include "fields/m31.simf"
+#include "fields/cm31.simf"
+
+#define QM31_P 21267647892944572736998860269687930881  // (2^31 - 1)^4
+
+/// QM31 element represented as (a, b, c, d) or `a + bi + (c + di)u`
+type QM31 = (CM31, CM31);
+
+/// Construct a QM31 element from four M31 elements.
+fn qm31(a: M31, b: M31, c: M31, d: M31) -> QM31 {
+    ((a, b), (c, d))
+}
+
+/// Construct a zero QM31 element.
+fn qm31_zero() -> QM31 {
+    (cm31_zero(), cm31_zero())
+}
+
+/// Construct a one QM31 element.
+fn qm31_one() -> QM31 {
+    (cm31_one(), cm31_zero())
+}
+
+/// Add two QM31 elements.
+fn qm31_add(a: QM31, b: QM31) -> QM31 {
+    let (a0, a1): (CM31, CM31) = a;
+    let (b0, b1): (CM31, CM31) = b;
+    (cm31_add(a0, b0), cm31_add(a1, b1))
+}
+
+/// Negate a QM31 element.
+fn qm31_neg(a: QM31) -> QM31 {
+    let (a0, a1): (CM31, CM31) = a;
+    (cm31_neg(a0), cm31_neg(a1))
+}
+
+/// Subtract two QM31 elements.
+fn qm31_sub(a: QM31, b: QM31) -> QM31 {
+    let (a0, a1): (CM31, CM31) = a;
+    let (b0, b1): (CM31, CM31) = b;
+    (cm31_sub(a0, b0), cm31_sub(a1, b1))
+}
+
+/// Multiply a QM31 element by a M31 element.
+fn qm31_mul_m31(a: QM31, b: M31) -> QM31 {
+    let (a0, a1): (CM31, CM31) = a;
+    (cm31_mul_m31(a0, b), cm31_mul_m31(a1, b))
+}
+
+/// Multiply a QM31 element by a CM31 element.
+fn qm31_mul_cm31(a: QM31, b: CM31) -> QM31 {
+    let (a0, a1): (CM31, CM31) = a;
+    (cm31_mul(a0, b), cm31_mul(a1, b))
+}
+
+/// Get a complex conjugate of a QM31 element.
+fn qm31_conj(a: QM31) -> QM31 {
+    let (a0, a1): (CM31, CM31) = a;
+    (a0, cm31_neg(a1))
+}
+
+/// Multiply two QM31 elements.
+fn qm31_mul(a: QM31, b: QM31) -> QM31 {
+    let (a0, a1): (CM31, CM31) = a;
+    let (b0, b1): (CM31, CM31) = b;
+    // (a + bu) * (c + du) = (ac + rbd) + (ad + bc)u.
+    let c0: CM31 = cm31_add(cm31_mul(a0, b0), cm31_mul(cm31_mul(a1, b1), (2, 1)));
+    let c1: CM31 = cm31_add(cm31_mul(a0, b1), cm31_mul(a1, b0));
+    (c0, c1)
+}
+
+/// Invert a QM31 element.
+fn qm31_inv(a: QM31) -> QM31 {
+    let (a0, a1): (CM31, CM31) = a;
+    let a0_sq: CM31 = cm31_mul(a0, a0);
+    let a1_sq: CM31 = cm31_mul(a1, a1);
+    let a1_sq_dbl: CM31 = cm31_add(a1_sq, a1_sq);
+    let (b0, b1): (M31, M31) = a1_sq;
+    let a1_sq_rev: CM31 = (m31_neg(b1), b0);
+    let den: CM31 = cm31_add(a0_sq, cm31_neg(cm31_add(a1_sq_dbl, a1_sq_rev)));
+    let den_inv: CM31 = cm31_inv(den);
+    (cm31_mul(a0, den_inv), cm31_mul(cm31_neg(a1), den_inv))
+}
+
+/// Divide two QM31 elements.
+fn qm31_div(a: QM31, b: QM31) -> QM31 {
+    let b_inv: QM31 = qm31_inv(b);
+    qm31_mul(a, b_inv)
+}
+
+/// Construct a QM31 element from a CM31 element.
+fn qm31_from_cm31(a: CM31) -> QM31 {
+    (a, cm31_zero())
+}
+
+/// Construct a QM31 element from a M31 element.
+fn qm31_from_m31(a: M31) -> QM31 {
+    (cm31_from_m31(a), cm31_zero())
+}
+
+fn qm31_eq(a: QM31, b: QM31) -> bool {
+    let (a0, a1): (CM31, CM31) = a;
+    let (b0, b1): (CM31, CM31) = b;
+    match cm31_eq(a0, b0) {
+        true => cm31_eq(a1, b1),
+        false => false,
+    }
+}
+
+fn test_qm31_inv() {
+    let a: QM31 = qm31(1, 2, 3, 4);
+    let a_inv: QM31 = qm31_inv(a);
+    let b: QM31 = qm31_mul(a, a_inv);
+    assert!(qm31_eq(b, qm31_one()));
+}
+
+fn test_qm31_add() {
+    let a: QM31 = qm31(1, 2, 3, 4);
+    let b: QM31 = qm31(4, 5, 6, 7);
+    let c: QM31 = qm31_add(a, b);
+    assert!(qm31_eq(c, qm31(5, 7, 9, 11)));
+}
+
+fn test_qm31_sub() {
+    let a: QM31 = qm31(1, 2, 3, 4);
+    let b: QM31 = qm31(4, 5, 6, 7);
+    let c: QM31 = qm31_sub(a, b);
+    assert!(qm31_eq(c, qm31(2147483644, 2147483644, 2147483644, 2147483644)));
+}
+
+fn test_qm31_mul_m31() {
+    let a: QM31 = qm31(1, 2, 3, 4);
+    let b: M31 = 8;
+    let c: QM31 = qm31_mul_m31(a, b);
+    assert!(qm31_eq(c, qm31(8, 16, 24, 32)));
+}
+
+fn test_qm31_mul_cm31() {
+    let a: QM31 = qm31(1, 2, 3, 4);
+    let b: CM31 = (8, 16);
+    let c: QM31 = qm31_mul_cm31(a, b);
+    assert!(qm31_eq(c, qm31(8, 16, 24, 32)));
+}
+
+fn test_qm31_mul() {
+    let a: QM31 = qm31(1, 2, 3, 4);
+    let b: QM31 = qm31(5, 6, 7, 8);
+    let c: QM31 = qm31_mul(a, b);
+    assert!(qm31_eq(c, qm31(2147483576, 93, 2147483631, 50)));
+}
+
+#endif

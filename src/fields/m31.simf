@@ -1,5 +1,8 @@
 //! M31 field implementation
 
+#ifndef M31_SIMF
+#define M31_SIMF
+
 #define M31_MODULUS 2147483647  // 2^31 - 1
 
 type M31 = u32;
@@ -13,10 +16,15 @@ fn m31_add(a: M31, b: M31) -> M31 {
     jet::modulo_32(sum, M31_MODULUS)
 }
 
+/// Negate a field element modulo M31.
+fn m31_neg(a: M31) -> M31 {
+    let (_, res): (bool, u32) = jet::subtract_32(M31_MODULUS, a);
+    res
+}
+
 /// Subtract two elements modulo M31.
 fn m31_sub(a: M31, b: M31) -> M31 {
-    let (_, b_neg): (bool, u32) = jet::subtract_32(M31_MODULUS, b);
-    m31_add(a, b_neg)
+    m31_add(a, m31_neg(b))
 }
 
 /// Multiply two elements modulo M31.
@@ -126,3 +134,5 @@ fn test_m31_sub() {
     let c: M31 = m31_sub(a, b);
     assert!(jet::eq_32(c, 2147483646));
 }
+
+#endif

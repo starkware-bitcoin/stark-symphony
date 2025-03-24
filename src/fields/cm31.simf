@@ -1,12 +1,25 @@
 //! Complex extension of M31 field
 //! Equivalent to M31\[x\] over (x^2 + 1) as the irreducible polynomial.
 
+#ifndef CM31_SIMF
+#define CM31_SIMF
+
 #include "fields/m31.simf"
 
-#define CM31_MODULUS 4611686014132420609  // (2^31 - 1)^2
+#define CM31_P 4611686014132420609  // (2^31 - 1)^2
 
 /// CM31 element represented as (a, b) of a + bi.
 type CM31 = (M31, M31);
+
+/// Construct a zero CM31 element.
+fn cm31_zero() -> CM31 {
+    (0, 0)
+}
+
+/// Construct a one CM31 element.
+fn cm31_one() -> CM31 {
+    (1, 0)
+}
 
 /// Add two CM31 elements.
 fn cm31_add(a: CM31, b: CM31) -> CM31 {
@@ -15,17 +28,17 @@ fn cm31_add(a: CM31, b: CM31) -> CM31 {
     (m31_add(a0, b0), m31_add(a1, b1))
 }
 
+/// Negate a CM31 element.
+fn cm31_neg(a: CM31) -> CM31 {
+    let (a0, a1): (M31, M31) = a;
+    (m31_neg(a0), m31_neg(a1))
+}
+
 /// Subtract two CM31 elements.
 fn cm31_sub(a: CM31, b: CM31) -> CM31 {
     let (a0, a1): (M31, M31) = a;
     let (b0, b1): (M31, M31) = b;
     (m31_sub(a0, b0), m31_sub(a1, b1))
-}
-
-/// Add a CM31 element to a M31 element.
-fn cm31_add_m31(a: CM31, b: M31) -> CM31 {
-    let (a0, a1): (M31, M31) = a;
-    (m31_add(a0, b), a1)
 }
 
 /// Subtract a CM31 element from a M31 element.
@@ -42,7 +55,6 @@ fn cm31_mul_m31(a: CM31, b: M31) -> CM31 {
 
 /// Divide a CM31 element by a M31 element.
 fn cm31_div_m31(a: CM31, b: M31) -> CM31 {
-    let (a0, a1): (M31, M31) = a;
     let b_inv: M31 = m31_inv(b);
     cm31_mul_m31(a, b_inv)
 }
@@ -55,7 +67,7 @@ fn cm31_from_m31(a: M31) -> CM31 {
 /// CM31 complex conjugate.
 fn cm31_conj(a: CM31) -> CM31 {
     let (a0, a1): (M31, M31) = a;
-    (a0, m31_sub(M31_MODULUS, a1))
+    (a0, m31_neg(a1))
 }
 
 /// Multiply two CM31 elements.
@@ -81,43 +93,49 @@ fn cm31_div(a: CM31, b: CM31) -> CM31 {
     cm31_mul(a, b_inv)
 }
 
+/// Check if two CM31 elements are equal.
+fn cm31_eq(a: CM31, b: CM31) -> bool {
+    let (a0, a1): (M31, M31) = a;
+    let (b0, b1): (M31, M31) = b;
+    match jet::eq_32(a0, b0) {
+        true => jet::eq_32(a1, b1),
+        false => false,
+    }
+}
+
 fn test_cm31_add() {
     let a: CM31 = (1, 2);
     let b: CM31 = (3, 4);
-    let (c0, c1): CM31 = cm31_add(a, b);
-    assert!(jet::eq_32(c0, 4));
-    assert!(jet::eq_32(c1, 6));
+    let c: CM31 = cm31_add(a, b);
+    assert!(cm31_eq(c, (4, 6)));
 }
 
 fn test_cm31_sub() {
     let a: CM31 = (1, 2);
     let b: CM31 = (4, 5);
-    let (c0, c1): CM31 = cm31_sub(a, b);
-    assert!(jet::eq_32(c0, 2147483644));
-    assert!(jet::eq_32(c1, 2147483644));
+    let c: CM31 = cm31_sub(a, b);
+    assert!(cm31_eq(c, (2147483644, 2147483644)));
 }
 
 fn test_cm31_mul() {
     let a: CM31 = (1, 2);
     let b: CM31 = (4, 5);
-    let (c0, c1): CM31 = cm31_mul(a, b);
-    assert!(jet::eq_32(c0, 2147483641));
-    assert!(jet::eq_32(c1, 13));
+    let c: CM31 = cm31_mul(a, b);
+    assert!(cm31_eq(c, (2147483641, 13)));
 }
 
 fn test_cm31_div() {
     let a: CM31 = (2147483641, 13);
     let b: CM31 = (4, 5);
-    let (c0, c1): CM31 = cm31_div(a, b);
-    assert!(jet::eq_32(c0, 1));
-    assert!(jet::eq_32(c1, 2));
+    let c: CM31 = cm31_div(a, b);
+    assert!(cm31_eq(c, (1, 2)));
 }
 
 fn test_cm31_inv() {
     let cm: CM31 = (1, 2);
     let cm_inv: CM31 = cm31_inv(cm);
-    let (o0, o1): CM31 = cm31_mul(cm, cm_inv);
-    assert!(jet::eq_32(o0, 1));
-    assert!(jet::eq_32(o1, 0));
+    let o: CM31 = cm31_mul(cm, cm_inv);
+    assert!(cm31_eq(o, (1, 0)));
 }
 
+#endif
