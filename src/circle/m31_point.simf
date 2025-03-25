@@ -1,0 +1,85 @@
+//! Group of points on the circle over M31 field
+
+#ifndef CIRCLE_M31_POINT_H
+#define CIRCLE_M31_POINT_H
+
+#include "fields/m31.simf"
+
+/// A generator for the circle group over M31.
+#define M31_CIRCLE_GEN (2, 1268011823)
+
+/// Number of elements in the circle group
+#define M31_CIRCLE_ORDER 0x80000000 // 2^31
+
+/// Logarithm base 2 of the circle group order
+#define M31_CIRCLE_LOG_ORDER 31
+
+/// Point on the circle where x and y are elements from M31
+type M31Point = (M31, M31);
+
+/// Neutral element of circle group
+fn m31_point_zero() -> M31Point {
+    (1, 0)
+}
+
+/// Double x coordinate: 2*x^2 - 1
+fn m31_point_dbl_x(x: M31) -> M31 {
+    let x_sq: M31 = m31_pow2(x);
+    let x_sq_dbl: M31 = m31_add(x_sq, x_sq);
+    m31_sub(x_sq_dbl, 1)
+}
+
+/// Add two circle points: (x0, y0) + (x1, y1)
+fn m31_point_add(lhs: M31Point, rhs: M31Point) -> M31Point {
+    let (x0, y0): (M31, M31) = lhs;
+    let (x1, y1): (M31, M31) = rhs;
+    let r0: M31 = m31_sub(m31_mul(x0, x1), m31_mul(y0, y1));
+    let r1: M31 = m31_add(m31_mul(x0, y1), m31_mul(y0, x1));
+    (r0, r1)
+}
+
+/// Flip y coordinate: (x, y) -> (x, -y)
+fn m31_point_neg(p: M31Point) -> M31Point {
+    let (x, y): (M31, M31) = p;
+    (x, m31_neg(y))
+}
+
+/// Check if two circle points are equal
+fn m31_point_eq(lhs: M31Point, rhs: M31Point) -> bool {
+    let (x0, y0): (M31, M31) = lhs;
+    let (x1, y1): (M31, M31) = rhs;
+    match m31_eq(x0, x1) {
+        true => m31_eq(y0, y1),
+        false => false,
+    }
+}
+
+fn test_m31_point_add_1() {
+    let g4: M31Point = (0, 1);
+    let g4_dbl: M31Point = m31_point_add(g4, g4);
+    let expected: M31Point = (2147483646, 0);
+    assert!(m31_point_eq(g4_dbl, expected));
+}
+
+fn test_m31_point_add_2() {
+    let point_1: M31Point = (750649172, 1991648574);
+    let point_2: M31Point = (1737427771, 309481134);
+    let result: M31Point = m31_point_add(point_1, point_2);
+    let expected: M31Point = (1476625263, 1040927458);
+    assert!(m31_point_eq(result, expected));
+}
+
+fn test_m31_point_zero() {
+    let result: M31Point = m31_point_zero();
+    let expected: M31Point = (1, 0);
+    assert!(m31_point_eq(result, expected));
+}
+
+fn test_m31_point_add_zero() {
+    let point_1: M31Point = (750649172, 1991648574);
+    let point_2: M31Point = m31_point_zero();
+    let result: M31Point = m31_point_add(point_1, point_2);
+    assert!(m31_point_eq(result, point_1));
+}
+
+#endif

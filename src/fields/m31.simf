@@ -88,6 +88,11 @@ fn m31_pow16(a: M31) -> M31 {
     m31_pow4(m31_pow4(a))
 }
 
+/// Check if two field elements are equal modulo M31.
+fn m31_eq(a: M31, b: M31) -> bool {
+    jet::eq_32(a, b)
+}
+
 /// Invert a field element modulo M31.
 /// More specifically compute `v^((2^31-1)-2) = v^2147483645` (which is cheaper than euclidian division)
 /// See https://github.com/mmcloughlin/addchain for more details
@@ -118,21 +123,21 @@ fn test_m31_inv() {
     let a: M31 = 35;
     let a_inv: M31 = m31_inv(a);
     let a_inv_expected: M31 = m31_exp(a, 2147483645);
-    assert!(jet::eq_32(a_inv, a_inv_expected));
+    assert!(m31_eq(a_inv, a_inv_expected));
 }
 
 fn test_m31_add() {
     let a: M31 = 2147483646;
     let b: M31 = 1;
     let c: M31 = m31_add(a, b);
-    assert!(jet::eq_32(c, 0));
+    assert!(m31_eq(c, 0));
 }
 
 fn test_m31_sub() {
     let a: M31 = 0;
     let b: M31 = 1;
     let c: M31 = m31_sub(a, b);
-    assert!(jet::eq_32(c, 2147483646));
+    assert!(m31_eq(c, 2147483646));
 }
 
 #endif

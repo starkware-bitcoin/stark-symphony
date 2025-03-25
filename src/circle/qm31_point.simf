@@ -1,0 +1,92 @@
+//! Group of points on the circle over QM31 field
+
+#ifndef CIRCLE_QM31_POINT_H
+#define CIRCLE_QM31_POINT_H
+
+#include "fields/m31.simf"
+#include "fields/qm31.simf"
+#include "circle/m31_point.simf"
+
+/// A generator for the circle group over QM31.
+#define QM31_CIRCLE_GEN (((1, 0), (478637715, 513582971)), ((992285211, 649143431), (740191619, 1186584352)))
+
+/// Order of the circle group
+#define QM31_CIRCLE_ORDER 21267647892944572736998860269687930880
+
+/// Point on the circle where x and y are elements from QM31
+type QM31Point = (QM31, QM31);
+
+/// Neutral element of circle group
+fn qm31_point_zero() -> QM31Point {
+    (qm31_one(), qm31_zero())
+}
+
+/// Double x coordinate: 2*x^2 - 1
+fn qm31_point_dbl_x(x: QM31) -> QM31 {
+    let x_sq: QM31 = qm31_mul(x, x);
+    let x_sq_dbl: QM31 = qm31_add(x_sq, x_sq);
+    qm31_sub(x_sq_dbl, qm31_one())
+}
+
+/// Add two circle points: (x0, y0) + (x1, y1)
+fn qm31_point_add(lhs: QM31Point, rhs: QM31Point) -> QM31Point {
+    let (x0, y0): (QM31, QM31) = lhs;
+    let (x1, y1): (QM31, QM31) = rhs;
+    let r0: QM31 = qm31_sub(qm31_mul(x0, x1), qm31_mul(y0, y1));
+    let r1: QM31 = qm31_add(qm31_mul(x0, y1), qm31_mul(y0, x1));
+    (r0, r1)
+}
+
+/// Flip y coordinate: (x, y) -> (x, -y)
+fn qm31_point_neg(p: QM31Point) -> QM31Point {
+    let (x, y): (QM31, QM31) = p;
+    (x, qm31_neg(y))
+}
+
+/// Get complex conjugate of a point
+fn qm31_point_conj(p: QM31Point) -> QM31Point {
+    let (x, y): (QM31, QM31) = p;
+    (qm31_conj(x), qm31_conj(y))
+}
+
+/// Check if two circle points are equal
+fn qm31_point_eq(lhs: QM31Point, rhs: QM31Point) -> bool {
+    let (x0, y0): (QM31, QM31) = lhs;
+    let (x1, y1): (QM31, QM31) = rhs;
+    match qm31_eq(x0, x1) {
+        true => qm31_eq(y0, y1),
+        false => false,
+    }
+}
+
+/// Add a QM31 point and a M31 point
+fn qm31_point_add_m31_point(lhs: QM31Point, rhs: M31Point) -> QM31Point {
+    let (x0, y0): (QM31, QM31) = lhs;
+    let (x1, y1): (M31, M31) = rhs;
+    let r0: QM31 = qm31_sub(qm31_mul_m31(x0, x1), qm31_mul_m31(y0, y1));
+    let r1: QM31 = qm31_add(qm31_mul_m31(x0, y1), qm31_mul_m31(y0, x1));
+    (r0, r1)
+}
+
+fn test_add_circle_point_m31() {
+    let qm31_gen: QM31Point = QM31_CIRCLE_GEN;
+    let m31_gen: M31Point = M31_CIRCLE_GEN;
+    let result: QM31Point = qm31_point_add_m31_point(qm31_gen, m31_gen);
+
+    let (x, y): (M31, M31) = m31_gen;
+    let m31_gen_as_qm31: QM31Point = (qm31_from_m31(x), qm31_from_m31(y));
+    let expected: QM31Point = qm31_point_add(qm31_gen, m31_gen_as_qm31);
+
+    assert!(qm31_point_eq(result, expected));
+}
+
+fn test_m31_point_neg() {
+    let gen: QM31Point = QM31_CIRCLE_GEN;
+    let point: QM31Point = qm31_point_add(gen, gen);
+    let point: QM31Point = qm31_point_add(point, gen);
+    let neg_point: QM31Point = qm31_point_neg(point);
+    let zero: QM31Point = qm31_point_zero();
+    assert!(qm31_point_eq(qm31_point_add(point, neg_point), zero));
+}
+
+#endif
