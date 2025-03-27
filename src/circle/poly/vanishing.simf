@@ -1,0 +1,28 @@
+#include "circle/domain/qm31_point.simf"
+
+/// Accumulator for the pi function
+type PiFnAcc = QM31;
+
+/// pi function: x -> 2*x^2 - 1
+fn pi_fn(acc: PiFnAcc, n_iter: u32, counter: u32) -> Either<QM31, PiFnAcc> {
+    match jet::eq_32(counter, n_iter) {
+        true => Left(acc),
+        false => {
+            let x_dbl: QM31 = qm31_point_dbl_x(acc);
+            Right(x_dbl)
+        }
+    }
+}
+
+/// Evaluate the polynomial that vanishes on the coset of size 2^log_size at a given point on circle (QM31)
+///
+/// Vanishing poly on a circle domain of size 2 is just x coordinate V_2(x,y) = x, because the standard canonic coset is {(0,y), (0,-y)}. 
+/// Then, if we take domain of size 4 you’d need to double all the points (doubling a standard coset gives a standard coset) 
+/// to make them lie on the y axis, so V_4(x,y)=2x^2-1, etc up to log_size - 1.
+fn vanishing_poly_eval(log_size: u32, point: QM31Point) -> QM31 {
+    let (x, _): (QM31, QM31) = point;
+    let (n_iter, _): (u32, bool) = jet::subtract_32(log_size, 1);
+    let res: Either<u32, PiFnAcc> = for_while::<pi_fn>(x, n_iter);
+    let result: QM31 = unwrap_left::<PiFnAcc>(res);
+    result
+}

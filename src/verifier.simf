@@ -12,7 +12,7 @@
 /// STARK proof for the Fibonacci squared AIR.
 /// - Merkle root of the trace polynomial evaluation on extended domain
 /// - Evaluations of the trace polynomials in the sampled point, together with the corresponding Merkle proofs.
-/// - FRI decommitments
+/// - FRI layers except the last one: commitments and decommitments
 /// - Last FRI layer: Merkle root and free term
 type FibSquareProof = (u256, FibSquareEvals, List<FriLayer, 32>, FriLastLayer);
 

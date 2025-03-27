@@ -5,7 +5,7 @@
 
 #include "fields/m31.simf"
 #include "fields/qm31.simf"
-#include "circle/m31_point.simf"
+#include "circle/domain/m31_point.simf"
 
 /// A generator for the circle group over QM31.
 #define QM31_CIRCLE_GEN (((1, 0), (478637715, 513582971)), ((992285211, 649143431), (740191619, 1186584352)))
