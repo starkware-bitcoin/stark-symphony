@@ -1,0 +1,9 @@
+#ifndef CIRCLE_POLY_DEEP_QUOTIENT_H
+#define CIRCLE_POLY_DEEP_QUOTIENT_H
+
+#include "circle/groups/qm31_point.simf"
+#include "circle/groups/m31_point.simf"
+
+
+
+#endif

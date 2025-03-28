@@ -1,4 +1,7 @@
-#include "circle/domain/qm31_point.simf"
+#ifndef CIRCLE_POLY_VANISHING_H
+#define CIRCLE_POLY_VANISHING_H
+
+#include "circle/groups/qm31_point.simf"
 
 /// Accumulator for the pi function
 type PiFnAcc = QM31;
@@ -26,3 +29,5 @@ fn vanishing_poly_eval(log_size: u32, point: QM31Point) -> QM31 {
     let result: QM31 = unwrap_left::<PiFnAcc>(res);
     result
 }
+
+#endif
