@@ -134,7 +134,7 @@ fn handle_run(path: PathBuf, witness: Option<PathBuf>, param: Option<PathBuf>) -
     let witness = parse_witness(witness_content.as_deref())?;
     let satisfied = compiled.satisfy(witness).map_err(|e| anyhow::anyhow!(e))?;
 
-    let mut machine = BitMachine::for_program(satisfied.redeem());
+    let mut machine = BitMachine::for_program(satisfied.redeem())?;
     let env = dummy_env::dummy();
     let res = machine.exec(satisfied.redeem(), &env)?;
 

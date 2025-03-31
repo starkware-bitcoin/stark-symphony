@@ -3,4 +3,4 @@ members = ["simfony-cli", "simfony-wallet"]
 resolver = "2"
 
 [workspace.dependencies]
-simfony = { git = "https://github.com/m-kus/simfony", rev = "a79cc9ef816b2f1bf8c905a964ccbc53a5f01305", features = ["serde"] }
+simfony = { git = "https://github.com/m-kus/simfony", rev = "45c34f92543e9610a0c79916aaa919c97b0211ae", features = ["serde"] }
