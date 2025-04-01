@@ -93,6 +93,11 @@ fn cm31_div(a: CM31, b: CM31) -> CM31 {
     cm31_mul(a, b_inv)
 }
 
+/// Double a CM31 element.
+fn cm31_dbl(a: CM31) -> CM31 {
+    cm31_add(a, a)
+}
+
 /// Check if two CM31 elements are equal.
 fn cm31_eq(a: CM31, b: CM31) -> bool {
     let (a0, a1): (M31, M31) = a;
