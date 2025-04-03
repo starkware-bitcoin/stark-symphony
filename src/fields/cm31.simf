@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
 //! Complex extension of M31 field
 //! Equivalent to M31\[x\] over (x^2 + 1) as the irreducible polynomial.
 

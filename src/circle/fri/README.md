@@ -1,2 +1,0 @@
-# Circle FRI
-

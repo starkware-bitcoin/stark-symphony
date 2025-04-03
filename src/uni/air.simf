@@ -8,10 +8,10 @@
 #ifndef AIR_SIMF
 #define AIR_SIMF
 
-#include "field.simf"
-#include "channel.simf"
-#include "merkle.simf"
-#include "sha256.simf"
+#include "fields/small.simf"
+#include "utils/channel.simf"
+#include "utils/merkle.simf"
+#include "utils/sha256.simf"
 
 #define IDX_OFFSET 8
 #define DOMAIN_EX_SIZE 8192 // 8x

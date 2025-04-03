@@ -8,7 +8,7 @@
 #ifndef CHANNEL_SIMF
 #define CHANNEL_SIMF
 
-#include "sha256.simf"
+#include "utils/sha256.simf"
 
 /// The channel state is a 256-bit value, initialized to 0.
 type ChannelState = u256;

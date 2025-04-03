@@ -7,7 +7,7 @@
 #ifndef MERKLE_SIMF
 #define MERKLE_SIMF
 
-#include "sha256.simf"
+#include "utils/sha256.simf"
 
 /// Merkle root, leaf, or intermediate node.
 type MerkleNode = u256;

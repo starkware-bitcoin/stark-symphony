@@ -5,7 +5,7 @@ install:
 	cargo install --path simfony-cli simfony-cli
 
 build:
-	mcpp -P src/main.simf -o $(SIMF_FILE)
+	mcpp -P -I src src/main.simf -o $(SIMF_FILE)
 	simfony build $(SIMF_FILE) --witness $(WIT_FILE)
 
 run:

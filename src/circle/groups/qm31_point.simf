@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
 //! Group of points on the unit circle over QM31 field
 
 #ifndef CIRCLE_GROUPS_QM31_POINT_H

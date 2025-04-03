@@ -4,9 +4,9 @@
 
 //! Program entry point.
 
-#include "verifier.simf"
-#include "fri.simf"
-#include "air.simf"
+#include "uni/verifier.simf"
+#include "uni/fri.simf"
+#include "uni/air.simf"
 
 fn main() {
     let p_mt_root: u256 = witness::P_MT_ROOT;
