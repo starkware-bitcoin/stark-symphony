@@ -6,6 +6,7 @@
 
 #include "fields/m31.simf"
 
+/// Size of the field extension
 #define CM31_P 4611686014132420609  // (2^31 - 1)^2
 
 /// CM31 element represented as (a, b) of a + bi.
@@ -23,34 +24,34 @@ fn cm31_one() -> CM31 {
 
 /// Add two CM31 elements.
 fn cm31_add(a: CM31, b: CM31) -> CM31 {
-    let (a0, a1): (M31, M31) = a;
-    let (b0, b1): (M31, M31) = b;
-    (m31_add(a0, b0), m31_add(a1, b1))
+    let (ar, ai): (M31, M31) = a;
+    let (br, bi): (M31, M31) = b;
+    (m31_add(ar, br), m31_add(ai, bi))
 }
 
 /// Negate a CM31 element.
 fn cm31_neg(a: CM31) -> CM31 {
-    let (a0, a1): (M31, M31) = a;
-    (m31_neg(a0), m31_neg(a1))
+    let (ar, ai): (M31, M31) = a;
+    (m31_neg(ar), m31_neg(ai))
 }
 
 /// Subtract two CM31 elements.
 fn cm31_sub(a: CM31, b: CM31) -> CM31 {
-    let (a0, a1): (M31, M31) = a;
-    let (b0, b1): (M31, M31) = b;
-    (m31_sub(a0, b0), m31_sub(a1, b1))
+    let (ar, ai): (M31, M31) = a;
+    let (br, bi): (M31, M31) = b;
+    (m31_sub(ar, br), m31_sub(ai, bi))
 }
 
 /// Subtract a CM31 element from a M31 element.
 fn cm31_sub_m31(a: CM31, b: M31) -> CM31 {
-    let (a0, a1): (M31, M31) = a;
-    (m31_sub(a0, b), a1)
+    let (ar, ai): (M31, M31) = a;
+    (m31_sub(ar, b), ai)
 }
 
 /// Multiply a CM31 element by a M31 element.
 fn cm31_mul_m31(a: CM31, b: M31) -> CM31 {
-    let (a0, a1): (M31, M31) = a;
-    (m31_mul(a0, b), m31_mul(a1, b))
+    let (ar, ai): (M31, M31) = a;
+    (m31_mul(ar, b), m31_mul(ai, b))
 }
 
 /// Divide a CM31 element by a M31 element.
@@ -66,24 +67,24 @@ fn cm31_from_m31(a: M31) -> CM31 {
 
 /// CM31 complex conjugate.
 fn cm31_conj(a: CM31) -> CM31 {
-    let (a0, a1): (M31, M31) = a;
-    (a0, m31_neg(a1))
+    let (ar, ai): (M31, M31) = a;
+    (ar, m31_neg(ai))
 }
 
 /// Multiply two CM31 elements.
 fn cm31_mul(a: CM31, b: CM31) -> CM31 {
-    let (a0, a1): (M31, M31) = a;
-    let (b0, b1): (M31, M31) = b;
-    let re: M31 = m31_sub(m31_mul(a0, b0), m31_mul(a1, b1));
-    let im: M31 = m31_add(m31_mul(a0, b1), m31_mul(a1, b0));
+    let (ar, ai): (M31, M31) = a;
+    let (br, bi): (M31, M31) = b;
+    let re: M31 = m31_sub(m31_mul(ar, br), m31_mul(ai, bi));
+    let im: M31 = m31_add(m31_mul(ar, bi), m31_mul(ai, br));
     (re, im)
 }
 
 /// Invert a CM31 element.
 fn cm31_inv(a: CM31) -> CM31 {
-    let (a0, a1): (M31, M31) = a;
+    let (ar, ai): (M31, M31) = a;
     let a_conj: CM31 = cm31_conj(a);
-    let a_norm: M31 = m31_add(m31_pow2(a0), m31_pow2(a1));
+    let a_norm: M31 = m31_add(m31_pow2(ar), m31_pow2(ai));
     cm31_div_m31(a_conj, a_norm)
 }
 
@@ -100,10 +101,10 @@ fn cm31_dbl(a: CM31) -> CM31 {
 
 /// Check if two CM31 elements are equal.
 fn cm31_eq(a: CM31, b: CM31) -> bool {
-    let (a0, a1): (M31, M31) = a;
-    let (b0, b1): (M31, M31) = b;
-    match jet::eq_32(a0, b0) {
-        true => jet::eq_32(a1, b1),
+    let (ar, ai): (M31, M31) = a;
+    let (br, bi): (M31, M31) = b;
+    match jet::eq_32(ar, br) {
+        true => jet::eq_32(ai, bi),
         false => false,
     }
 }
@@ -124,9 +125,17 @@ fn test_cm31_sub() {
 
 fn test_cm31_mul() {
     let a: CM31 = (1, 2);
-    let b: CM31 = (4, 5);
+    let b: CM31 = (5, 6);
     let c: CM31 = cm31_mul(a, b);
-    assert!(cm31_eq(c, (2147483641, 13)));
+    assert!(cm31_eq(c, (2147483640, 16)));
+}
+
+fn test_cm31_mul_2() {
+    let a: CM31 = (3, 4);
+    let b: CM31 = (7, 8);
+    let c: CM31 = (2, 1);
+    let d: CM31 = cm31_mul(cm31_mul(a, b), c);
+    assert!(cm31_eq(d, (2147483573, 93)));
 }
 
 fn test_cm31_div() {

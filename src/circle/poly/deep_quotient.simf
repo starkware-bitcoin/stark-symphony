@@ -28,7 +28,7 @@ fn deep_quotient_interpolant_coefficients(sample_point: QM31Point, sample_value:
     (a, b, c)
 }
 
-/// Compute the nominator of the DEEP quotient interpolant
+/// Compute the nominator of the DEEP quotient polynomial
 fn deep_quotient_nominator(coefficients: (QM31, QM31, QM31), query_point: M31Point, query_value: M31) -> QM31 {
     let (a, b, c): (QM31, QM31, QM31) = coefficients;
     let b_val: QM31 = qm31_mul_m31(b, query_value);
