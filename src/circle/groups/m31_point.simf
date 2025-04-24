@@ -7,7 +7,7 @@
 #ifndef CIRCLE_GROUPS_M31_POINT_H
 #define CIRCLE_GROUPS_M31_POINT_H
 
-#include "fields/m31.simf"
+#include "circle/fields/m31.simf"
 
 /// A generator for the circle group over M31.
 #define M31_CIRCLE_GEN (2, 1268011823)

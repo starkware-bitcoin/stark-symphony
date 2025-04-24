@@ -8,9 +8,9 @@
 #ifndef AIR_SIMF
 #define AIR_SIMF
 
-#include "fields/small.simf"
-#include "utils/channel.simf"
-#include "utils/merkle.simf"
+#include "uni/field.simf"
+#include "uni/channel.simf"
+#include "uni/merkle.simf"
 #include "utils/sha256.simf"
 
 #define IDX_OFFSET 8

@@ -5,8 +5,8 @@
 //! A non-interactive channel for communication between the prover and the verifier.
 //! The channel is based on the SHA-256 hash function.
 
-#ifndef CHANNEL_SIMF
-#define CHANNEL_SIMF
+#ifndef UNI_CHANNEL_SIMF
+#define UNI_CHANNEL_SIMF
 
 #include "utils/sha256.simf"
 

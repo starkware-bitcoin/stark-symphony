@@ -5,8 +5,8 @@
 #ifndef FLAT_FIB_H
 #define FLAT_FIB_H
 
-#include "fields/qm31.simf"
-#include "fields/qm31_point.simf"
+#include "circle/fields/qm31.simf"
+#include "circle/fields/qm31_point.simf"
 #include "circle/poly/vanishing.simf"
 
 #define FLAT_FIB_N_COLUMNS 128
@@ -28,7 +28,7 @@ fn eval_step(c: QM31, acc: EvalAcc) -> EvalAcc {
         true => {
             let constraint: QM31 = qm31_sub(c, qm31_add(qm31_pow2(b), qm31_pow2(a)));
             let constraint_acc_next: QM31 = qm31_add(qm31_mul(constraint_acc, random_coeff), constraint);
-            (constraint_acc_next, b, c, 0)
+            (constraint_acc_next, b, c, skip_2)
         },
         false => (constraint_acc, b, c, jet::add_8(skip_2, 1))
     }

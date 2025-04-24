@@ -11,13 +11,18 @@
 
 type M31 = u32;
 
+/// Reduce a u32 value modulo M31.
+/// Modulo jet is cheaper than the bitwise version:
+/// (a & 0x7f) + (a >> 31)
+fn m31(val: u32) -> M31 {
+    jet::modulo_32(val, M31_MODULUS)
+}
+
 /// Add two elements modulo M31.
 fn m31_add(a: M31, b: M31) -> M31 {
     // Note that the sum of two 31-bit integers fits in u32
     let (_, sum): (bool, u32) = jet::add_32(a, b);
-    // Modulo jet is cheaper than the bitwise version:
-    // (a & 0x7f) + (a >> 31)
-    jet::modulo_32(sum, M31_MODULUS)
+    m31(sum)
 }
 
 /// Negate a field element modulo M31.

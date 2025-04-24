@@ -7,8 +7,8 @@
 #ifndef CIRCLE_GROUPS_QM31_POINT_H
 #define CIRCLE_GROUPS_QM31_POINT_H
 
-#include "fields/m31.simf"
-#include "fields/qm31.simf"
+#include "circle/fields/m31.simf"
+#include "circle/fields/qm31.simf"
 #include "circle/groups/m31_point.simf"
 
 /// A generator for the circle group over QM31.
