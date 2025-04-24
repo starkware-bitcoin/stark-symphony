@@ -1,0 +1,51 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
+#ifndef FLAT_FIB_H
+#define FLAT_FIB_H
+
+#include "fields/qm31.simf"
+#include "fields/qm31_point.simf"
+#include "circle/poly/vanishing.simf"
+
+#define FLAT_FIB_N_COLUMNS 128
+
+/// The mask values for the base trace, no offsets (single element per column).
+type FlatFibMaskValues = List<QM31, FLAT_FIB_N_COLUMNS>;
+
+/// The accumulator for the evaluation of the composition polynomial.
+/// * contraint accumulator
+/// * a (base_trace[i - 2])
+/// * b (base_trace[i - 1])
+/// * skip_2 (counter which stops at 2)
+type EvalAcc = (QM31, QM31, QM31, u8);
+
+/// The folding function for the evaluation of the composition polynomial.
+fn eval_step(c: QM31, acc: EvalAcc) -> EvalAcc {
+    let (constraint_acc, a, b, skip_2): EvalAcc = acc;
+    match jet::eq_8(skip_2, 2) {
+        true => {
+            let constraint: QM31 = qm31_sub(c, qm31_add(qm31_pow2(b), qm31_pow2(a)));
+            let constraint_acc_next: QM31 = qm31_add(qm31_mul(constraint_acc, random_coeff), constraint);
+            (constraint_acc_next, b, c, 0)
+        },
+        false => (constraint_acc, b, c, jet::add_8(skip_2, 1))
+    }
+}
+
+/// Evaluates the composition polynomial at a given point.
+///
+/// # Arguments
+///
+/// * `log_size`: The log of the column size (all columns have the same size).
+/// * `point`: The point to evaluate the polynomial at.
+/// * `mask_values`: The mask values for the base trace
+/// * `random_coeff`: The random coefficient.
+fn flat_fib_eval_composition_poly(log_size: u32, point: QM31Point, mask_values: FlatFibMaskValues, random_coeff: QM31) -> QM31 {
+    let (constraint_acc, _, _, _): EvalAcc = fold::<eval_step, FLAT_FIB_N_COLUMNS>(mask_values, (qm31_zero(), qm31_zero(), qm31_zero(), 0));
+    let vanish_eval: QM31 = vanishing_poly_eval(log_size, point);
+    qm31_div(constraint_acc, vanish_eval)
+}
+
+#endif

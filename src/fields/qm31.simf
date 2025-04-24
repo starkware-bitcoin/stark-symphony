@@ -78,6 +78,11 @@ fn qm31_mul(a: QM31, b: QM31) -> QM31 {
     (re, im)
 }
 
+/// Square a QM31 element.
+fn qm31_pow2(a: QM31) -> QM31 {
+    qm31_mul(a, a)
+}
+
 /// Invert a QM31 element.
 fn qm31_inv(a: QM31) -> QM31 {
     let (ar, ai): (CM31, CM31) = a;
