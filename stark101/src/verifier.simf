@@ -4,10 +4,10 @@
 
 //! STARK verifier for the Fibonacci squared AIR.
 
-#include "uni/channel.simf"
-#include "uni/fri.simf"
-#include "uni/air.simf"
-#include "uni/field.simf"
+#include "channel.simf"
+#include "fri.simf"
+#include "air.simf"
+#include "field.simf"
 
 /// STARK proof for the Fibonacci squared AIR.
 /// - Merkle root of the trace polynomial evaluation on extended domain

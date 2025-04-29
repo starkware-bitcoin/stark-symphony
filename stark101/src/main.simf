@@ -4,9 +4,9 @@
 
 //! Program entry point.
 
-#include "uni/verifier.simf"
-#include "uni/fri.simf"
-#include "uni/air.simf"
+#include "verifier.simf"
+#include "fri.simf"
+#include "air.simf"
 #include "padding.simf"
 
 fn main() {

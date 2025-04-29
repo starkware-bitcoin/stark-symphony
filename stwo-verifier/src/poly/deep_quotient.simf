@@ -4,12 +4,12 @@
 
 //! Helpers for evaluating DEEP quotient polynomials
 
-#ifndef CIRCLE_POLY_DEEP_QUOTIENT_H
-#define CIRCLE_POLY_DEEP_QUOTIENT_H
+#ifndef POLY_DEEP_QUOTIENT_H
+#define POLY_DEEP_QUOTIENT_H
 
-#include "circle/groups/qm31_point.simf"
-#include "circle/groups/m31_point.simf"
-#include "circle/fields/cm31.simf"
+#include "groups/qm31_point.simf"
+#include "groups/m31_point.simf"
+#include "fields/cm31.simf"
 
 /// Compute the inverse of the denominator of the DEEP quotient polynomial
 fn deep_quotient_denominator_inverse(sample_point: QM31Point, query_point: M31Point) -> QM31 {

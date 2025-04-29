@@ -7,11 +7,11 @@
 #ifndef FRI_SIMF
 #define FRI_SIMF
 
-#include "utils/sha256.simf"
-#include "uni/merkle.simf"
-#include "uni/field.simf"
-#include "uni/channel.simf"
-#include "uni/air.simf"
+#include "sha256.simf"
+#include "merkle.simf"
+#include "field.simf"
+#include "channel.simf"
+#include "air.simf"
 
 /// Accumulator for the FRI protocol.
 /// * index (random query)

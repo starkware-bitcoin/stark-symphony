@@ -4,10 +4,10 @@
 
 //! Helpers for evaluating vanishing polynomials
 
-#ifndef CIRCLE_POLY_VANISHING_H
-#define CIRCLE_POLY_VANISHING_H
+#ifndef POLY_VANISHING_H
+#define POLY_VANISHING_H
 
-#include "circle/groups/qm31_point.simf"
+#include "groups/qm31_point.simf"
 
 /// Accumulator for the pi function
 type PiFnAcc = QM31;

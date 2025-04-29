@@ -14,12 +14,13 @@ STARKs are perfect candidate for this approach!
 ## Roadmap
 
 - [x] Fibonacci square over toy field PoC
-- [ ] Liquid testnet deployment
+- [x] Liquid testnet deployment
 - [x] Operations in M31 field and its extensions
-- [ ] Circle point domain, canonic coset
-- [ ] Merkle commitments
+- [x] Operations on M31 and QM31 circle points
+- [x] Composition polynomial evaluation
 - [ ] Sha256 channel
-- [ ] Composition polynomial evaluation
+- [ ] Merkle commitments
+- [ ] Circle point domain, canonic coset
 - [ ] Proof of work
 - [ ] Circle FRI
 
@@ -28,9 +29,12 @@ STARKs are perfect candidate for this approach!
 0. Clone this repo
 1. Install `simfony` CLI tool with `make install`
 2. Run tests with `make test`
-3. Generate proof with `make proof`
-4. Build STARK verifier program with `make build`
-5. Run the program using the generated witness with `make run`
+
+### STARK 101
+1. Go to stark101 folder
+2. Generate proof with `make proof`
+3. Build STARK verifier program with `make build`
+4. Run the program using the generated witness with `make run`
 
 ## Simfony CLI
 

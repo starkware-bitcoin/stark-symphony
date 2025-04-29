@@ -7,8 +7,8 @@
 #ifndef QM31_SIMF
 #define QM31_SIMF
 
-#include "circle/fields/m31.simf"
-#include "circle/fields/cm31.simf"
+#include "fields/m31.simf"
+#include "fields/cm31.simf"
 
 /// Size of the field extension
 #define QM31_P 21267647892944572736998860269687930881  // (2^31 - 1)^4

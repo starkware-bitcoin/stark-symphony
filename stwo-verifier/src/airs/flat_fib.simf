@@ -5,9 +5,9 @@
 #ifndef FLAT_FIB_H
 #define FLAT_FIB_H
 
-#include "circle/fields/qm31.simf"
-#include "circle/fields/qm31_point.simf"
-#include "circle/poly/vanishing.simf"
+#include "fields/qm31.simf"
+#include "fields/qm31_point.simf"
+#include "poly/vanishing.simf"
 
 #define FLAT_FIB_N_COLUMNS 128
 

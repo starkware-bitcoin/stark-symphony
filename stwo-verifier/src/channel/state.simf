@@ -1,0 +1,114 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
+//! A non-interactive channel for communication between the prover and the verifier.
+//! The channel is based on the SHA-256 hash function.
+
+#ifndef CHANNEL_STATE_SIMF
+#define CHANNEL_STATE_SIMF
+
+#include "fields/m31.simf"
+#include "fields/qm31.simf"
+#include "groups/qm31_point.simf"
+#include "channel/helpers.simf"
+
+/// The channel state consists of:
+/// - "so-far" digest 256-bit value, initialized to 0.
+/// - 32-bit counter for the number of drawing attempts per current state (aka num_sent).
+type ChannelState = (u256, u32);
+
+/// Draw 8 big endian 32-bit words from the channel state and increment the num_sent counter.
+fn channel_draw_words(state: ChannelState) -> (ChannelState, U32x8) {
+    let (digest, num_sent): ChannelState = state;
+    let ctx: Ctx8 = jet::sha_256_ctx_8_init();
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_32(ctx, digest);
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_4(ctx, num_sent);
+    let res: u256 = jet::sha_256_ctx_8_finalize(ctx);
+    let (_, num_sent): (bool, u32) = jet::add_32(num_sent, 1);
+    ((digest, num_sent), split_256(res))
+}
+
+/// Draw 8 base field elements (M31) from the channel uniformly at random.
+/// Returns the state and the 8 base field elements if they are uniformly distributed.
+/// Otherwise, returns the state unchanged.
+fn draw_base_felts_iter_8(state: ChannelState, context: (), counter: u8) -> Either<(ChannelState, M31x8), ChannelState> {
+    let (state, (a, b, c, d, e, f, g, h)): (ChannelState, U32x8) = channel_draw_words(state);
+    match is_uniform_8(a, b, c, d, e, f, g, h) {
+        true => Left((state, (m31(a), m31(b), m31(c), m31(d), m31(e), m31(f), m31(g), m31(h)))),
+        false => Right(state),
+    }
+}
+
+/// Draw 4 base field elements (M31) from the channel uniformly at random.
+/// Returns the state and the 4 base field elements if they are uniformly distributed.
+/// Otherwise, returns the state unchanged.
+fn draw_base_felts_iter_4(state: ChannelState, context: (), counter: u8) -> Either<(ChannelState, M31x4), ChannelState> {
+    let (state, (a, b, c, d, _, _, _, _)): (ChannelState, U32x8) = channel_draw_words(state);
+    match is_uniform_4(a, b, c, d) {
+        true => Left((state, (m31(a), m31(b), m31(c), m31(d)))),
+        false => Right(state),
+    }
+}
+
+/// Draw 8 base field elements (M31) from the channel uniformly at random.
+fn channel_draw_m31x8(state: ChannelState) -> (ChannelState, M31x8) {
+    let res: Either<(ChannelState, M31x8), ChannelState> = for_while::<draw_base_felts_iter_8>(state, ());
+    let (state, values): (ChannelState, M31x8) = unwrap_left::<ChannelState>(res);
+    (state, values)
+}
+
+/// Draw 4 base field elements (M31) from the channel uniformly at random.
+fn channel_draw_m31x4(state: ChannelState) -> (ChannelState, M31x4) {
+    let res: Either<(ChannelState, M31x4), ChannelState> = for_while::<draw_base_felts_iter_4>(state, ());
+    let (state, values): (ChannelState, M31x4) = unwrap_left::<ChannelState>(res);
+    (state, values)
+}
+/// Draw a QM31 value from the channel state.
+fn channel_draw_qm31(state: ChannelState) -> (ChannelState, QM31) {
+    let (state, (a, b, c, d)): (ChannelState, M31x4) = channel_draw_m31x4(state);
+    (state, qm31(a, b, c, d))
+}
+
+/// Draw a QM31 point from the channel state.
+fn channel_draw_qm31_point(state: ChannelState) -> (ChannelState, QM31Point) {
+    let (state, t): (ChannelState, QM31) = channel_draw_qm31(state);
+    let t_sq: QM31 = qm31_pow2(t);
+    let t_sq_plus_1_inv: QM31 = qm31_inv(qm31_add(qm31_one(), t_sq));
+    let x: QM31 = qm31_mul(qm31_sub(qm31_one(), t_sq), t_sq_plus_1_inv);
+    let y: QM31 = qm31_mul(qm31_add(t, t), t_sq_plus_1_inv);
+    (state, (x, y))
+}
+
+/// Mix a u64 value into the channel state.
+fn channel_mix_u64(state: ChannelState, input: u64) -> ChannelState {
+    let (digest, _): ChannelState = state;
+    let ctx: Ctx8 = jet::sha_256_ctx_8_init();
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_32(ctx, digest);
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_8(ctx, input);
+    let res: u256 = jet::sha_256_ctx_8_finalize(ctx);
+    // Reset the num_sent counter
+    (res, 0)
+}
+
+fn test_channel_draw_qm31() {
+    let state: ChannelState = (0, 0);
+    let first_random_felt: QM31 = qm31(741658141, 1916502925, 1522477695, 1681378467);
+    let second_random_felt: QM31 = qm31(148898406, 2146478797, 1687637794, 624304808);
+
+    let (state, value): (ChannelState, QM31) = channel_draw_qm31(state);
+    //assert!(qm31_eq(value, first_random_felt));
+
+    let (state, value): (ChannelState, QM31) = channel_draw_qm31(state);
+    //assert!(qm31_eq(value, second_random_felt));
+}
+
+fn test_channel_draw_qm31_point() {
+    let state: ChannelState = (0, 0);
+    let (state, value): (ChannelState, QM31Point) = channel_draw_qm31_point(state);
+    let x: QM31 = qm31(1116780557, 2044256354, 1723700012, 1755363094);
+    let y: QM31 = qm31(2138743810, 1953780644, 577089820, 497750207);
+    //assert!(qm31_point_eq(value, (x, y)));
+}
+
+#endif
