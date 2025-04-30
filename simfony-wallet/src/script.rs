@@ -11,7 +11,7 @@ use simfony::{Arguments, CompiledProgram, WitnessValues};
 /// Load Simfony program from .simf file and compile it to a Simplicity program
 pub fn load_program(path: &Path) -> anyhow::Result<CompiledProgram> {
     let src = std::fs::read_to_string(path)?;
-    let compiled = simfony::CompiledProgram::new(src, Arguments::default())
+    let compiled = simfony::CompiledProgram::new(src, Arguments::default(), false)
         .map_err(|e| anyhow!("Failed to compile Simfony program: {}", e))?;
     Ok(compiled)
 }

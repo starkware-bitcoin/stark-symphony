@@ -6,9 +6,12 @@ use simfony::{dummy_env, Arguments, CompiledProgram, WitnessValues};
 use simplicity::ffi::tests::{run_program, TestUpTo};
 use simplicity::human_encoding::Forest;
 use simplicity::node::CommitNode;
+use simplicity::BitMachine;
 use simplicity::{self, BitIter};
 use std::fs;
 use std::path::PathBuf;
+
+mod tracker;
 
 #[derive(Parser)]
 #[command(name = "simfony")]
@@ -44,6 +47,20 @@ enum Commands {
 
     /// Run a Simfony program
     Run {
+        /// Path to the source file
+        path: PathBuf,
+
+        /// Path to the witness file
+        #[arg(long)]
+        witness: Option<PathBuf>,
+
+        /// Path to file with arguments
+        #[arg(long)]
+        param: Option<PathBuf>,
+    },
+
+    /// Debug a Simfony program
+    Debug {
         /// Path to the source file
         path: PathBuf,
 
@@ -110,7 +127,7 @@ fn handle_build(
     let source = fs::read_to_string(&path)
         .with_context(|| format!("Failed to read source file: {}", path.display()))?;
 
-    let compiled = CompiledProgram::new(source, Arguments::default())
+    let compiled = CompiledProgram::new(source, Arguments::default(), true)
         .map_err(|e| anyhow::anyhow!(e))
         .with_context(|| "Failed to compile program")?;
 
@@ -164,10 +181,10 @@ fn handle_run(path: PathBuf, witness: Option<PathBuf>, param: Option<PathBuf>) -
         };
 
     let arguments = parse_arguments(param_content.as_deref())?;
-    let compiled = CompiledProgram::new(source, arguments).map_err(|e| anyhow::anyhow!(e))?;
+    let compiled = CompiledProgram::new(source, arguments, true).map_err(|e| anyhow::anyhow!(e))?;
     let witness = parse_witness(witness_content.as_deref())?;
     let satisfied = compiled
-        .satisfy_with_env(witness, Some(dummy_env::dummy()))
+        .satisfy_with_env(witness, Some(&dummy_env::dummy()))
         .map_err(|e| anyhow::anyhow!(e))?;
 
     let node = satisfied.redeem();
@@ -189,6 +206,43 @@ fn handle_run(path: PathBuf, witness: Option<PathBuf>, param: Option<PathBuf>) -
     Ok(())
 }
 
+fn handle_debug(path: PathBuf, witness: Option<PathBuf>, param: Option<PathBuf>) -> Result<()> {
+    let source = fs::read_to_string(&path)
+        .with_context(|| format!("Failed to read source file: {}", path.display()))?;
+
+    let param_content =
+        if let Some(param_path) = param {
+            Some(fs::read_to_string(&param_path).with_context(|| {
+                format!("Failed to read parameter file: {}", param_path.display())
+            })?)
+        } else {
+            None
+        };
+
+    let witness_content =
+        if let Some(witness_path) = witness {
+            Some(fs::read_to_string(&witness_path).with_context(|| {
+                format!("Failed to read witness file: {}", witness_path.display())
+            })?)
+        } else {
+            None
+        };
+
+    let arguments = parse_arguments(param_content.as_deref())?;
+    let compiled = CompiledProgram::new(source, arguments, true).map_err(|e| anyhow::anyhow!(e))?;
+    let witness = parse_witness(witness_content.as_deref())?;
+    let satisfied = compiled.satisfy(witness).map_err(|e| anyhow::anyhow!(e))?;
+
+    let mut machine = BitMachine::for_program(satisfied.redeem())?;
+    let env = dummy_env::dummy();
+    let mut tracker = tracker::Tracker {
+        debug_symbols: satisfied.debug_symbols(),
+    };
+    let res = machine.exec_with_tracker(satisfied.redeem(), &env, &mut tracker)?;
+
+    println!("Result: {}", res);
+    Ok(())
+}
 fn main() {
     let cli = Cli::parse();
 
@@ -204,6 +258,11 @@ fn main() {
             witness,
             param,
         } => handle_run(path, witness, param),
+        Commands::Debug {
+            path,
+            witness,
+            param,
+        } => handle_debug(path, witness, param),
     };
 
     if let Err(err) = result {

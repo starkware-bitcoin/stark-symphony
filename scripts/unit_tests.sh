@@ -9,6 +9,17 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
+# Parse command line arguments
+DEBUG_MODE=false
+for arg in "$@"; do
+    case $arg in
+        --debug)
+            DEBUG_MODE=true
+            shift
+            ;;
+    esac
+done
+
 # Arrays to store test results
 failed_tests=()
 error_messages=()
@@ -41,6 +52,23 @@ for file in $simf_files; do
         # Replace the test function with main
         sed "s/fn $test_func/fn main/" "$file" > "$temp_file"
         
+        # If debug mode is enabled, wrap custom function calls in dbg!()
+        if [ "$DEBUG_MODE" = true ]; then
+            # Create a temporary file for the debug modifications
+            debug_temp="$TEMP_DIR/${base_name}_${test_func}_debug_temp.simf"
+            
+            # First, create a temporary file with function declarations marked
+            # This helps us avoid matching function declarations
+            sed 's/^fn /__FN__/g' "$temp_file" > "$debug_temp"
+               
+            # Now wrap remaining function calls in dbg!()
+            sed -E 's/(let [^:]*: [^=]*= )([a-zA-Z0-9_]+)\(([^;]*)\);/\1dbg!(\2(\3));/g' "$debug_temp" > "$temp_file"
+            
+            # Restore function declarations
+            sed 's/^__FN__/fn /g' "$temp_file" > "$debug_temp"
+            mv "$debug_temp" "$temp_file"
+        fi
+        
         # Check if witness and param files exist for this test
         witness_file=""
         param_file=""
@@ -65,7 +93,7 @@ for file in $simf_files; do
         fi
         
         # Run the test with the preprocessed file and any parameters
-        output=$(simfony run "$preprocessed_file" $witness_file $param_file 2>&1)
+        output=$(simfony debug "$preprocessed_file" $witness_file $param_file 2>&1)
         exit_code=$?
         
         # Print result

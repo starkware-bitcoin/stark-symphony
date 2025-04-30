@@ -1,2 +1,2 @@
 test:
-	bash ../scripts/unit_tests.sh
+	bash ../scripts/unit_tests.sh --debug

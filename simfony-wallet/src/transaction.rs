@@ -37,7 +37,7 @@ pub fn spend_script_path(
         .unwrap();
 
     let satisfied_program = program
-        .satisfy_with_env(witness_values, Some(dummy_env::dummy()))
+        .satisfy_with_env(witness_values, Some(&dummy_env::dummy()))
         .map_err(|e| anyhow::anyhow!("Failed to satisfy program: {}", e))?;
 
     let redeem_node = satisfied_program.redeem();

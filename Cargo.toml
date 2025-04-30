@@ -3,5 +3,5 @@ members = ["simfony-cli", "simfony-wallet"]
 resolver = "2"
 
 [workspace.dependencies]
-simfony = { git = "https://github.com/m-kus/simfony", rev = "686e07b32663efdb109d29adf91eccdac807a868", features = ["serde"] }
-simplicity-lang = { git = "https://github.com/BlockstreamResearch/rust-simplicity", rev = "5c3ff26cd6311c438b13513c2af81f4d88de4901", features = ["test-utils"] }
+simfony = { git = "https://github.com/m-kus/simfony", rev = "c49562b014a7978704f6096368d8bb5a0474c770", features = ["serde"] }
+simplicity-lang = { git = "https://github.com/m-kus/rust-simplicity", rev = "d29c7bca1e225c3578877a8f8cd067cd8f014470", features = ["test-utils"] }

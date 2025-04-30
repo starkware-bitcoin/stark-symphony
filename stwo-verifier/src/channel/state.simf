@@ -18,15 +18,21 @@
 /// - 32-bit counter for the number of drawing attempts per current state (aka num_sent).
 type ChannelState = (u256, u32);
 
-/// Draw 8 big endian 32-bit words from the channel state and increment the num_sent counter.
-fn channel_draw_words(state: ChannelState) -> (ChannelState, U32x8) {
+/// Draw a 256-bit value from the channel state and increment the num_sent counter.
+fn channel_draw_u256(state: ChannelState) -> (ChannelState, u256) {
     let (digest, num_sent): ChannelState = state;
     let ctx: Ctx8 = jet::sha_256_ctx_8_init();
     let ctx: Ctx8 = jet::sha_256_ctx_8_add_32(ctx, digest);
     let ctx: Ctx8 = jet::sha_256_ctx_8_add_4(ctx, num_sent);
     let res: u256 = jet::sha_256_ctx_8_finalize(ctx);
     let (_, num_sent): (bool, u32) = jet::add_32(num_sent, 1);
-    ((digest, num_sent), split_256(res))
+    ((digest, num_sent), res)
+}
+
+/// Draw 8 big endian 32-bit words from the channel state and increment the num_sent counter.
+fn channel_draw_words(state: ChannelState) -> (ChannelState, U32x8) {
+    let (state, value): (ChannelState, u256) = channel_draw_u256(state);
+    (state, split_256(value))
 }
 
 /// Draw 8 base field elements (M31) from the channel uniformly at random.
@@ -93,22 +99,22 @@ fn channel_mix_u64(state: ChannelState, input: u64) -> ChannelState {
 
 fn test_channel_draw_qm31() {
     let state: ChannelState = (0, 0);
-    let first_random_felt: QM31 = qm31(741658141, 1916502925, 1522477695, 1681378467);
-    let second_random_felt: QM31 = qm31(148898406, 2146478797, 1687637794, 624304808);
+    let first_random_felt: QM31 = qm31(1840668629, 533944055, 1922121815, 459001195);
+    let second_random_felt: QM31 = qm31(559458448, 1834888235, 1610726090, 1135320235);
 
     let (state, value): (ChannelState, QM31) = channel_draw_qm31(state);
-    //assert!(qm31_eq(value, first_random_felt));
+    assert!(qm31_eq(value, first_random_felt));
 
     let (state, value): (ChannelState, QM31) = channel_draw_qm31(state);
-    //assert!(qm31_eq(value, second_random_felt));
+    assert!(qm31_eq(value, second_random_felt));
 }
 
 fn test_channel_draw_qm31_point() {
     let state: ChannelState = (0, 0);
     let (state, value): (ChannelState, QM31Point) = channel_draw_qm31_point(state);
-    let x: QM31 = qm31(1116780557, 2044256354, 1723700012, 1755363094);
-    let y: QM31 = qm31(2138743810, 1953780644, 577089820, 497750207);
-    //assert!(qm31_point_eq(value, (x, y)));
+    let x: QM31 = qm31(877266510, 837585062, 67369234, 641637369);
+    let y: QM31 = qm31(1140140443, 711987229, 851311779, 496972972);
+    assert!(qm31_point_eq(value, (x, y)));
 }
 
 #endif
