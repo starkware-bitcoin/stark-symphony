@@ -14,7 +14,7 @@
 type Proof = (
     u32, // Trace log size
     (u256, u256, u256), // Commitments: const (preprocessed) root, trace root, CP root
-    (EvalsQM31, CPEvalQM31) // Sampled values, composition polynomial evaluation (partitioned)
+    (EvalsQM31, CPEvalQM31) // Trace evaluations, composition polynomial evaluation (partitioned) at OODS point
 );
 
 /// Reads the trace/cp polynomial commitments and evaluations at OODS, samples random coefficient and OODS point.
@@ -22,7 +22,7 @@ fn oods_verify(state: ChannelState, proof: Proof) -> ChannelState {
     let (
         log_size,
         (const_root, trace_root, cp_root),
-        (oods_values, oods_cp_eval)
+        (oods_trace_evals, oods_cp_eval)
     ): Proof = proof;
 
     // Read preprocessed tree root (aka constant trace)
@@ -40,10 +40,10 @@ fn oods_verify(state: ChannelState, proof: Proof) -> ChannelState {
     let (state, oods_point): (ChannelState, QM31Point) = channel_draw_qm31_point(state);
 
     // Read sampled values and CP partitioned evaluation
-    let state: ChannelState = channel_mix_evals(state, oods_values, oods_cp_eval);
+    let state: ChannelState = channel_mix_evals(state, oods_trace_evals, oods_cp_eval);
 
     // Evaluate composition polynomial at OODS point
-    let cp_eval = eval_composition_poly(log_size, oods_point, oods_values, random_coeff_cp)
+    let cp_eval = eval_composition_poly(log_size, oods_point, oods_trace_evals, random_coeff_cp)
     
     // Reconstruct sampled CP evaluation and compare
     let sampled_cp_eval = composition_poly_eval_from_partitions(oods_cp_eval);

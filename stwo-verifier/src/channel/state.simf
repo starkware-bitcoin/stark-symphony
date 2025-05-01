@@ -111,7 +111,7 @@ fn channel_mix_u64(state: ChannelState, input: u64) -> ChannelState {
 
 /// Add a QM31 value to the hasher, coordinate by coordinate, 4 bytes (big endian) at a time.
 fn hasher_add_qm31(value: QM31, ctx: Ctx8) -> Ctx8 {
-    let ((a, b), (c, d)): QM31 = value;
+    let ((a, b), (c, d)): QM31 = dbg!(value);
     let ctx: Ctx8 = jet::sha_256_ctx_8_add_4(ctx, a);
     let ctx: Ctx8 = jet::sha_256_ctx_8_add_4(ctx, b);
     let ctx: Ctx8 = jet::sha_256_ctx_8_add_4(ctx, c);
@@ -125,13 +125,13 @@ fn hasher_add_qm31_column(col_evals: ColEvalsQM31, ctx: Ctx8) -> Ctx8 {
 }
 
 /// Mix a list of QM31 values into the channel state.
-fn channel_mix_evals(state: ChannelState, oods_values: EvalsQM31, oods_cp_eval: CPEvalQM31) -> ChannelState {
+fn channel_mix_evals(state: ChannelState, oods_trace_evals: EvalsQM31, oods_cp_eval: CPEvalQM31) -> ChannelState {
     let (digest, _): ChannelState = state;
     let ctx: Ctx8 = jet::sha_256_ctx_8_init();
     let ctx: Ctx8 = jet::sha_256_ctx_8_add_32(ctx, digest);
 
     // Mix sampled values
-    let ctx: Ctx8 = fold::<hasher_add_qm31_column, MAX_COLUMNS>(oods_values, ctx);
+    let ctx: Ctx8 = fold::<hasher_add_qm31_column, MAX_COLUMNS>(oods_trace_evals, ctx);
 
     // Mix CP partitioned evaluation
     let (cp0, cp1, cp2, cp3): (QM31, QM31, QM31, QM31) = <CPEvalQM31>::into(oods_cp_eval);
@@ -166,7 +166,7 @@ fn test_channel_draw_qm31_point() {
 }
 
 fn test_channel_mix_evals() {
-    let state: ChannelState = (0, 0);
+    let state: ChannelState = (0x94642214378090859916af45c596713b6d8abaa2c72f3ed8ad41f869ad35491b, 0);
     let oods_values: EvalsQM31 = list![
         list![qm31(1, 0, 0, 0)],
         list![qm31(219216441, 1999484797, 865948224, 1842303184)],
@@ -182,7 +182,7 @@ fn test_channel_mix_evals() {
     let expected: u256 = 0x44dff4effae0be493c21672683c892b3baeaa7d251e5e7153bc0e0b2da8a9d96;
 
     let (digest, _): ChannelState = channel_mix_evals(state, oods_values, oods_cp_eval);
-    //assert!(jet::eq_256(digest, expected));
+    assert!(jet::eq_256(digest, expected));
 }
 
 #endif
