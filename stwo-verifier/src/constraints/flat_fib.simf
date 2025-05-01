@@ -8,11 +8,7 @@
 #include "fields/qm31.simf"
 #include "fields/qm31_point.simf"
 #include "poly/vanishing.simf"
-
-#define FLAT_FIB_N_COLUMNS 128
-
-/// The mask values for the base trace, no offsets (single element per column).
-type FlatFibMaskValues = List<QM31, FLAT_FIB_N_COLUMNS>;
+#include "constraints/helpers.simf"
 
 /// The accumulator for the evaluation of the composition polynomial.
 /// * contraint accumulator
@@ -40,10 +36,10 @@ fn eval_step(c: QM31, acc: EvalAcc) -> EvalAcc {
 ///
 /// * `log_size`: The log of the column size (all columns have the same size).
 /// * `point`: The point to evaluate the polynomial at.
-/// * `mask_values`: The mask values for the base trace
+/// * `sampled_values`: Trace evaluations at the sampled point.
 /// * `random_coeff`: The random coefficient.
-fn flat_fib_eval_composition_poly(log_size: u32, point: QM31Point, mask_values: FlatFibMaskValues, random_coeff: QM31) -> QM31 {
-    let (constraint_acc, _, _, _): EvalAcc = fold::<eval_step, FLAT_FIB_N_COLUMNS>(mask_values, (qm31_zero(), qm31_zero(), qm31_zero(), 0));
+fn eval_composition_poly(log_size: u32, point: QM31Point, sampled_values: EvalsQM31, random_coeff: QM31) -> QM31 {
+    let (constraint_acc, _, _, _): EvalAcc = fold::<eval_step, MAX_COLUMNS>(sampled_values, (qm31_zero(), qm31_zero(), qm31_zero(), 0));
     let vanish_eval: QM31 = vanishing_poly_eval(log_size, point);
     qm31_div(constraint_acc, vanish_eval)
 }

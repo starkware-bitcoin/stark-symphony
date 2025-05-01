@@ -1405,7 +1405,7 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 [[package]]
 name = "simfony"
 version = "0.1.0"
-source = "git+https://github.com/m-kus/simfony?rev=c49562b014a7978704f6096368d8bb5a0474c770#c49562b014a7978704f6096368d8bb5a0474c770"
+source = "git+https://github.com/m-kus/simfony?rev=74b94b4414d6d29ad254026168b4ee2c50cbde40#74b94b4414d6d29ad254026168b4ee2c50cbde40"
 dependencies = [
  "base64",
  "either",
@@ -1454,7 +1454,7 @@ dependencies = [
 [[package]]
 name = "simplicity-lang"
 version = "0.4.0"
-source = "git+https://github.com/m-kus/rust-simplicity?rev=d29c7bca1e225c3578877a8f8cd067cd8f014470#d29c7bca1e225c3578877a8f8cd067cd8f014470"
+source = "git+https://github.com/m-kus/rust-simplicity?rev=7c43d07c12a47906fb1de6af35f8d0f2c2f93127#7c43d07c12a47906fb1de6af35f8d0f2c2f93127"
 dependencies = [
  "bitcoin",
  "bitcoin_hashes 0.14.0",
@@ -1470,7 +1470,7 @@ dependencies = [
 [[package]]
 name = "simplicity-sys"
 version = "0.4.0"
-source = "git+https://github.com/m-kus/rust-simplicity?rev=d29c7bca1e225c3578877a8f8cd067cd8f014470#d29c7bca1e225c3578877a8f8cd067cd8f014470"
+source = "git+https://github.com/m-kus/rust-simplicity?rev=7c43d07c12a47906fb1de6af35f8d0f2c2f93127#7c43d07c12a47906fb1de6af35f8d0f2c2f93127"
 dependencies = [
  "bitcoin_hashes 0.14.0",
  "cc",

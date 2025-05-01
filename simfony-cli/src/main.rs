@@ -232,13 +232,14 @@ fn handle_debug(path: PathBuf, witness: Option<PathBuf>, param: Option<PathBuf>)
     let compiled = CompiledProgram::new(source, arguments, true).map_err(|e| anyhow::anyhow!(e))?;
     let witness = parse_witness(witness_content.as_deref())?;
     let satisfied = compiled.satisfy(witness).map_err(|e| anyhow::anyhow!(e))?;
+    let node = satisfied.redeem();
 
-    let mut machine = BitMachine::for_program(satisfied.redeem())?;
+    let mut machine = BitMachine::for_program(node)?;
     let env = dummy_env::dummy();
     let mut tracker = tracker::Tracker {
         debug_symbols: satisfied.debug_symbols(),
     };
-    let res = machine.exec_with_tracker(satisfied.redeem(), &env, &mut tracker)?;
+    let res = machine.exec_with_tracker(node, &env, &mut tracker)?;
 
     println!("Result: {}", res);
     Ok(())

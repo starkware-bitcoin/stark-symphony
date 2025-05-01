@@ -1,0 +1,55 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
+#ifndef VERIFIER_OODS_SIMF
+#define VERIFIER_OODS_SIMF
+
+#include "channel/state.simf"
+#include "fields/qm31.simf"
+#include "groups/qm31_point.simf"
+#include "constraints/flat_fib.simf"
+#include "constraints/helpers.simf"
+
+type Proof = (
+    u32, // Trace log size
+    (u256, u256, u256), // Commitments: const (preprocessed) root, trace root, CP root
+    (EvalsQM31, CPEvalQM31) // Sampled values, composition polynomial evaluation (partitioned)
+);
+
+/// Reads the trace/cp polynomial commitments and evaluations at OODS, samples random coefficient and OODS point.
+fn oods_verify(state: ChannelState, proof: Proof) -> ChannelState {
+    let (
+        log_size,
+        (const_root, trace_root, cp_root),
+        (oods_values, oods_cp_eval)
+    ): Proof = proof;
+
+    // Read preprocessed tree root (aka constant trace)
+    let state: ChannelState = channel_mix_u256(state, const_root);
+    // Read trace root
+    let state: ChannelState = channel_mix_u256(state, trace_root);
+
+    // Draw random coefficient for CP evaluation
+    let (state, random_coeff_cp): (ChannelState, QM31) = channel_draw_qm31(state);
+
+    // Read composition polynomial commitment root
+    let state: ChannelState = channel_mix_u256(state, cp_root);
+
+    // Draw OODS point
+    let (state, oods_point): (ChannelState, QM31Point) = channel_draw_qm31_point(state);
+
+    // Read sampled values and CP partitioned evaluation
+    let state: ChannelState = channel_mix_evals(state, oods_values, oods_cp_eval);
+
+    // Evaluate composition polynomial at OODS point
+    let cp_eval = eval_composition_poly(log_size, oods_point, oods_values, random_coeff_cp)
+    
+    // Reconstruct sampled CP evaluation and compare
+    let sampled_cp_eval = composition_poly_eval_from_partitions(oods_cp_eval);
+    assert!(qm31_eq(cp_eval, sampled_cp_eval));
+
+    state
+}
+
+#endif
