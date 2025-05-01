@@ -13,8 +13,8 @@
 type PiFnAcc = QM31;
 
 /// pi function: x -> 2*x^2 - 1
-fn pi_fn(acc: PiFnAcc, n_iter: u32, counter: u32) -> Either<QM31, PiFnAcc> {
-    match jet::eq_32(counter, n_iter) {
+fn pi_fn(acc: PiFnAcc, n_iter: u8, counter: u8) -> Either<QM31, PiFnAcc> {
+    match jet::eq_8(counter, n_iter) {
         true => Left(acc),
         false => {
             let x_dbl: QM31 = qm31_point_dbl_x(acc);
@@ -28,12 +28,22 @@ fn pi_fn(acc: PiFnAcc, n_iter: u32, counter: u32) -> Either<QM31, PiFnAcc> {
 /// Vanishing poly on a circle domain of size 2 is just x coordinate V_2(x,y) = x, because the standard canonic coset is {(0,y), (0,-y)}. 
 /// Then, if we take domain of size 4 you’d need to double all the points (doubling a standard coset gives a standard coset) 
 /// to make them lie on the y axis, so V_4(x,y)=2x^2-1, etc up to log_size - 1.
-fn vanishing_poly_eval(log_size: u32, point: QM31Point) -> QM31 {
+fn vanishing_poly_eval(log_size: u8, point: QM31Point) -> QM31 {
     let (x, _): (QM31, QM31) = point;
-    let (n_iter, _): (u32, bool) = jet::subtract_32(log_size, 1);
-    let res: Either<u32, PiFnAcc> = for_while::<pi_fn>(x, n_iter);
-    let result: QM31 = unwrap_left::<PiFnAcc>(res);
-    result
+    let (_, n_iter): (bool, u8) = jet::subtract_8(log_size, 1);
+    let res: Either<QM31, PiFnAcc> = for_while::<pi_fn>(x, n_iter);
+    unwrap_left::<PiFnAcc>(res)
+}
+
+fn test_vanishing_poly_eval() {
+    let log_size: u8 = 2;
+    let point: QM31Point = (
+        qm31(853359656, 1678958373, 358478267, 760744889),
+        qm31(23994856, 240802263, 189516568, 1941571865)
+    );
+    let result: QM31 = vanishing_poly_eval(log_size, point);
+    let expected: QM31 = qm31(1577521274, 883254348, 2004066876, 1290622108);
+    assert!(qm31_eq(result, expected));
 }
 
 #endif

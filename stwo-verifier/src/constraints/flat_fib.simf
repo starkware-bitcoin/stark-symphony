@@ -6,7 +6,7 @@
 #define FLAT_FIB_H
 
 #include "fields/qm31.simf"
-#include "fields/qm31_point.simf"
+#include "groups/qm31_point.simf"
 #include "poly/vanishing.simf"
 #include "constraints/helpers.simf"
 
@@ -14,34 +14,91 @@
 /// * contraint accumulator
 /// * a (base_trace[i - 2])
 /// * b (base_trace[i - 1])
+/// * random coefficient
 /// * skip_2 (counter which stops at 2)
-type EvalAcc = (QM31, QM31, QM31, u8);
+type EvalAcc = (QM31, QM31, QM31, QM31, u8);
+
+/// Returns the evaluation at offset 0
+/// NOTE: assuming COL_MAX_OFFSET == 4
+fn eval_0(col_evals: ColEvalsQM31) -> QM31 {
+    let (head, tail): (Option<[QM31; 2]>, List<QM31, 2>) = <ColEvalsQM31>::into(col_evals);
+    match head {
+        Some(head: [QM31; 2]) => {
+            let (e0, e1): (QM31, QM31) = <[QM31; 2]>::into(head);
+            e0
+        },
+        None => {
+            let head: Option<QM31> = <List<QM31, 2>>::into(tail);
+            match head {
+                Some(e0: QM31) => e0,
+                None => panic!(),
+            }
+        }
+    }
+}
 
 /// The folding function for the evaluation of the composition polynomial.
-fn eval_step(c: QM31, acc: EvalAcc) -> EvalAcc {
-    let (constraint_acc, a, b, skip_2): EvalAcc = acc;
+fn eval_column(col_evals: ColEvalsQM31, acc: EvalAcc) -> EvalAcc {
+    let (constraint_acc, a, b, random_coeff, skip_2): EvalAcc = acc;
+    let c: QM31 = eval_0(col_evals);
     match jet::eq_8(skip_2, 2) {
         true => {
             let constraint: QM31 = qm31_sub(c, qm31_add(qm31_pow2(b), qm31_pow2(a)));
             let constraint_acc_next: QM31 = qm31_add(qm31_mul(constraint_acc, random_coeff), constraint);
-            (constraint_acc_next, b, c, skip_2)
+            (constraint_acc_next, b, c, random_coeff, skip_2)
         },
-        false => (constraint_acc, b, c, jet::add_8(skip_2, 1))
+        false => {
+            let (_, skip_2_next): (bool, u8) = jet::add_8(skip_2, 1);
+            (constraint_acc, b, c, random_coeff, skip_2_next)
+        }
     }
 }
 
-/// Evaluates the composition polynomial at a given point.
+/// Evaluates the composition polynomial at OODS point.
 ///
 /// # Arguments
 ///
 /// * `log_size`: The log of the column size (all columns have the same size).
-/// * `point`: The point to evaluate the polynomial at.
-/// * `sampled_values`: Trace evaluations at the sampled point.
+/// * `point`: The OODS point to evaluate the polynomial at.
+/// * `oods_trace_evals`: Trace evaluations at the OODS point.
 /// * `random_coeff`: The random coefficient.
-fn eval_composition_poly(log_size: u32, point: QM31Point, sampled_values: EvalsQM31, random_coeff: QM31) -> QM31 {
-    let (constraint_acc, _, _, _): EvalAcc = fold::<eval_step, MAX_COLUMNS>(sampled_values, (qm31_zero(), qm31_zero(), qm31_zero(), 0));
-    let vanish_eval: QM31 = vanishing_poly_eval(log_size, point);
-    qm31_div(constraint_acc, vanish_eval)
+fn eval_composition_poly(log_size: u8, oods_point: QM31Point, oods_trace_evals: TraceEvalsQM31, random_coeff: QM31) -> QM31 {
+    let acc: EvalAcc = (qm31_zero(), qm31_zero(), qm31_zero(), random_coeff, 0);
+    let (constraint_acc, _, _, _, _): EvalAcc = fold::<eval_column, MAX_COLUMNS>(oods_trace_evals, acc);
+    let vanish_poly_eval: QM31 = vanishing_poly_eval(log_size, oods_point);
+    qm31_div(constraint_acc, vanish_poly_eval)
+}
+
+fn test_eval_0() {
+    let col_evals: ColEvalsQM31 = list![qm31(1, 0, 0, 0)];
+    let eval0: QM31 = eval_0(col_evals);
+    assert!(qm31_eq(eval0, qm31(1, 0, 0, 0)));
+
+    let col_evals: ColEvalsQM31 = list![qm31(1, 0, 0, 0), qm31(2, 0, 0, 0)];
+    let eval0: QM31 = eval_0(col_evals);
+    assert!(qm31_eq(eval0, qm31(1, 0, 0, 0)));
+
+    let col_evals: ColEvalsQM31 = list![qm31(1, 0, 0, 0), qm31(2, 0, 0, 0), qm31(3, 0, 0, 0)];
+    let eval0: QM31 = eval_0(col_evals);
+    assert!(qm31_eq(eval0, qm31(1, 0, 0, 0)));
+}
+
+fn test_eval_composition_poly() {
+    let log_size: u8 = 2;
+    let oods_point: QM31Point = (
+        qm31(853359656, 1678958373, 358478267, 760744889),
+        qm31(23994856, 240802263, 189516568, 1941571865)
+    );
+    let oods_trace_evals: TraceEvalsQM31 = list![
+        list![qm31(1, 0, 0, 0)],
+        list![qm31(219216441, 1999484797, 865948224, 1842303184)],
+        list![qm31(88796111, 196217285, 1337974825, 1079249662)],
+        list![qm31(1039952504, 987562643, 1687835115, 1083917527)],
+    ];
+    let random_coeff: QM31 = qm31(2012724549, 1128459570, 1584582850, 1454574268);
+    let result: QM31 = eval_composition_poly(log_size, oods_point, oods_trace_evals, random_coeff);
+    let expected: QM31 = qm31(634949303, 1333531166, 715684036, 225686437);
+    assert!(qm31_eq(result, expected));
 }
 
 #endif

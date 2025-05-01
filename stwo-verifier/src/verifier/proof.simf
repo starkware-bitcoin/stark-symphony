@@ -1,0 +1,29 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
+#ifndef PROOF_SIMF
+#define PROOF_SIMF
+
+#include "constraints/helpers.simf"
+
+// Select the constraints
+#include "constraints/flat_fib.simf"
+
+/// Commitments:
+/// * const (preprocessed) root
+/// * trace root
+/// * composition polynomial root
+type Commitments = (u256, u256, u256);
+
+/// Proof:
+/// * trace log size
+/// * commitments
+/// * OODS trace evaluations and CP evaluation (partitioned) at OODS point
+type Proof = (
+    u8,
+    Commitments,
+    OodsEvals,
+);
+
+#endif

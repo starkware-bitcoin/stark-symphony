@@ -8,22 +8,15 @@
 #include "channel/state.simf"
 #include "fields/qm31.simf"
 #include "groups/qm31_point.simf"
-#include "constraints/flat_fib.simf"
 #include "constraints/helpers.simf"
+#include "verifier/proof.simf"
 
-type Proof = (
-    u32, // Trace log size
-    (u256, u256, u256), // Commitments: const (preprocessed) root, trace root, CP root
-    (EvalsQM31, CPEvalQM31) // Trace evaluations, composition polynomial evaluation (partitioned) at OODS point
-);
-
-/// Reads the trace/cp polynomial commitments and evaluations at OODS, samples random coefficient and OODS point.
-fn oods_verify(state: ChannelState, proof: Proof) -> ChannelState {
-    let (
-        log_size,
-        (const_root, trace_root, cp_root),
-        (oods_trace_evals, oods_cp_eval)
-    ): Proof = proof;
+/// Reads the trace/cp polynomial commitments and evaluations at OODS, samples random CP coefficient and OODS point.
+/// Fails if the computed CP evaluation does not match the sampled CP evaluation.
+/// Returns the updated channel state.
+fn oods_read_checked(state: ChannelState, log_size: u8, commitments: Commitments, oods_evals: OodsEvals) -> ChannelState {
+    let (const_root, trace_root, cp_root): Commitments = commitments;
+    let (oods_trace_evals, oods_cp_eval): OodsEvals = oods_evals;
 
     // Read preprocessed tree root (aka constant trace)
     let state: ChannelState = channel_mix_u256(state, const_root);
@@ -31,7 +24,7 @@ fn oods_verify(state: ChannelState, proof: Proof) -> ChannelState {
     let state: ChannelState = channel_mix_u256(state, trace_root);
 
     // Draw random coefficient for CP evaluation
-    let (state, random_coeff_cp): (ChannelState, QM31) = channel_draw_qm31(state);
+    let (state, random_coeff): (ChannelState, QM31) = channel_draw_qm31(state);
 
     // Read composition polynomial commitment root
     let state: ChannelState = channel_mix_u256(state, cp_root);
@@ -43,7 +36,7 @@ fn oods_verify(state: ChannelState, proof: Proof) -> ChannelState {
     let state: ChannelState = channel_mix_evals(state, oods_trace_evals, oods_cp_eval);
 
     // Evaluate composition polynomial at OODS point
-    let cp_eval = eval_composition_poly(log_size, oods_point, oods_trace_evals, random_coeff_cp)
+    let cp_eval = eval_composition_poly(log_size, oods_point, oods_trace_evals, random_coeff)
     
     // Reconstruct sampled CP evaluation and compare
     let sampled_cp_eval = composition_poly_eval_from_partitions(oods_cp_eval);

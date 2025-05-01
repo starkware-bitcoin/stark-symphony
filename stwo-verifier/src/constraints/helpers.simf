@@ -16,19 +16,23 @@
 #define MAX_COLUMNS 256
 
 /// A list of evaluations in QM31 for a given column.
+/// TODO: consider using a tuple instead, we need at most 2 for Plonk.
 type ColEvalsQM31 = List<QM31, COL_MAX_OFFSET>;
 
 /// A list of evaluations in M31 for a given column.
 type ColEvalsM31 = List<M31, COL_MAX_OFFSET>;
 
 /// A list of evaluations in QM31 for all columns.
-type EvalsQM31 = List<ColEvalsQM31, MAX_COLUMNS>;
+type TraceEvalsQM31 = List<ColEvalsQM31, MAX_COLUMNS>;
 
 /// A list of evaluations in M31 for all columns.
-type EvalsM31 = List<ColEvalsM31, MAX_COLUMNS>;
+type TraceEvalsM31 = List<ColEvalsM31, MAX_COLUMNS>;
 
 /// Partitioned composition polynomial evaluation
 type CPEvalQM31 = [QM31; 4];
+
+/// Trace evaluations and composition polynomial evaluation at OODS point
+type OodsEvals = (TraceEvalsQM31, CPEvalQM31);
 
 /// Reconstructs the composition polynomial evaluation from the partitioned evaluations.
 fn composition_poly_eval_from_partitions(partitioned_cp_eval: CPEvalQM31) -> QM31 {

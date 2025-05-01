@@ -125,12 +125,13 @@ fn hasher_add_qm31_column(col_evals: ColEvalsQM31, ctx: Ctx8) -> Ctx8 {
 }
 
 /// Mix a list of QM31 values into the channel state.
-fn channel_mix_evals(state: ChannelState, oods_trace_evals: EvalsQM31, oods_cp_eval: CPEvalQM31) -> ChannelState {
+fn channel_mix_oods_evals(state: ChannelState, oods_evals: OodsEvals) -> ChannelState {
     let (digest, _): ChannelState = state;
     let ctx: Ctx8 = jet::sha_256_ctx_8_init();
     let ctx: Ctx8 = jet::sha_256_ctx_8_add_32(ctx, digest);
 
     // Mix sampled values
+    let (oods_trace_evals, oods_cp_eval): OodsEvals = oods_evals;
     let ctx: Ctx8 = fold::<hasher_add_qm31_column, MAX_COLUMNS>(oods_trace_evals, ctx);
 
     // Mix CP partitioned evaluation
@@ -165,9 +166,9 @@ fn test_channel_draw_qm31_point() {
     assert!(qm31_point_eq(value, (x, y)));
 }
 
-fn test_channel_mix_evals() {
+fn test_channel_mix_oods_evals() {
     let state: ChannelState = (0x94642214378090859916af45c596713b6d8abaa2c72f3ed8ad41f869ad35491b, 0);
-    let oods_values: EvalsQM31 = list![
+    let oods_trace_evals: TraceEvalsQM31 = list![
         list![qm31(1, 0, 0, 0)],
         list![qm31(219216441, 1999484797, 865948224, 1842303184)],
         list![qm31(88796111, 196217285, 1337974825, 1079249662)],
@@ -181,7 +182,7 @@ fn test_channel_mix_evals() {
     ];
     let expected: u256 = 0x44dff4effae0be493c21672683c892b3baeaa7d251e5e7153bc0e0b2da8a9d96;
 
-    let (digest, _): ChannelState = channel_mix_evals(state, oods_values, oods_cp_eval);
+    let (digest, _): ChannelState = channel_mix_oods_evals(state, (oods_trace_evals, oods_cp_eval));
     assert!(jet::eq_256(digest, expected));
 }
 
