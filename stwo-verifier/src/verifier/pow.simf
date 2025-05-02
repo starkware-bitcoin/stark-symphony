@@ -5,5 +5,50 @@
 #ifndef VERIFIER_POW_SIMF
 #define VERIFIER_POW_SIMF
 
+#include "channel/helpers.simf"
+#include "channel/state.simf"
+
+/// The target for the proof of work.
+/// WARNING: up to 64 bits are supported.
+#define POW_TARGET_64 0x07ffffffffffffff // 5 bits
+
+/// Reverse the bytes of a 32-bit value.
+fn reverse_bytes_32(value: u32) -> u32 {
+    let (ab, cd): (u16, u16) = <u32>::into(value);
+    let (a, b): (u8, u8) = <u16>::into(ab);
+    let (c, d): (u8, u8) = <u16>::into(cd);
+    let dc: u16 = <(u8, u8)>::into((d, c));
+    let ba: u16 = <(u8, u8)>::into((b, a));
+    <(u16, u16)>::into((dc, ba))
+}
+
+/// Mix nonce into the channel state and check the proof of work.
+fn check_proof_of_work(state: ChannelState, nonce: u64) -> ChannelState {
+    let state: ChannelState = channel_mix_u64(state, nonce);
+
+    let (digest, _): ChannelState = state;
+    // Consider digest in reverse order (see https://learnmeabitcoin.com/technical/general/byte-order/)
+    // Take the last 8 bytes, reverse, and convert to u64.
+    let (_, _, _, _, _, _, g, h): U32x8 = split_256(digest);
+    let value: u64 = <(u32, u32)>::into((reverse_bytes_32(h), reverse_bytes_32(g)));
+
+    // Check that the value is less than the target.
+    assert!(jet::lt_64(value, POW_TARGET_64));
+
+    state
+}
+
+fn test_reverse_bytes_32() {
+    let value: u32 = 0x12345678;
+    let reversed: u32 = reverse_bytes_32(value);
+    assert!(jet::eq_32(reversed, 0x78563412));
+}
+
+fn test_check_proof_of_work() {
+    let state: ChannelState = (0xa906adfe1ac2b7cf283ae8a11e16a1c4c44834f259056eacd36d14044761266c, 0);
+    let nonce: u64 = 57;
+    let (digest, _): ChannelState = check_proof_of_work(state, nonce);
+    assert!(jet::eq_256(digest, 0x2b43649271b97d2eaeb7f037b1d23ad2fd06e6546bc512bb0eec27c7f24b2105));
+}
 
 #endif

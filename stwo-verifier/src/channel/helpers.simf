@@ -7,6 +7,8 @@
 #ifndef CHANNEL_RANDOM_SIMF
 #define CHANNEL_RANDOM_SIMF
 
+#include "fields/m31.simf"
+
 /// 2P = 2^32 - 2
 #define DBL_P 4294967294
 

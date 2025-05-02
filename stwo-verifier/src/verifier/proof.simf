@@ -36,11 +36,13 @@ type Commitments = (u256, u256, u256);
 /// * commitments
 /// * OODS trace evaluations and CP evaluation (partitioned) at OODS point
 /// * FRI layers
+/// * PoW nonce
 type Proof = (
     u8,
     Commitments,
     OodsEvals,
     FriLayers,
+    u64,
 );
 
 #endif

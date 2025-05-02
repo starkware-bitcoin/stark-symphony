@@ -64,9 +64,8 @@ fn test_fri_commit() {
             qm31(1462473176, 2065988908, 1080482792, 1497677558),
         ],
     );
-    let expected: u256 = 0xa906adfe1ac2b7cf283ae8a11e16a1c4c44834f259056eacd36d14044761266c;
     let (digest, _): ChannelState = fri_commit(state, fri_layers);
-    assert!(jet::eq_256(digest, expected));
+    assert!(jet::eq_256(digest, 0xa906adfe1ac2b7cf283ae8a11e16a1c4c44834f259056eacd36d14044761266c));
 }
 
 #endif
