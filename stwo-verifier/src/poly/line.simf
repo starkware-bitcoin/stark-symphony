@@ -1,0 +1,13 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
+#ifndef POLY_LINE_SIMF
+#define POLY_LINE_SIMF
+
+#define MAX_LINE_POLY_DEGREE 16
+
+/// Line polynomial coefficients in Circle FFT basis.
+type LinePoly = List<QM31, MAX_LINE_POLY_DEGREE>;
+
+#endif

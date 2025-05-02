@@ -12,7 +12,8 @@
 #include "fields/qm31.simf"
 #include "groups/qm31_point.simf"
 #include "channel/helpers.simf"
-#include "constraints/helpers.simf"
+#include "poly/evaluations.simf"
+#include "poly/line.simf"
 
 /// The channel state consists of:
 /// - "so-far" digest 256-bit value, initialized to 0.
@@ -141,6 +142,18 @@ fn channel_mix_oods_evals(state: ChannelState, oods_evals: OodsEvals) -> Channel
     let ctx: Ctx8 = hasher_add_qm31(cp2, ctx);
     let ctx: Ctx8 = hasher_add_qm31(cp3, ctx);
 
+    let res: u256 = jet::sha_256_ctx_8_finalize(ctx);
+    // Reset the num_sent counter
+    (res, 0)
+}
+
+/// Mix line polynomial coefficients into the channel state.
+fn channel_mix_line_poly(state: ChannelState, line_poly: LinePoly) -> ChannelState {
+    let (digest, _): ChannelState = state;
+    let ctx: Ctx8 = jet::sha_256_ctx_8_init();
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_32(ctx, digest);
+    // Mix coefficients as list of QM31 values
+    let ctx: Ctx8 = fold::<hasher_add_qm31, MAX_LINE_POLY_DEGREE>(line_poly, ctx);
     let res: u256 = jet::sha_256_ctx_8_finalize(ctx);
     // Reset the num_sent counter
     (res, 0)

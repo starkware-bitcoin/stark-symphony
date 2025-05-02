@@ -2,32 +2,20 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef VERIFIER_OODS_SIMF
-#define VERIFIER_OODS_SIMF
+#ifndef VERIFIER_DEEP_ALI_SIMF
+#define VERIFIER_DEEP_ALI_SIMF
 
 #include "channel/state.simf"
 #include "fields/qm31.simf"
 #include "groups/qm31_point.simf"
-#include "constraints/helpers.simf"
+#include "poly/evaluations.simf"
 #include "verifier/proof.simf"
 
-/// Reads the trace/cp polynomial commitments and evaluations at OODS, samples random CP coefficient and OODS point.
+/// Reads the trace/cp polynomial evaluations at OODS, samples OODS point and random coefficient for DEEP quotients.
 /// Fails if the computed CP evaluation does not match the sampled CP evaluation.
-/// Returns the updated channel state.
-fn oods_read_checked(state: ChannelState, log_size: u8, commitments: Commitments, oods_evals: OodsEvals) -> ChannelState {
-    let (const_root, trace_root, cp_root): Commitments = commitments;
+/// Returns the updated channel state and random coefficient for DEEP quotients.
+fn oods(state: ChannelState, log_size: u8, oods_evals: OodsEvals, random_coeff: QM31) -> (ChannelState, QM31) {
     let (oods_trace_evals, oods_cp_eval): OodsEvals = oods_evals;
-
-    // Read preprocessed tree root (aka constant trace)
-    let state: ChannelState = channel_mix_u256(state, const_root);
-    // Read trace root
-    let state: ChannelState = channel_mix_u256(state, trace_root);
-
-    // Draw random coefficient for CP evaluation
-    let (state, random_coeff): (ChannelState, QM31) = channel_draw_qm31(state);
-
-    // Read composition polynomial commitment root
-    let state: ChannelState = channel_mix_u256(state, cp_root);
 
     // Draw OODS point
     let (state, oods_point): (ChannelState, QM31Point) = channel_draw_qm31_point(state);
@@ -42,17 +30,14 @@ fn oods_read_checked(state: ChannelState, log_size: u8, commitments: Commitments
     let sampled_cp_eval: QM31 = composition_poly_eval_from_partitions(oods_cp_eval);
     assert!(qm31_eq(cp_eval, sampled_cp_eval));
 
-    state
+    // Draw random coefficient for DEEP quotients
+    channel_draw_qm31(state)
 }
 
-fn test_oods_read_checked() {
-    let state: ChannelState = (0, 0);
+fn test_oods() {
+    let state: ChannelState = (0x94642214378090859916af45c596713b6d8abaa2c72f3ed8ad41f869ad35491b, 0);
     let log_size: u8 = 2;
-    let commitments: Commitments = (
-        0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,
-        0x2151e980c7ae914e9b486e36b8392db505e1848bd7dcc89329245c61cdb95096,
-        0xe85deb2eaadb5e5376ce81ffb6ee36eab838c2a97686f83d5de609ba03845e0c,
-    );
+    let random_coeff: QM31 = qm31(2012724549, 1128459570, 1584582850, 1454574268);
     let oods_trace_evals: TraceEvalsQM31 = list![
         list![qm31(1, 0, 0, 0)],
         list![qm31(219216441, 1999484797, 865948224, 1842303184)],
@@ -66,8 +51,9 @@ fn test_oods_read_checked() {
         qm31(1674296998, 584689294, 411846336, 680031775),
     ];
     let oods_evals: OodsEvals = (oods_trace_evals, oods_cp_eval);
-    let (digest, _): ChannelState = oods_read_checked(state, log_size, commitments, oods_evals);
+    let ((digest, _), deep_alpha): (ChannelState, QM31) = oods(state, log_size, oods_evals, random_coeff);
     assert!(jet::eq_256(digest, 0x44dff4effae0be493c21672683c892b3baeaa7d251e5e7153bc0e0b2da8a9d96));
+    assert!(qm31_eq(deep_alpha, qm31(671473682, 1782580300, 578753371, 854797671)));
 }
 
 #endif

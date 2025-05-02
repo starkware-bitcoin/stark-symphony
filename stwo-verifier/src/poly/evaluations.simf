@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef CONSTRAINT_HELPERS_SIMF
-#define CONSTRAINT_HELPERS_SIMF
+#ifndef POLY_EVALUATIONS_H
+#define POLY_EVALUATIONS_H
 
 #include "fields/qm31.simf"
 

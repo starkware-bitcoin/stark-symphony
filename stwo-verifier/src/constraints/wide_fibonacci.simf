@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef FLAT_FIB_H
-#define FLAT_FIB_H
+#ifndef WIDE_FIBONACCI_H
+#define WIDE_FIBONACCI_H
 
 #include "fields/qm31.simf"
 #include "groups/qm31_point.simf"
+#include "poly/evaluations.simf"
 #include "poly/vanishing.simf"
-#include "constraints/helpers.simf"
 
 /// The accumulator for the evaluation of the composition polynomial.
 /// * contraint accumulator

@@ -1,0 +1,9 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
+#ifndef VERIFIER_POW_SIMF
+#define VERIFIER_POW_SIMF
+
+
+#endif

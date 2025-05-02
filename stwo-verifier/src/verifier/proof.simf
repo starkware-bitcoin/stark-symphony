@@ -5,10 +5,25 @@
 #ifndef PROOF_SIMF
 #define PROOF_SIMF
 
-#include "constraints/helpers.simf"
+#include "poly/evaluations.simf"
+#include "poly/line.simf"
 
 // Select the constraints
-#include "constraints/flat_fib.simf"
+#include "constraints/wide_fibonacci.simf"
+
+#define MAX_FRI_LAYERS 16
+
+/// FRI layer (first and inner)
+/// * commitment
+/// * folding alpha
+/// * domain size
+type FriLayer = (u256, QM31, u32);
+
+/// FRI layers:
+/// * first layer
+/// * inner layers (up to MAX_FRI_LAYERS - 1)
+/// * last layer (line polynomial coefficients)
+type FriLayers = (FriLayer, List<FriLayer, MAX_FRI_LAYERS>, LinePoly);
 
 /// Commitments:
 /// * const (preprocessed) root
@@ -20,10 +35,12 @@ type Commitments = (u256, u256, u256);
 /// * trace log size
 /// * commitments
 /// * OODS trace evaluations and CP evaluation (partitioned) at OODS point
+/// * FRI layers
 type Proof = (
     u8,
     Commitments,
     OodsEvals,
+    FriLayers,
 );
 
 #endif
