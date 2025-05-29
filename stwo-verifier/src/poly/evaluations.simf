@@ -31,6 +31,9 @@ type TraceEvalsM31 = List<ColEvalsM31, MAX_COLUMNS>;
 /// Partitioned composition polynomial evaluation
 type CPEvalQM31 = [QM31; 4];
 
+/// Partitioned composition polynomial evaluation in M31.
+type CPEvalM31 = [M31; 4];
+
 /// Trace evaluations and composition polynomial evaluation at OODS point
 type OodsEvals = (TraceEvalsQM31, CPEvalQM31);
 

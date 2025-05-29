@@ -1,0 +1,79 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
+//! Merkle tree helpers.
+
+#ifndef MERKLE_SIMF
+#define MERKLE_SIMF
+
+#include "vcs/hasher.simf"
+
+/// Merkle root, leaf, or intermediate node.
+type MerkleNode = u256;
+
+/// A proof of inclusion for a Merkle tree having a maximum depth of 32.
+/// Consists of a list of sibling nodes required to reconstruct the root.
+type MerkleProof32 = List<MerkleNode, 32>;
+
+type MerkleAcc = (u256, u32);
+
+/// Compute the next intermediate node in the Merkle tree.
+fn merkle_compute_step(sib_node: MerkleNode, acc: MerkleAcc) -> MerkleAcc {
+    let (curr_node, path): MerkleAcc = acc;
+    let next_node: u256 = match jet::divides_32(2, path) {
+        false => sha256_pair(sib_node, curr_node),
+        true => sha256_pair(curr_node, sib_node),
+    };
+    (next_node, jet::divide_32(path, 2))
+}
+
+/// Verify a proof of inclusion for a leaf in a Merkle tree having a maximum depth of 32.
+///
+/// # Arguments
+///
+/// * `leaf` - The hash of the leaf value to verify.
+/// * `auth_path` - The authentication path, whose bits tell whether the sibling node is on the left or right.
+/// * `proof` - The proof of inclusion, which is a list of sibling nodes required to reconstruct the root.
+/// * `root` - The root of the Merkle tree.
+fn merkle_verify_32(leaf: u256, auth_path: u32, proof: MerkleProof32, root: u256) {
+    let acc: MerkleAcc = (leaf, auth_path);
+    let (computed_root, _): MerkleAcc = fold::<merkle_compute_step, 32>(proof, acc);
+    assert!(jet::eq_256(computed_root, root));
+}
+
+fn test_merkle() {
+    let root: u256 = 0x875ef7b0a28899d85920fa5586628c27dd7f3ca3d221ee018ee34fc5d758a477;
+    let leaf: u256 = sha256(0);
+    let proof: MerkleProof32 = list![
+        0xa665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3,
+        0x114bd151f8fb0c58642d2170da4ae7d7c57977260ac2cc8905306cab6b2acabc,
+    ];
+    merkle_verify_32(leaf, 4, proof, root);
+}
+
+fn test_decommitment() {
+    let root: u256 = 104500214297066916133126671825692285761566746556879834723302550549120383229768;
+    let leaf: u256 = sha256_32(2915689030);
+    let leaf_id: u32 = 365;
+    let proof: MerkleProof32 = list![
+        40002981752987147694309380063602322877192470823891740405244967830358421330165,
+        68230051127233951163966464088993224369415563839403172920771929824688376897836,
+        44367194844377689594601408886911285881450064458724818845992887113201531757121,
+        60552900297880916965024681698561373284576136923986771043513996698868811233985,
+        79218389783070783756683999973685334738468089983346892627711616664675847169649,
+        86056786573167414412681166168252960406880608123124193289687215839010289393365,
+        42453213914905194455440404069578264192574453344270898367924206751883339264593,
+        100519484132498123993280827552597641444767528842124397297226835189343039225855,
+        30418746830344061354082449665096536031982034761593207228745631004087660418979,
+        94840054322059291530750321008166965053871351749658110562305809404250112199706,
+        42301955221152678394190333573390831727995145343891343924222537015244996575494,
+        68599396864515883651939550638527607595242626780681277342646949156789742939178,
+        56974666195930694403713290580441264812544914556973432228768127355537336583012
+    ];
+    // auth_path = leaf_id + num_leaves
+    let (_, auth_path): (bool, u32) = jet::add_32(leaf_id, 8192);
+    merkle_verify_32(leaf, auth_path, proof, root);
+}
+
+#endif

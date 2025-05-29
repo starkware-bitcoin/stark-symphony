@@ -2,14 +2,16 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef VERIFIER_QUERY_SIMF
-#define VERIFIER_QUERY_SIMF
+#ifndef VERIFIER_QUERIES_SIMF
+#define VERIFIER_QUERIES_SIMF
 
 #include "channel/state.simf"
 #include "fields/qm31.simf"
 #include "groups/qm31_point.simf"
 #include "poly/evaluations.simf"
 #include "verifier/proof.simf"
+#include "vcs/hasher.simf"
+#include "vcs/merkle.simf"
 
 /// Reads the trace/cp polynomial commitments and samples random CP coefficient.
 /// Returns the updated channel state and random CP coefficient.
@@ -28,6 +30,30 @@ fn commit(state: ChannelState, commitments: Commitments) -> (ChannelState, QM31)
     let state: ChannelState = channel_mix_u256(state, cp_root);
 
     (state, random_coeff)
+}
+
+/// Decommits queried values for a single FRI query.
+fn decommit_queried_value(decommitment: Decommitment, roots: Commitments) -> Commitments {
+    let (query, trace_decommitment, cp_decommitment): Decommitment = decommitment;
+    let (_, trace_root, cp_root): Commitments = roots;
+    
+    // Verify main trace decommitment
+    let (trace_evals, trace_proof): TraceDecommitment = trace_decommitment;
+    let trace_node: MerkleNode = hash_node_m31_trace(evals);
+    merkle_verify_32(query, trace_proof, trace_node, trace_root);
+    
+    // Verify composition polynomial decommitment
+    let (cp_evals, cp_proof): CpDecommitment = cp_decommitment;
+    let cp_node: MerkleNode = hash_node_m31_cp(cp_evals);
+    merkle_verify_32(query, cp_proof, cp_node, cp_root);
+
+    // Forward commitment roots for the next query
+    roots
+}
+
+/// Decommits queried values for each FRI query.
+fn decommit_queried_values(decommitments: Decommitments, roots: Commitments) {
+    fold::<decommit_queried_value, MAX_FRI_QUERIES>(decommitments, roots);
 }
 
 fn test_commit() {

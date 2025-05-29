@@ -18,11 +18,16 @@ STARKs are perfect candidate for this approach!
 - [x] Operations in M31 field and its extensions
 - [x] Operations on M31 and QM31 circle points
 - [x] Composition polynomial evaluation
-- [ ] Sha256 channel
-- [ ] Merkle commitments
-- [ ] Circle point domain, canonic coset
-- [ ] Proof of work
-- [ ] Circle FRI
+- [x] Sha256 channel
+- [x] Commitment phase
+- [x] OODS phase
+- [x] Circle FRI commitment
+- [x] Proof of work
+- [ ] Generating FRI queries
+- [ ] Merkle decommitments
+- [ ] FRI decommitments
+- [ ] Wide fibonacci e2e
+- [ ] Plonk
 
 ## Dev quickstart
 

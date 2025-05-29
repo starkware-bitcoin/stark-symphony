@@ -233,7 +233,7 @@ fn handle_debug(path: PathBuf, witness: Option<PathBuf>, param: Option<PathBuf>)
     let witness = parse_witness(witness_content.as_deref())?;
     let satisfied = compiled.satisfy(witness).map_err(|e| anyhow::anyhow!(e))?;
     let node = satisfied.redeem();
-
+    println!("Node bounds: {:?}", node.bounds());
     let mut machine = BitMachine::for_program(node)?;
     let env = dummy_env::dummy();
     let mut tracker = tracker::Tracker {
