@@ -1,0 +1,8 @@
+//! Positions are indices of the points on a circle.
+//! They form a group which is isomorphic to the group of the points on a circle.
+//! FRI queries are basically a set of random positions.
+
+#ifndef POSITIONS_SIMF
+#define POSITIONS_SIMF
+
+#endif // POSITIONS_SIMF

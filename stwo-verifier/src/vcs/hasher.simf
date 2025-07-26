@@ -6,7 +6,6 @@
 #define HASHER_SIMF
 
 #include "poly/evaluations.simf"
-#include "vcs/merkle.simf"
 
 /// SHA256 hash of a 256-bit value (big-endian).
 fn sha256(input: u256) -> u256 {
@@ -30,27 +29,29 @@ fn sha256_pair(left: u256, right: u256) -> u256 {
     jet::sha_256_ctx_8_finalize(ctx)
 }
 
+/// Add an M31 value to the SHA256 context.
 fn hasher_add_m31(eval: M31, ctx: Ctx8) -> Ctx8 {
-    jet::sha_256_ctx_8_add_4(ctx, eval)
+    jet::sha_256_ctx_8_add_4(ctx, dbg!(eval))
 }
 
+/// Add a column of M31 values to the SHA256 context.
 fn hasher_add_m31_column(col_evals: ColEvalsM31, ctx: Ctx8) -> Ctx8 {
     fold::<hasher_add_m31, COL_MAX_OFFSET>(col_evals, ctx)
 }
 
-fn hash_node_m31_trace(trace_evals: TraceEvalsM31) -> MerkleNode {
+/// Hash multiple M31 columns (trace evaluations).
+fn hash_node_m31_trace(trace_evals: TraceEvalsM31) -> u256 {
     let ctx: Ctx8 = jet::sha_256_ctx_8_init();
     let ctx: Ctx8 = fold::<hasher_add_m31_column, MAX_COLUMNS>(trace_evals, ctx);
     jet::sha_256_ctx_8_finalize(ctx)
 }
 
-fn hash_node_m31_cp(cp_eval: CPEvalM31) -> MerkleNode {
+/// Hash a partitioned composition polynomial evaluation.
+fn hash_node_m31_cp(cp_eval: CPEvalM31) -> u256 {
     let ctx: Ctx8 = jet::sha_256_ctx_8_init();
-    let (cp0, cp1, cp2, cp3): (M31, M31, M31, M31) = <CPEvalM31>::into(cp_eval);
-    let ctx: Ctx8 = hasher_add_m31(cp0, ctx);
-    let ctx: Ctx8 = hasher_add_m31(cp1, ctx);
-    let ctx: Ctx8 = hasher_add_m31(cp2, ctx);
-    let ctx: Ctx8 = hasher_add_m31(cp3, ctx);
+    // Convert array to list to be able to fold
+    let cp_eval_list: List<M31, 32> = <(Option<CPEvalM31>, List<M31, 16>)>::into((Some(cp_eval), list![]));
+    let ctx: Ctx8 = fold::<hasher_add_m31, 32>(cp_eval_list, ctx);
     jet::sha_256_ctx_8_finalize(ctx)
 }
 

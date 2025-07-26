@@ -13,6 +13,8 @@
 #include "vcs/hasher.simf"
 #include "vcs/merkle.simf"
 
+type QueriedValues = (TraceEvalsM31, CPEvalM31);
+
 /// Reads the trace/cp polynomial commitments and samples random CP coefficient.
 /// Returns the updated channel state and random CP coefficient.
 fn commit(state: ChannelState, commitments: Commitments) -> (ChannelState, QM31) {
@@ -32,28 +34,41 @@ fn commit(state: ChannelState, commitments: Commitments) -> (ChannelState, QM31)
     (state, random_coeff)
 }
 
-/// Decommits queried values for a single FRI query.
-fn decommit_queried_value(decommitment: Decommitment, roots: Commitments) -> Commitments {
-    let (query, trace_decommitment, cp_decommitment): Decommitment = decommitment;
-    let (_, trace_root, cp_root): Commitments = roots;
-    
-    // Verify main trace decommitment
-    let (trace_evals, trace_proof): TraceDecommitment = trace_decommitment;
+/// Decommit trace polynomial evaluations at queried position.
+fn decommit_trace_evals(query: u32, decommitment: TraceDecommitment, root: MerkleNode) {
+    let (evals, proof): (TraceEvalsM31, MerkleProof32) = decommitment;
     let trace_node: MerkleNode = hash_node_m31_trace(evals);
-    merkle_verify_32(query, trace_proof, trace_node, trace_root);
-    
-    // Verify composition polynomial decommitment
-    let (cp_evals, cp_proof): CpDecommitment = cp_decommitment;
-    let cp_node: MerkleNode = hash_node_m31_cp(cp_evals);
-    merkle_verify_32(query, cp_proof, cp_node, cp_root);
+    // Auth path is query + num_leaves
+    let (_, auth_path): (bool, u32) = jet::add_32(query, 16);
+    merkle_verify_32(trace_node, auth_path, proof, root);
+}
 
-    // Forward commitment roots for the next query
+/// Decommit composition polynomial evaluation at queried position.
+fn decommit_cp_evals(query: u32, decommitment: CpDecommitment, root: MerkleNode) {
+    let (evals, proof): (CPEvalM31, MerkleProof32) = decommitment;
+    let cp_node: MerkleNode = dbg!(hash_node_m31_cp(evals));
+    // Auth path is query + num_leaves
+    let (_, auth_path): (bool, u32) = jet::add_32(query, 16);
+    merkle_verify_32(cp_node, auth_path, proof, root);
+}
+
+/// Decommit a single query.
+fn decommit_query(decommitment: Decommitment, roots: Commitments) -> Commitments {
+    let (_, trace_root, cp_root): Commitments = roots;
+    let (query, trace_decommitment, cp_decommitment): Decommitment = decommitment;
+    //decommit_trace_evals(query, trace_decommitment, trace_root);
+    decommit_cp_evals(query, cp_decommitment, cp_root);
     roots
 }
 
-/// Decommits queried values for each FRI query.
-fn decommit_queried_values(decommitments: Decommitments, roots: Commitments) {
-    fold::<decommit_queried_value, MAX_FRI_QUERIES>(decommitments, roots);
+/// Verify decommitments of queried trace & cp evaluations.
+/// NOTE that we do not draw random queries here, they are hinted by the prover.
+/// Queried positions will be constrained in the next step (when computing quotients).
+fn decommit(decommitments: Decommitments, roots: Commitments) {
+    // Construct a list out of the array (to be able to fold)
+    let items: List<Decommitment, NUM_FRI_QUERIES_X2> = 
+        <(Option<[Decommitment; NUM_FRI_QUERIES]>, List<Decommitment, NUM_FRI_QUERIES>)>::into((Some(decommitments), list![]));
+    let _: Commitments = fold::<decommit_query, NUM_FRI_QUERIES_X2>(items, roots);
 }
 
 fn test_commit() {
@@ -66,6 +81,44 @@ fn test_commit() {
     let ((digest, _), random_coeff): (ChannelState, QM31) = commit(state, commitments);
     assert!(jet::eq_256(digest, 0x94642214378090859916af45c596713b6d8abaa2c72f3ed8ad41f869ad35491b));
     assert!(qm31_eq(random_coeff, qm31(2012724549, 1128459570, 1584582850, 1454574268)));
+}
+
+fn test_decommit() {
+    let roots: Commitments = (
+        0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,
+        0x2143f75d71572fd6cc57f586b6713dd237ce03e0e6992ef8e2199ed653129c7f,
+        0x83e5557f761f237e20462300295aa53c3480f3f0907bd5b1e4f89ffdc6f950bc,
+    );
+    let decommitment: Decommitment = (
+        5, // query
+        (
+            list![list![1], list![495602521], list![1874631582], list![1174813791]], // trace evaluations
+            list![0x61d89893714f17dacc2219d98fe3213716140fb03a2b712ddfe03fdac7b74b2d, 0x97e6ead6d49cc7289a7ec47c2c09ae05851c06dde5028b976c3a8a03c547bfa1, 0xd02fe24628e6d523938e57fc793a98c320e4b75b121faa830d2e8f95f2abaee0], // trace decommitment
+        ),
+        (
+            [1840623278, 1926730915, 2147287039, 0, 1265893248, 993651831, 0, 0, 236821717, 325156552, 0, 0, 2110497226, 1488481922, 0, 0], // cp evaluations
+            list![0x2b1f2f773bdf244640f9aaa3a3ba28aa7a413cbc28c1acf7f1a8c27e14e14cf3, 0x81886da63943805c745dbabf91e86d53f89ce5c850f52ec5e8ead438ce4418c9, 0xf628a1fa959d01d179e48d47c159e90990585cea53ca23fb8bcbdfc30781201b], // cp decommitment
+        ),
+    );
+    let decommitments: Decommitments = [
+        decommitment,
+        decommitment,
+        decommitment,
+        decommitment,
+        decommitment,
+        decommitment,
+        decommitment,
+        decommitment,
+        decommitment,
+        decommitment,
+        decommitment,
+        decommitment,
+        decommitment,
+        decommitment,
+        decommitment,
+        decommitment,
+    ];
+    decommit(decommitments, roots);
 }
 
 #endif
