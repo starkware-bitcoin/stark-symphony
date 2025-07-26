@@ -27,7 +27,7 @@ fn oods(state: ChannelState, log_size: u8, oods_evals: OodsEvals, random_coeff: 
     let cp_eval: QM31 = eval_composition_poly(log_size, oods_point, oods_trace_evals, random_coeff);
     
     // Reconstruct sampled CP evaluation and compare
-    let sampled_cp_eval: QM31 = composition_poly_eval_from_partitions(oods_cp_eval);
+    let sampled_cp_eval: QM31 = composition_poly_eval_from_decomposed(oods_cp_eval, oods_point);
     assert!(qm31_eq(cp_eval, sampled_cp_eval));
 
     // Draw random coefficient for DEEP quotients
@@ -35,25 +35,37 @@ fn oods(state: ChannelState, log_size: u8, oods_evals: OodsEvals, random_coeff: 
 }
 
 fn test_oods() {
-    let state: ChannelState = (0x94642214378090859916af45c596713b6d8abaa2c72f3ed8ad41f869ad35491b, 0);
+    let state: ChannelState = (0xf4101066b0addfbccce964d958b1dec28fcf4e2a9a280f15b8dfcb4176b65c99, 0);
     let log_size: u8 = 2;
     let random_coeff: QM31 = qm31(2012724549, 1128459570, 1584582850, 1454574268);
     let oods_trace_evals: TraceEvalsQM31 = list![
         list![qm31(1, 0, 0, 0)],
-        list![qm31(219216441, 1999484797, 865948224, 1842303184)],
-        list![qm31(88796111, 196217285, 1337974825, 1079249662)],
-        list![qm31(1039952504, 987562643, 1687835115, 1083917527)],
+        list![qm31(1317558333, 30282626, 1003338644, 805043598)],
+        list![qm31(962074990, 170174207, 1792910003, 764280909)],
+        list![qm31(1150846786, 1548284776, 259211664, 74473918)],
     ];
     let oods_cp_eval: CPEvalQM31 = [
-        qm31(102457172, 120697777, 684798907, 704325503),
-        qm31(1524382544, 864965792, 1090724300, 832226163),
-        qm31(1447800586, 1051306930, 2035698572, 902029335),
-        qm31(1674296998, 584689294, 411846336, 680031775),
+        qm31(1454521826, 1225905306, 1400157099, 1190844098),
+        qm31(1028648943, 0, 0, 0),
+        qm31(2147287039, 0, 0, 0),
+        qm31(0, 0, 0, 0),
+        qm31(1077048838, 1065010352, 1218756193, 72961446),
+        qm31(1832027781, 0, 0, 0),
+        qm31(0, 0, 0, 0),
+        qm31(0, 0, 0, 0),
+        qm31(1384617206, 1935540515, 73491668, 934779802),
+        qm31(1354939621, 0, 0, 0),
+        qm31(0, 0, 0, 0),
+        qm31(0, 0, 0, 0),
+        qm31(1615962367, 320491381, 618401992, 1994125905),
+        qm31(180137318, 0, 0, 0),
+        qm31(0, 0, 0, 0),
+        qm31(0, 0, 0, 0),
     ];
     let oods_evals: OodsEvals = (oods_trace_evals, oods_cp_eval);
     let ((digest, _), deep_alpha): (ChannelState, QM31) = oods(state, log_size, oods_evals, random_coeff);
-    assert!(jet::eq_256(digest, 0x44dff4effae0be493c21672683c892b3baeaa7d251e5e7153bc0e0b2da8a9d96));
-    assert!(qm31_eq(deep_alpha, qm31(671473682, 1782580300, 578753371, 854797671)));
+    assert!(jet::eq_256(digest, 0x7a974a58d6ebe09baa1373d9eda65b443a427796a4befe155a944ce9f9effbfd));
+    assert!(qm31_eq(deep_alpha, qm31(2025520334, 1698313713, 620429472, 614470376)));
 }
 
 #endif

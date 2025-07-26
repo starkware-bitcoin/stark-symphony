@@ -6,6 +6,7 @@
 #define POLY_EVALUATIONS_H
 
 #include "fields/qm31.simf"
+#include "groups/qm31_point.simf"
 
 /// Maximum supported offset for an AIR column with transition constraints.
 /// Upper bound not included, i.e. offset is in range [0, COL_MAX_OFFSET).
@@ -23,37 +24,62 @@ type ColEvalsQM31 = List<QM31, COL_MAX_OFFSET>;
 type ColEvalsM31 = List<M31, COL_MAX_OFFSET>;
 
 /// A list of evaluations in QM31 for all columns.
+/// Assumming single component.
 type TraceEvalsQM31 = List<ColEvalsQM31, MAX_COLUMNS>;
 
 /// A list of evaluations in M31 for all columns.
+/// Assumming single component.
 type TraceEvalsM31 = List<ColEvalsM31, MAX_COLUMNS>;
 
-/// Partitioned composition polynomial evaluation
-type CPEvalQM31 = [QM31; 4];
+/// Partitioned composition polynomial evaluation.
+/// 4 coordinates x 4 decomposed polynomials (reducing degree by one).
+type CPEvalQM31 = [QM31; 16];
+
+/// Partitioned composition polynomial evaluation in M31.
+/// 4 coordinates x 4 decomposed polynomials (reducing degree by one)
+type CPEvalM31 = [M31; 16];
 
 /// Trace evaluations and composition polynomial evaluation at OODS point
 type OodsEvals = (TraceEvalsQM31, CPEvalQM31);
 
-/// Reconstructs the composition polynomial evaluation from the partitioned evaluations.
-fn composition_poly_eval_from_partitions(partitioned_cp_eval: CPEvalQM31) -> QM31 {
-    let (cp0, cp1, cp2, cp3): (QM31, QM31, QM31, QM31) = <CPEvalQM31>::into(partitioned_cp_eval);
+/// Reconstructs a composition polynomial evaluation from the partitioned evaluations.
+fn composition_poly_eval_from_partitions(partitioned_cp_eval: (QM31, QM31, QM31, QM31)) -> QM31 {
+    let (cp0, cp1, cp2, cp3): (QM31, QM31, QM31, QM31) = partitioned_cp_eval;
     let res: QM31 = qm31_add(cp0, qm31_mul(cp1, qm31(0, 1, 0, 0)));
     let res: QM31 = qm31_add(res, qm31_mul(cp2, qm31(0, 0, 1, 0)));
     let res: QM31 = qm31_add(res, qm31_mul(cp3, qm31(0, 0, 0, 1)));
     res
 }
 
+/// Reconstructs composition polynomial evaluation from decomposed partitioned evaluations.
+fn composition_poly_eval_from_decomposed(decomposed_cp_eval: CPEvalQM31, oods_point: QM31Point) -> QM31 {
+    let (a0, b0, c0, d0, a1, b1, c1, d1, a2, b2, c2, d2, a3, b3, c3, d3): (QM31, QM31, QM31, QM31, QM31, QM31, QM31, QM31, QM31, QM31, QM31, QM31, QM31, QM31, QM31, QM31) 
+        = <CPEvalQM31>::into(decomposed_cp_eval);
+    let cpa: QM31 = composition_poly_eval_from_partitions((a0, a1, a2, a3));
+    let cpb: QM31 = composition_poly_eval_from_partitions((b0, b1, b2, b3));
+    let cpc: QM31 = composition_poly_eval_from_partitions((c0, c1, c2, c3));
+    let cpd: QM31 = composition_poly_eval_from_partitions((d0, d1, d2, d3));
+    // F(x, y) = F_a(X, Y) + x * F_b(X, Y) + y * F_c(X, Y) + x * y * F_d(X, Y)
+    let (x, y): (QM31, QM31) = oods_point;
+    let res: QM31 = qm31_add(cpa, qm31_mul(cpb, y));
+    let res: QM31 = qm31_add(res, qm31_mul(cpc, x));
+    qm31_add(res, qm31_mul(cpd, qm31_mul(x, y)))
+}
+
 fn test_composition_poly_eval_from_partitions() {
-    let partitioned_cp_eval: CPEvalQM31 = [
+    let partitioned_cp_eval: (QM31, QM31, QM31, QM31) = (
         qm31(102457172, 120697777, 684798907, 704325503),
         qm31(1524382544, 864965792, 1090724300, 832226163),
         qm31(1447800586, 1051306930, 2035698572, 902029335),
         qm31(1674296998, 584689294, 411846336, 680031775)
-    ];
+    );
     let expected: QM31 = qm31(634949303, 1333531166, 715684036, 225686437);
 
     let cp_eval: QM31 = composition_poly_eval_from_partitions(partitioned_cp_eval);
     assert!(qm31_eq(cp_eval, expected));
+}
+
+fn test_composition_poly_eval() {
 }
 
 #endif

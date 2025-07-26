@@ -7,11 +7,14 @@
 
 #include "poly/evaluations.simf"
 #include "poly/line.simf"
+#include "vcs/merkle.simf"
 
 // Select the constraints
 #include "constraints/wide_fibonacci.simf"
 
 #define MAX_FRI_LAYERS 16
+#define NUM_FRI_QUERIES 16
+#define NUM_FRI_QUERIES_X2 32
 
 /// FRI layer (first and inner)
 /// * commitment
@@ -31,6 +34,26 @@ type FriLayers = (FriLayer, List<FriLayer, MAX_FRI_LAYERS>, LinePoly);
 /// * composition polynomial root
 type Commitments = (u256, u256, u256);
 
+/// Composition polynomial decommitment:
+/// * partitioned evaluations in M31
+/// * Merkle proof
+type CpDecommitment = (CPEvalM31, MerkleProof32);
+
+/// Trace decommitment:
+/// * evaluations in M31
+/// * Merkle proof
+type TraceDecommitment = (TraceEvalsM31, MerkleProof32);
+
+/// Decommitment:
+/// * query
+/// * trace decommitment
+/// * composition polynomial decommitment
+type Decommitment = (u32, TraceDecommitment, CpDecommitment);
+
+/// Decommitments:
+/// * decommitments for each FRI query
+type Decommitments = [Decommitment; NUM_FRI_QUERIES];
+
 /// Proof:
 /// * trace log size
 /// * commitments
@@ -40,6 +63,7 @@ type Commitments = (u256, u256, u256);
 type Proof = (
     u8,
     Commitments,
+    Decommitments,
     OodsEvals,
     FriLayers,
     u64,
