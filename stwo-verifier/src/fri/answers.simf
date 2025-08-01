@@ -1,3 +1,127 @@
 // SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
 //
 // SPDX-License-Identifier: MIT
+
+#ifndef FRI_ANSWERS_SIMF
+#define FRI_ANSWERS_SIMF
+
+#include "verifier/proof.simf"
+#include "utils/list_zip.simf"
+#include "poly/evaluations.simf"
+
+/// Response to a single FRI query.
+type QueryResponse = (u32, TraceEvalsM31, CPEvalM31);
+
+/// List of query responses.
+type QueryResponses = List<QueryResponse, MAX_FRI_QUERIES>;
+
+/// FRI answer is a pair of a query and a random linear combination of quotients.
+type FriAnswer = (u32, QM31);
+
+/// List of FRI answers.
+type FriAnswers = List<FriAnswer, MAX_FRI_QUERIES>;
+
+DEFINE_ZIP_ARR_2(trace_evals, ColEvalsM31, ColEvalsQM31)
+DEFINE_ZIP_ARR(trace_evals, ColEvalsM31, ColEvalsQM31, 4, 2)
+DEFINE_ZIP_ARR(trace_evals, ColEvalsM31, ColEvalsQM31, 8, 4)
+DEFINE_ZIP_ARR(trace_evals, ColEvalsM31, ColEvalsQM31, 16, 8)
+DEFINE_ZIP_ARR(trace_evals, ColEvalsM31, ColEvalsQM31, 32, 16)
+DEFINE_ZIP_ARR(trace_evals, ColEvalsM31, ColEvalsQM31, 64, 32)
+DEFINE_ZIP_ARR(trace_evals, ColEvalsM31, ColEvalsQM31, 128, 64)
+
+DEFINE_ZIP_LST_2(trace_evals, ColEvalsM31, ColEvalsQM31)
+DEFINE_ZIP_LST(trace_evals, ColEvalsM31, ColEvalsQM31, 4, 2)
+DEFINE_ZIP_LST(trace_evals, ColEvalsM31, ColEvalsQM31, 8, 4)
+DEFINE_ZIP_LST(trace_evals, ColEvalsM31, ColEvalsQM31, 16, 8)
+DEFINE_ZIP_LST(trace_evals, ColEvalsM31, ColEvalsQM31, 32, 16)
+DEFINE_ZIP_LST(trace_evals, ColEvalsM31, ColEvalsQM31, 64, 32)
+DEFINE_ZIP_LST(trace_evals, ColEvalsM31, ColEvalsQM31, 128, 64)
+DEFINE_ZIP_LST(trace_evals, ColEvalsM31, ColEvalsQM31, 256, 128)
+
+DEFINE_ZIP_ARR_2(cp_evals, M31, QM31)
+DEFINE_ZIP_ARR(cp_evals, M31, QM31, 4, 2)
+DEFINE_ZIP_ARR(cp_evals, M31, QM31, 8, 4)
+DEFINE_ZIP_ARR(cp_evals, M31, QM31, 16, 8)
+DEFINE_ZIP_ARR(cp_evals, M31, QM31, 32, 16)
+
+DEFINE_ZIP_LST_2(cp_evals, M31, QM31)
+DEFINE_ZIP_LST(cp_evals, M31, QM31, 4, 2)
+
+/// Accumulator for the quotient batching:
+/// * quotient accumulator value
+/// * domain point (for the given query position)
+/// * OODS point
+/// * random coefficient
+type QuotientAcc = (QM31, M31Point, QM31Point, QM31);
+
+fn quotient_aggregate(evals: (M31, QM31), acc: QuotientAcc) -> QuotientAcc {
+    let (quotient_acc, domain_point, oods_point, random_coeff): QuotientAcc = acc;
+
+    // Compute coefficients.
+
+    // Compute quotient.
+
+    // Add quotient to the accumulator.
+
+    // Return the updated accumulator.
+    (quotient_acc, domain_point, oods_point, random_coeff)
+}
+
+fn trace_quotient_aggregate(evals: (ColEvalsM31, ColEvalsQM31), acc: QuotientAcc) -> QuotientAcc {
+    let (col_evals, oods_col_evals): (ColEvalsM31, ColEvalsQM31) = evals;
+    // Zip column evaluations with OODS column evaluations.
+    let zipped_col_evals: List<(M31, QM31), COL_MAX_OFFSET> = cp_evals_zip_lst_4(col_evals, oods_col_evals);
+    // Aggregate the quotients.
+    fold::<quotient_aggregate, COL_MAX_OFFSET>(zipped_col_evals, acc)
+}
+
+fn fri_answer(response: QueryResponse, random_coeff: QM31, oods_point: QM31Point, oods_evals: OodsEvals) -> FriAnswer {
+    let (query, trace_evals, cp_evals): QueryResponse = response;
+    let (oods_trace_evals, oods_cp_evals): OodsEvals = oods_evals;
+
+    // Zip queried evaluations with sampled evaluations.
+    let zipped_trace_evals: List<(ColEvalsM31, ColEvalsQM31), MAX_COLUMNS> = trace_evals_zip_lst_256(trace_evals, oods_trace_evals);
+    let zipped_cp_evals: [(M31, QM31); 16] = cp_evals_zip_arr_16(cp_evals, oods_cp_evals);
+
+    // Compute the domain point from the query position.
+    let domain_point: M31Point = (0, 0); // TODO
+
+    // Aggregate the quotient.
+    let acc: QuotientAcc = (qm31(0, 0, 0, 0), domain_point, oods_point, random_coeff);
+    let acc: QuotientAcc = fold::<trace_quotient_aggregate, MAX_COLUMNS>(zipped_trace_evals, acc);
+
+    // Convert cp evals array to a list for convenient folding.
+    let zipped_cp_evals: List<(M31, QM31), 32> = <(Option<[(M31, QM31); 16]>, List<(M31, QM31), 16>)>::into((Some(zipped_cp_evals), list![]));
+    let (quotient_acc, _, _, _): QuotientAcc = fold::<quotient_aggregate, 32>(zipped_cp_evals, acc);
+
+    // Return the FRI answer.
+    (query, quotient_acc)
+}
+
+fn fri_answers(responses: QueryResponses, random_coeff: QM31, oods_point: QM31Point, oods_evals: OodsEvals) -> FriAnswers {
+    list![]
+}
+
+fn test_trace_evals_zip_lst_8() {
+    let evals: List<ColEvalsM31, 8> = list![
+        list![1],
+        list![2],
+        list![3],
+        list![4],
+        list![5],
+    ];
+    let oods_evals: List<ColEvalsQM31, 8> = list![
+        list![qm31(1, 0, 0, 0)],
+        list![qm31(2, 0, 0, 0)],
+        list![qm31(3, 0, 0, 0)],
+        list![qm31(4, 0, 0, 0)],
+        list![qm31(5, 0, 0, 0)],
+    ];
+    let zipped: List<(ColEvalsM31, ColEvalsQM31), 8> = trace_evals_zip_lst_8(evals, oods_evals);
+}
+
+fn test_cp_evals_zip_lst_4() {
+    // TODO
+}
+
+#endif

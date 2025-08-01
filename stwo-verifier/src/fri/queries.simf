@@ -35,7 +35,7 @@ fn fri_generate_queries(state: ChannelState, log_size: u8) -> (ChannelState, Lis
     // It's easier to manually construct the list of queries rather than implement a generator and then use list map.
     let queries: List<u32, MAX_FRI_QUERIES> = list![q0, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, q13, q14, q15];
 
-    // TODO: sort and remove duplicates.
+    // NOTE: we do not sort and remove duplicates here, to simplify the implementation.
 
     (state, queries)
 }

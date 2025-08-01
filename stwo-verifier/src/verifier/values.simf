@@ -14,15 +14,10 @@
 #include "vcs/merkle.simf"
 #include "utils/list_map.simf"
 #include "utils/list_zip.simf"
+#include "fri/answers.simf"
 
 /// Pair of a query and a decommitment.
 type QueryDecommitment = (u32, Decommitment);
-
-/// Response to a single FRI query.
-type QueryResponse = (u32, TraceEvalsM31, CPEvalM31);
-
-/// List of query responses.
-type QueryResponses = List<QueryResponse, MAX_FRI_QUERIES>;
 
 /// Reads the trace/cp polynomial commitments and samples random CP coefficient.
 /// Returns the updated channel state and random CP coefficient.
