@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef VERIFIER_CIRCLE_FRI_SIMF
-#define VERIFIER_CIRCLE_FRI_SIMF
+#ifndef FRI_FOLDING_SIMF
+#define FRI_FOLDING_SIMF
 
 #include "channel/state.simf"
 #include "fields/qm31.simf"

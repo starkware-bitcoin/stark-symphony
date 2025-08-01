@@ -1,0 +1,48 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
+//! Helpers for computing and batching FRI quotients.
+
+#ifndef FRI_BATCHING_SIMF
+#define FRI_BATCHING_SIMF
+
+#include "utils/list_zip.simf"
+#include "poly/evaluations.simf"
+
+DEFINE_ZIP_ARR_2(trace_evals, ColEvalsM31, ColEvalsQM31)
+DEFINE_ZIP_ARR(trace_evals, ColEvalsM31, ColEvalsQM31, 4, 2)
+DEFINE_ZIP_ARR(trace_evals, ColEvalsM31, ColEvalsQM31, 8, 4)
+DEFINE_ZIP_ARR(trace_evals, ColEvalsM31, ColEvalsQM31, 16, 8)
+DEFINE_ZIP_ARR(trace_evals, ColEvalsM31, ColEvalsQM31, 32, 16)
+DEFINE_ZIP_ARR(trace_evals, ColEvalsM31, ColEvalsQM31, 64, 32)
+DEFINE_ZIP_ARR(trace_evals, ColEvalsM31, ColEvalsQM31, 128, 64)
+
+DEFINE_ZIP_LST_2(trace_evals, ColEvalsM31, ColEvalsQM31)
+DEFINE_ZIP_LST(trace_evals, ColEvalsM31, ColEvalsQM31, 4, 2)
+DEFINE_ZIP_LST(trace_evals, ColEvalsM31, ColEvalsQM31, 8, 4)
+DEFINE_ZIP_LST(trace_evals, ColEvalsM31, ColEvalsQM31, 16, 8)
+DEFINE_ZIP_LST(trace_evals, ColEvalsM31, ColEvalsQM31, 32, 16)
+DEFINE_ZIP_LST(trace_evals, ColEvalsM31, ColEvalsQM31, 64, 32)
+DEFINE_ZIP_LST(trace_evals, ColEvalsM31, ColEvalsQM31, 128, 64)
+DEFINE_ZIP_LST(trace_evals, ColEvalsM31, ColEvalsQM31, 256, 128)
+
+fn test_trace_evals_zip_lst_8() {
+    let evals: List<ColEvalsM31, 8> = list![
+        list![1],
+        list![2],
+        list![3],
+        list![4],
+        list![5],
+    ];
+    let oods_evals: List<ColEvalsQM31, 8> = list![
+        list![qm31(1, 0, 0, 0)],
+        list![qm31(2, 0, 0, 0)],
+        list![qm31(3, 0, 0, 0)],
+        list![qm31(4, 0, 0, 0)],
+        list![qm31(5, 0, 0, 0)],
+    ];
+    let zipped: List<(ColEvalsM31, ColEvalsQM31), 8> = trace_evals_zip_lst_8(evals, oods_evals);
+}
+
+#endif
