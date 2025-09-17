@@ -7,6 +7,7 @@
 
 #include "fields/qm31.simf"
 #include "groups/qm31_point.simf"
+#include "utils/list_get.simf"
 
 /// Maximum supported offset for an AIR column with transition constraints.
 /// Upper bound not included, i.e. offset is in range [0, COL_MAX_OFFSET).
@@ -66,6 +67,28 @@ fn composition_poly_eval_from_decomposed(decomposed_cp_eval: CPEvalQM31, oods_po
     qm31_add(res, qm31_mul(cpd, qm31_mul(x, y)))
 }
 
+DEFINE_GET_ARR_2(qm31, QM31)
+DEFINE_GET_ARR(qm31, QM31, 4, 2)
+DEFINE_GET_LST_2(qm31, QM31)
+DEFINE_GET_LST(qm31, QM31, 4, 2)
+
+DEFINE_GET_ARR_2(m31, M31)
+DEFINE_GET_ARR(m31, M31, 4, 2)
+DEFINE_GET_LST_2(m31, M31)
+DEFINE_GET_LST(m31, M31, 4, 2)
+
+/// Get an evaluation from a column evaluations list given an offset.
+/// If the offset is out of bounds, the function will panic.
+fn col_evals_qm31_get(col_evals: ColEvalsQM31, offset: u32) -> QM31 {
+    qm31_unwrap(qm31_get_lst_4(col_evals, offset))
+}
+
+/// Get an evaluation from a column evaluations list given an offset.
+/// If the offset is out of bounds, the function will panic.
+fn col_evals_m31_get(col_evals: ColEvalsM31, offset: u32) -> M31 {
+    m31_unwrap(m31_get_lst_4(col_evals, offset))
+}
+
 fn test_composition_poly_eval_from_partitions() {
     let partitioned_cp_eval: (QM31, QM31, QM31, QM31) = (
         qm31(102457172, 120697777, 684798907, 704325503),
@@ -79,7 +102,7 @@ fn test_composition_poly_eval_from_partitions() {
     assert!(qm31_eq(cp_eval, expected));
 }
 
-fn test_composition_poly_eval() {
+fn test_composition_poly_eval_from_decomposed() {
 }
 
 #endif

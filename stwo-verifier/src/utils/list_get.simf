@@ -1,0 +1,92 @@
+//! SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//!
+//! SPDX-License-Identifier: MIT
+
+//! Helpers for getting an item from a list.
+
+#ifndef UTILS_LIST_GET_SIMF
+#define UTILS_LIST_GET_SIMF
+
+#define DEFINE_GET_ARR_2(PREFIX, T) \
+fn PREFIX##_get_arr_2(arr: [T; 2], index: u32) -> Option<T> { \
+    let (elt0, elt1): (T, T) = <[T; 2]>::into(arr); \
+    match jet::eq_32(index, 0) { \
+        true => Some(elt0), \
+        false => { \
+            match jet::eq_32(index, 1) { \
+                true => Some(elt1), \
+                false => None, \
+            } \
+        } \
+    } \
+}
+
+#define DEFINE_GET_ARR(PREFIX, T, N, HALF_N) \
+fn PREFIX##_get_arr_##N(arr: [T; N], index: u32) -> Option<T> { \
+    let (arr0, arr1): ([T; HALF_N], [T; HALF_N]) = <[T; N]>::into(arr); \
+    match jet::lt_32(index, HALF_N) { \
+        true => PREFIX##_get_arr_##HALF_N(arr0, index), \
+        false => { \
+            let (_, new_index): (bool, u32) = jet::subtract_32(index, HALF_N); \
+            PREFIX##_get_arr_##HALF_N(arr1, new_index) \
+        } \
+    } \
+}
+
+#define DEFINE_GET_LST_2(PREFIX, T) \
+fn PREFIX##_get_lst_2(lst: List<T, 2>, index: u32) -> Option<T> { \
+    <List<T, 2>>::into(lst) \
+}
+
+#define DEFINE_GET_LST(PREFIX, T, N, HALF_N) \
+fn PREFIX##_get_lst_##N(lst: List<T, N>, index: u32) -> Option<T> { \
+    let (l_arr, l_lst): (Option<[T; HALF_N]>, List<T, HALF_N>) = <List<T, N>>::into(lst); \
+    match jet::lt_32(index, HALF_N) { \
+        true => { \
+            match l_arr { \
+                Some(arr: [T; HALF_N]) => PREFIX##_get_arr_##HALF_N(arr, index), \
+                None => PREFIX##_get_lst_##HALF_N(l_lst, index), \
+            } \
+        } \
+        false => { \
+            match l_arr { \
+                Some(arr: [T; HALF_N]) => { \
+                    let (_, new_index): (bool, u32) = jet::subtract_32(index, HALF_N); \
+                    PREFIX##_get_lst_##HALF_N(l_lst, new_index) \
+                }, \
+                None => None, \
+            } \
+        } \
+    } \
+}
+
+DEFINE_GET_ARR_2(num, u32)
+DEFINE_GET_ARR(num, u32, 4, 2)
+DEFINE_GET_ARR(num, u32, 8, 4)
+DEFINE_GET_LST_2(num, u32)
+DEFINE_GET_LST(num, u32, 4, 2)
+DEFINE_GET_LST(num, u32, 8, 4)
+
+// NOTE: cannot use assert or unwrap (or any other reserved word) as a beginning of a function name.
+fn u32_unwrap(x: Option<u32>) -> u32 {
+    match x {
+        Some(x: u32) => x,
+        None => panic!(),
+    }
+}
+
+fn u32_is_none(x: Option<u32>) -> bool {
+    match x {
+        None => true,
+        Some(x: u32) => false,
+    }
+}
+
+fn test_get_lst_8() {
+    let lst: List<u32, 8> = list![1, 2, 3, 4, 5, 6];
+    let elt: u32 = u32_unwrap(num_get_lst_8(lst, 2));
+    assert!(jet::eq_32(elt, 3));
+    assert!(u32_is_none(num_get_lst_8(lst, 10)));
+}
+
+#endif

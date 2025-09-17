@@ -18,29 +18,10 @@
 /// * skip_2 (counter which stops at 2)
 type EvalAcc = (QM31, QM31, QM31, QM31, u8);
 
-/// Returns the evaluation at offset 0
-/// NOTE: assuming COL_MAX_OFFSET == 4
-fn eval_0(col_evals: ColEvalsQM31) -> QM31 {
-    let (head, tail): (Option<[QM31; 2]>, List<QM31, 2>) = <ColEvalsQM31>::into(col_evals);
-    match head {
-        Some(head: [QM31; 2]) => {
-            let (e0, e1): (QM31, QM31) = <[QM31; 2]>::into(head);
-            e0
-        },
-        None => {
-            let head: Option<QM31> = <List<QM31, 2>>::into(tail);
-            match head {
-                Some(e0: QM31) => e0,
-                None => panic!(),
-            }
-        }
-    }
-}
-
 /// The folding function for the evaluation of the composition polynomial.
 fn eval_column(col_evals: ColEvalsQM31, acc: EvalAcc) -> EvalAcc {
     let (constraint_acc, a, b, random_coeff, skip_2): EvalAcc = acc;
-    let c: QM31 = eval_0(col_evals);
+    let c: QM31 = col_evals_qm31_get(col_evals, 0);
     match jet::eq_8(skip_2, 2) {
         true => {
             let constraint: QM31 = qm31_sub(c, qm31_add(qm31_pow2(b), qm31_pow2(a)));
@@ -67,20 +48,6 @@ fn eval_composition_poly(log_size: u8, oods_point: QM31Point, oods_trace_evals: 
     let (constraint_acc, _, _, _, _): EvalAcc = fold::<eval_column, MAX_COLUMNS>(oods_trace_evals, acc);
     let vanish_poly_eval: QM31 = vanishing_poly_eval(log_size, oods_point);
     qm31_div(constraint_acc, vanish_poly_eval)
-}
-
-fn test_eval_0() {
-    let col_evals: ColEvalsQM31 = list![qm31(1, 0, 0, 0)];
-    let eval0: QM31 = eval_0(col_evals);
-    assert!(qm31_eq(eval0, qm31(1, 0, 0, 0)));
-
-    let col_evals: ColEvalsQM31 = list![qm31(1, 0, 0, 0), qm31(2, 0, 0, 0)];
-    let eval0: QM31 = eval_0(col_evals);
-    assert!(qm31_eq(eval0, qm31(1, 0, 0, 0)));
-
-    let col_evals: ColEvalsQM31 = list![qm31(1, 0, 0, 0), qm31(2, 0, 0, 0), qm31(3, 0, 0, 0)];
-    let eval0: QM31 = eval_0(col_evals);
-    assert!(qm31_eq(eval0, qm31(1, 0, 0, 0)));
 }
 
 fn test_eval_composition_poly() {

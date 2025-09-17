@@ -12,7 +12,7 @@
 #include "fields/cm31.simf"
 
 /// Compute the inverse of the denominator of the DEEP quotient polynomial
-fn deep_quotient_denominator_inverse(sample_point: QM31Point, query_point: M31Point) -> QM31 {
+fn deep_quotient_denominator_inverse(sample_point: QM31Point, query_point: M31Point) -> CM31 {
     let ((prx, pix), (pry, piy)): ((CM31, CM31), (CM31, CM31)) = sample_point;
     let (x, y): (M31, M31) = query_point;
     let dx: CM31 = cm31_sub_m31(prx, x);
@@ -26,8 +26,8 @@ fn deep_quotient_interpolant_coefficients(sample_point: QM31Point, sample_value:
     let (_, py): (QM31, QM31) = sample_point;
     let (_, im_py): (CM31, CM31) = py;
     let (_, im_val): (CM31, CM31) = sample_value;
-    let a: QM31 = qm31_mul(alpha_i, (0, cm31_neg(cm31_dbl(im_val))));
-    let b: QM31 = qm31_mul(alpha_i, (0, cm31_dbl(im_py)));
+    let a: QM31 = qm31_mul(alpha_i, ((0, 0), cm31_neg(cm31_dbl(im_val))));
+    let b: QM31 = qm31_mul(alpha_i, ((0, 0), cm31_dbl(im_py)));
     let a_py: QM31 = qm31_mul(a, py);
     let b_val: QM31 = qm31_mul(b, sample_value);
     let c: QM31 = qm31_mul(alpha_i, qm31_neg(qm31_add(a_py, b_val)));
@@ -38,15 +38,23 @@ fn deep_quotient_interpolant_coefficients(sample_point: QM31Point, sample_value:
 fn deep_quotient_nominator(coefficients: (QM31, QM31, QM31), query_point: M31Point, query_value: M31) -> QM31 {
     let (a, b, c): (QM31, QM31, QM31) = coefficients;
     let b_val: QM31 = qm31_mul_m31(b, query_value);
-    let a_py: QM31 = qm31_mul_m31(a, query_point);
+    let (_, py): M31Point = query_point;
+    let a_py: QM31 = qm31_mul_m31(a, py);
     qm31_sub(b_val, qm31_add(a_py, c))
 }
 
 /// Evaluate the DEEP quotient
 fn deep_quotient_evaluate(sample_point: QM31Point, sample_value: QM31, query_point: M31Point, query_value: M31, coefficients: (QM31, QM31, QM31)) -> QM31 {
     let nominator: QM31 = deep_quotient_nominator(coefficients, query_point, query_value);
-    let denominator_inv: QM31 = deep_quotient_denominator_inverse(sample_point, query_point);
-    qm31_mul(nominator, denominator_inv)
+    let denominator_inv: CM31 = deep_quotient_denominator_inverse(sample_point, query_point);
+    qm31_mul_cm31(nominator, denominator_inv)
+}
+
+fn test_quotient_denominator_inverse() {
+    // let sample_point: QM31Point = (qm31(1, 0, 0, 0), qm31(2, 0, 0, 0));
+    // let query_point: M31Point = (1, 2);
+    // let denominator_inv: CM31 = deep_quotient_denominator_inverse(sample_point, query_point);
+    // assert!(cm31_eq(denominator_inv, (1, 0)));
 }
 
 #endif
