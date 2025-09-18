@@ -112,12 +112,22 @@ fn qm31_from_m31(a: M31) -> QM31 {
     (cm31_from_m31(a), cm31_zero())
 }
 
+/// Check if two QM31 elements are equal.
 fn qm31_eq(a: QM31, b: QM31) -> bool {
     let (ar, ai): (CM31, CM31) = a;
     let (br, bi): (CM31, CM31) = b;
     match cm31_eq(ar, br) {
         true => cm31_eq(ai, bi),
         false => false,
+    }
+}
+
+/// Unwrap a QM31 element from an Option.
+/// If the element is None, the function will panic.
+fn qm31_unwrap(x: Option<QM31>) -> QM31 {
+    match x {
+        Some(x: QM31) => x,
+        None => panic!(),
     }
 }
 

@@ -102,6 +102,15 @@ fn m31_eq(a: M31, b: M31) -> bool {
     jet::eq_32(a, b)
 }
 
+/// Unwrap a M31 element from an Option.
+/// If the element is None, the function will panic.
+fn m31_unwrap(x: Option<M31>) -> M31 {
+    match x {
+        Some(x: M31) => x,
+        None => panic!(),
+    }
+}
+
 /// Invert a field element modulo M31.
 /// More specifically compute `v^((2^31-1)-2) = v^2147483645` (which is cheaper than euclidian division)
 /// See https://github.com/mmcloughlin/addchain for more details
