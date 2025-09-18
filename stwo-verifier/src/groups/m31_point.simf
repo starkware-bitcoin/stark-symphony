@@ -12,6 +12,9 @@
 /// A generator for the circle group over M31.
 #define M31_CIRCLE_GEN (2, 1268011823)
 
+/// Neutral element of circle group
+#define M31_CIRCLE_POINT_ZERO (1, 0)
+
 /// Number of elements in the circle group
 #define M31_CIRCLE_ORDER 0x80000000 // 2^31
 
@@ -40,6 +43,57 @@ fn m31_point_add(lhs: M31Point, rhs: M31Point) -> M31Point {
     let r0: M31 = m31_sub(m31_mul(x0, x1), m31_mul(y0, y1));
     let r1: M31 = m31_add(m31_mul(x0, y1), m31_mul(y0, x1));
     (r0, r1)
+}
+
+/// Double a circle point: (x, y) -> (2*x^2 - 1, 2*x*y)
+fn m31_point_dbl(p: M31Point) -> M31Point {
+    let (x, y): (M31, M31) = p;
+    let x_dbl: M31 = m31_point_dbl_x(x);
+    let xy: M31 = m31_mul(x, y);
+    let y_dbl: M31 = m31_add(xy, xy);
+    (x_dbl, y_dbl)
+}
+
+/// Multiply a circle point by a u1.
+/// Takes result accumulator and the multiplier (to support carry) and a single bit.
+fn m31_point_mul_u1(res: M31Point, cur: M31Point, rhs: u1) -> (M31Point, M31Point) {
+    let new_res: M31Point = match jet::eq_1(rhs, 1) {
+        true => m31_point_add(res, cur),
+        false => res,
+    };
+    (new_res, m31_point_dbl(cur))
+}
+
+/// Multiply a circle point by a u8.
+/// Takes result accumulator and the multiplier (to support carry) and a single byte.
+fn m31_point_mul_u8(res: M31Point, cur: M31Point, rhs: u8) -> (M31Point, M31Point) {
+    let (b7, b6, b5, b4, b3, b2, b1, b0): (u1, u1, u1, u1, u1, u1, u1, u1) = <u8>::into(rhs);
+    let (res, cur): (M31Point, M31Point) = m31_point_mul_u1(res, cur, b0);
+    let (res, cur): (M31Point, M31Point) = m31_point_mul_u1(res, cur, b1);
+    let (res, cur): (M31Point, M31Point) = m31_point_mul_u1(res, cur, b2);
+    let (res, cur): (M31Point, M31Point) = m31_point_mul_u1(res, cur, b3);
+    let (res, cur): (M31Point, M31Point) = m31_point_mul_u1(res, cur, b4);
+    let (res, cur): (M31Point, M31Point) = m31_point_mul_u1(res, cur, b5);
+    let (res, cur): (M31Point, M31Point) = m31_point_mul_u1(res, cur, b6);
+    let (res, cur): (M31Point, M31Point) = m31_point_mul_u1(res, cur, b7);
+    (res, cur)
+}
+
+/// Multiply a circle point by a u32.
+/// Takes result accumulator and the multiplier (to support carry) and a single 32-bit integer.
+fn m31_point_mul_u32(res: M31Point, cur: M31Point, rhs: u32) -> (M31Point, M31Point) {
+    let (b3, b2, b1, b0): (u8, u8, u8, u8) = <u32>::into(rhs);
+    let (res, cur): (M31Point, M31Point) = m31_point_mul_u8(res, cur, b0);
+    let (res, cur): (M31Point, M31Point) = m31_point_mul_u8(res, cur, b1);
+    let (res, cur): (M31Point, M31Point) = m31_point_mul_u8(res, cur, b2);
+    let (res, cur): (M31Point, M31Point) = m31_point_mul_u8(res, cur, b3);
+    (res, cur)
+}
+
+/// Converts a circle point index to a M31 point.
+fn circle_point_index_to_m31_point(point_index: u32) -> M31Point {
+    let (res, _): (M31Point, M31Point) = m31_point_mul_u32(M31_CIRCLE_POINT_ZERO, M31_CIRCLE_GEN, point_index);
+    res
 }
 
 /// Flip y coordinate: (x, y) -> (x, -y)
@@ -84,6 +138,20 @@ fn test_m31_point_add_zero() {
     let point_2: M31Point = m31_point_zero();
     let result: M31Point = m31_point_add(point_1, point_2);
     assert!(m31_point_eq(result, point_1));
+}
+
+fn test_m31_point_dbl() {
+    let point: M31Point = (2, 1268011823);
+    let result: M31Point = m31_point_dbl(point);
+    let expected: M31Point = (7, 777079998);
+    assert!(m31_point_eq(result, expected));
+}
+
+fn test_circle_point_index_to_m31_point() {
+    let point_index: u32 = 1389;
+    let result: M31Point = circle_point_index_to_m31_point(point_index);
+    let expected: M31Point = (1670284485, 627279409);
+    assert!(m31_point_eq(result, expected));
 }
 
 #endif

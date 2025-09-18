@@ -10,6 +10,7 @@
 #include "utils/list_map.simf"
 #include "poly/evaluations.simf"
 #include "poly/deep_quotient.simf"
+#include "groups/circle_domain.simf"
 
 /// Response to a single FRI query.
 type QueryResponse = (u32, TraceEvalsM31, CPEvalM31);
@@ -91,11 +92,15 @@ fn trace_quotient_numerator_aggregate(evals: (ColEvalsM31, ColEvalsQM31), acc: N
 }
 
 /// Context for mapping query responses to FRI answers.
-type QueryResponseCtx = (QM31, QM31Point, OodsEvals);
+/// * random coefficient
+/// * OODS point
+/// * OODS evaluations
+/// * log size
+type QueryResponseCtx = (QM31, QM31Point, OodsEvals, u8);
 
 /// Mapper function for mapping a query response to a FRI answer.
 fn fri_answer(response: QueryResponse, ctx: QueryResponseCtx) -> (FriAnswer, QueryResponseCtx) {
-    let (random_coeff, oods_point, oods_evals): QueryResponseCtx = ctx;
+    let (random_coeff, oods_point, oods_evals, log_size): QueryResponseCtx = ctx;
     let (query, trace_evals, cp_evals): QueryResponse = response;
     let (oods_trace_evals, oods_cp_evals): OodsEvals = oods_evals;
 
@@ -104,14 +109,19 @@ fn fri_answer(response: QueryResponse, ctx: QueryResponseCtx) -> (FriAnswer, Que
     let zipped_cp_evals: [(M31, QM31); 16] = cp_evals_zip_arr_16(cp_evals, oods_cp_evals);
 
     // Compute the domain point from the query position and column offset 0.
-    let domain_point: M31Point = (0, 0); // TODO
+    let domain: CanonicCoset = circle_canonic_coset(log_size);
+    let domain_point_index: u32 = circle_position_to_point_index(domain, bit_reverse_index(query, log_size));
+    let domain_point: M31Point = circle_point_index_to_m31_point(domain_point_index);
 
     // Compute quotient denominator inverse.
     let denominator_inv: CM31 = deep_quotient_denominator_inverse(oods_point, domain_point);
 
     // Aggregate the quotient numerators.
-    let acc: NumeratorAcc = (qm31(0, 0, 0, 0), 0, domain_point, oods_point, random_coeff, qm31(1, 0, 0, 0));
+    // Quotient numerator accumulator = 0, column offset = 0, alpha_1 = random_coeff
+    let acc: NumeratorAcc = (qm31(0, 0, 0, 0), 0, domain_point, oods_point, random_coeff, random_coeff);
     let acc: NumeratorAcc = fold::<trace_quotient_numerator_aggregate, MAX_COLUMNS>(zipped_trace_evals, acc);
+
+    // TODO: process for other offsets (not needed for the current AIR)
 
     // Convert cp evals array to a list for convenient folding.
     // CP evals is 16 elements long (4 coords x 4 decompositions), the minimal list size that would fit that is 32.
@@ -139,8 +149,8 @@ DEFINE_MAP_LST(fri_answers, QueryResponse, FriAnswer, QueryResponseCtx, fri_answ
 DEFINE_MAP_LST(fri_answers, QueryResponse, FriAnswer, QueryResponseCtx, fri_answer, 32, 16)
 
 /// Map query responses to FRI answers.
-fn fri_answers(responses: QueryResponses, random_coeff: QM31, oods_point: QM31Point, oods_evals: OodsEvals) -> FriAnswers {
-    let ctx: QueryResponseCtx = (random_coeff, oods_point, oods_evals);
+fn fri_answers(responses: QueryResponses, random_coeff: QM31, oods_point: QM31Point, oods_evals: OodsEvals, log_size: u8) -> FriAnswers {
+    let ctx: QueryResponseCtx = (random_coeff, oods_point, oods_evals, log_size);
     let (fri_answers, _): (FriAnswers, QueryResponseCtx) = fri_answers_map_lst_32(responses, ctx);
     fri_answers
 }
@@ -163,8 +173,10 @@ fn test_trace_evals_zip_lst_8() {
     let zipped: List<(ColEvalsM31, ColEvalsQM31), 8> = trace_evals_zip_lst_8(evals, oods_evals);
 }
 
-fn test_cp_evals_zip_lst_4() {
-    // TODO
+fn test_cp_evals_zip_arr_4() {
+    let evals: [M31; 4] = [1, 2, 3, 4];
+    let oods_evals: [QM31; 4] = [qm31(1, 0, 0, 0), qm31(2, 0, 0, 0), qm31(3, 0, 0, 0), qm31(4, 0, 0, 0)];
+    let zipped: [(M31, QM31); 4] = cp_evals_zip_arr_4(evals, oods_evals);
 }
 
 #endif

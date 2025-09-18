@@ -26,12 +26,12 @@ fn deep_quotient_interpolant_coefficients(sample_point: QM31Point, sample_value:
     let (_, py): (QM31, QM31) = sample_point;
     let (_, im_py): (CM31, CM31) = py;
     let (_, im_val): (CM31, CM31) = sample_value;
-    let a: QM31 = qm31_mul(alpha_i, ((0, 0), cm31_neg(cm31_dbl(im_val))));
-    let b: QM31 = qm31_mul(alpha_i, ((0, 0), cm31_dbl(im_py)));
+    let a: QM31 = ((0, 0), cm31_neg(cm31_dbl(im_val)));
+    let b: QM31 = ((0, 0), cm31_neg(cm31_dbl(im_py)));
     let a_py: QM31 = qm31_mul(a, py);
     let b_val: QM31 = qm31_mul(b, sample_value);
-    let c: QM31 = qm31_mul(alpha_i, qm31_neg(qm31_add(a_py, b_val)));
-    (a, b, c)
+    let c: QM31 = qm31_sub(b_val, a_py);
+    (qm31_mul(alpha_i, a), qm31_mul(alpha_i, b), qm31_mul(alpha_i, c))
 }
 
 /// Compute the nominator of the DEEP quotient polynomial
@@ -43,18 +43,35 @@ fn deep_quotient_nominator(coefficients: (QM31, QM31, QM31), query_point: M31Poi
     qm31_sub(b_val, qm31_add(a_py, c))
 }
 
-/// Evaluate the DEEP quotient
-fn deep_quotient_evaluate(sample_point: QM31Point, sample_value: QM31, query_point: M31Point, query_value: M31, coefficients: (QM31, QM31, QM31)) -> QM31 {
-    let nominator: QM31 = deep_quotient_nominator(coefficients, query_point, query_value);
+fn test_quotient_denominator_inverse() {
+    let sample_point: QM31Point = (qm31(973971476, 2096742829, 1506028233, 421744209), qm31(412553825, 1247993643, 1275808085, 759067568));
+    let query_point: M31Point = (1106814243, 1856575509);
     let denominator_inv: CM31 = deep_quotient_denominator_inverse(sample_point, query_point);
-    qm31_mul_cm31(nominator, denominator_inv)
+    assert!(cm31_eq(denominator_inv, (1958565474, 499486817)));
 }
 
-fn test_quotient_denominator_inverse() {
-    // let sample_point: QM31Point = (qm31(1, 0, 0, 0), qm31(2, 0, 0, 0));
-    // let query_point: M31Point = (1, 2);
-    // let denominator_inv: CM31 = deep_quotient_denominator_inverse(sample_point, query_point);
-    // assert!(cm31_eq(denominator_inv, (1, 0)));
+fn test_deep_quotient_nominator() {
+    let a: QM31 = qm31(1539171227, 2130906081, 1552620029, 421606521);
+    let b: QM31 = qm31(2092687743, 982108767, 1024680145, 1871101401);
+    let c: QM31 = qm31(546930199, 666866547, 319167041, 1674804678);
+    let coefficients: (QM31, QM31, QM31) = (a, b, c);
+    let query_point: M31Point = (1990604615, 173950722);
+    let query_value: M31 = 132493824;
+    let nominator: QM31 = deep_quotient_nominator(coefficients, query_point, query_value);
+    assert!(qm31_eq(nominator, qm31(797556606, 1129629479, 2052356644, 753193571)));
+}
+
+fn test_deep_quotient_interpolant_coefficients() {
+    let a: QM31 = qm31(1539171227, 2130906081, 1552620029, 421606521);
+    let b: QM31 = qm31(2092687743, 982108767, 1024680145, 1871101401);
+    let c: QM31 = qm31(546930199, 666866547, 319167041, 1674804678);
+    let sample_point: QM31Point = (qm31(1182596539, 2003309678, 1009758371, 1860515008), qm31(1681416490, 1048048329, 495237805, 1389839561));
+    let sample_value: QM31 = qm31(494281534, 148837544, 35002031, 430043267);
+    let alpha_i: QM31 = qm31(2061479243, 1859201030, 1028332810, 616681896);
+    let (aa, bb, cc): (QM31, QM31, QM31) = deep_quotient_interpolant_coefficients(sample_point, sample_value, alpha_i);
+    assert!(qm31_eq(aa, a));
+    assert!(qm31_eq(bb, b));
+    assert!(qm31_eq(cc, c));
 }
 
 #endif

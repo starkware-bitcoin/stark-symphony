@@ -1,0 +1,126 @@
+#ifndef CIRCLE_DOMAIN_H
+#define CIRCLE_DOMAIN_H
+
+#include "groups/m31_point.simf"
+
+/// M31 circle point index bit mask
+#define M31_CIRCLE_ORDER_BIT_MASK 0x7fffffff
+
+/// Canonic coset is defined by parameters of its half coset
+///  * half_size: 2^(n-1) where n is the log_size of the canonic coset
+///  * offset: 2^(31-(n+1))
+///  * step: 2^(31-(n-1))
+type CanonicCoset = (u32, u32, u32);
+
+/// Bit reverse a u8.
+fn bit_reverse_u8(value: u8) -> u8 {
+    let (a, b, c, d, e, f, g, h): (u1, u1, u1, u1, u1, u1, u1, u1) = <u8>::into(value);
+    <(u1, u1, u1, u1, u1, u1, u1, u1)>::into((h, g, f, e, d, c, b, a))
+}
+
+/// Returns the bit reversed index of `i` which is represented by `log_size` bits.
+fn bit_reverse_index(index: u32, log_size: u8) -> u32 {
+    let (l0, l1, l2, l3): (u8, u8, u8, u8) = <u32>::into(index);
+    let res: u32 = <(u8, u8, u8, u8)>::into((bit_reverse_u8(l3), bit_reverse_u8(l2), bit_reverse_u8(l1), bit_reverse_u8(l0)));
+    let (_, shift): (bool, u8) = jet::subtract_8(32, log_size);
+    jet::right_shift_32(shift, res)
+}
+
+/// Returns the generator (index) of the circle subgroup of size 2^log_size.
+fn circle_subgroup_gen(log_size: u8) -> u32 {
+    let (_, shift): (bool, u8) = jet::subtract_8(M31_CIRCLE_LOG_ORDER, log_size);
+    jet::left_shift_32(shift, 1)
+}
+
+/// Creates a canonic (standard) coset of size 2^log_size.
+fn circle_canonic_coset(log_size: u8) -> CanonicCoset {
+    let (_, log_size_minus_1): (bool, u8) = jet::subtract_8(log_size, 1);
+    let (_, log_size_plus_1): (bool, u8) = jet::add_8(log_size, 1);
+    let half_size: u32 = jet::left_shift_32(log_size_minus_1, 1);
+    let offset: u32 = circle_subgroup_gen(log_size_plus_1);
+    let step: u32 = circle_subgroup_gen(log_size_minus_1);
+    (half_size, offset, step)
+}
+
+/// Adds two circle point indices.
+fn circle_point_index_add(lhs: u32, rhs: u32) -> u32 {
+    let (_, res): (bool, u32) = jet::add_32(lhs, rhs);
+    jet::and_32(res, M31_CIRCLE_ORDER_BIT_MASK)
+}
+
+/// Multiplies two circle point indices.
+fn circle_point_index_mul(lhs: u32, rhs: u32) -> u32 {
+    let res: u64 = jet::multiply_32(lhs, rhs);
+    // Discarding the high 32 bits (emulating wrapping multiplication)
+    let (_, lo): (u32, u32) = <u64>::into(res);
+    jet::and_32(lo, M31_CIRCLE_ORDER_BIT_MASK)
+}
+
+/// Negates a circle point index.
+fn circle_point_index_neg(index: u32) -> u32 {
+    let (_, res): (bool, u32) = jet::subtract_32(M31_CIRCLE_ORDER, index);
+    jet::and_32(res, M31_CIRCLE_ORDER_BIT_MASK)
+}
+
+/// Converts a position (number of an element) to a point on the circle domain.
+fn circle_position_to_point_index(domain: CanonicCoset, position: u32) -> u32 {
+    let (half_size, offset, step): (u32, u32, u32) = domain;
+    match jet::lt_32(position, half_size) {
+        true => circle_point_index_add(offset, circle_point_index_mul(step, position)),
+        false => {
+            let (_, position): (bool, u32) = jet::subtract_32(position, half_size);
+            let index: u32 = circle_point_index_add(offset, circle_point_index_mul(step, position));
+            circle_point_index_neg(index)
+        }
+    }
+}
+
+fn test_bit_reverse_index() {
+    let index: u32 = 15;
+    let log_size: u8 = 11;
+    let reversed: u32 = bit_reverse_index(index, log_size);
+    assert!(jet::eq_32(reversed, 1920));
+}
+
+fn test_circle_canonic_coset() {
+    let (half_size, offset, step): (u32, u32, u32) = circle_canonic_coset(11);
+    assert!(jet::eq_32(half_size, 1024));
+    assert!(jet::eq_32(offset, 524288));
+    assert!(jet::eq_32(step, 2097152));
+}
+
+fn test_circle_point_index_add() {
+    let lhs: u32 = 1389;
+    let rhs: u32 = 1390;
+    let res: u32 = circle_point_index_add(lhs, rhs);
+    assert!(jet::eq_32(res, 2779));
+}
+
+fn test_circle_point_index_mul() {
+    let lhs: u32 = 1389;
+    let rhs: u32 = 123;
+    let res: u32 = circle_point_index_mul(lhs, rhs);
+    assert!(jet::eq_32(res, 170847));
+}
+
+fn test_circle_point_index_neg() {
+    let index: u32 = 1389;
+    let res: u32 = circle_point_index_neg(index);
+    assert!(jet::eq_32(res, 2147482259));
+}
+
+fn test_circle_position_to_point_index() {
+    let domain: CanonicCoset = circle_canonic_coset(11);
+    let position: u32 = 1133;
+    let point_index: u32 = circle_position_to_point_index(domain, position);
+    assert!(jet::eq_32(point_index, 1918369792));
+}
+
+fn test_circle_position_to_point_index_2() {
+    let domain: CanonicCoset = circle_canonic_coset(11);
+    let position: u32 = 201;
+    let point_index: u32 = circle_position_to_point_index(domain, position);
+    assert!(jet::eq_32(point_index, 422051840));
+}
+
+#endif
