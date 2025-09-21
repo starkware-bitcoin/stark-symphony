@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
 #ifndef CIRCLE_DOMAIN_H
 #define CIRCLE_DOMAIN_H
 

@@ -37,8 +37,8 @@ fn channel_mix_oods_evals(state: ChannelState, oods_evals: OodsEvals) -> Channel
 
 /// Reads the trace/cp polynomial evaluations at OODS, samples OODS point and random coefficient for DEEP quotients.
 /// Fails if the computed CP evaluation does not match the sampled CP evaluation.
-/// Returns the updated channel state and random coefficient for DEEP quotients.
-fn oods(state: ChannelState, log_size: u8, oods_evals: OodsEvals, random_coeff: QM31) -> (ChannelState, QM31) {
+/// Returns the updated channel state, random coefficient for DEEP quotients and OODS point.
+fn oods(state: ChannelState, log_size: u8, oods_evals: OodsEvals, cp_alpha: QM31) -> (ChannelState, QM31, QM31Point) {
     let (oods_trace_evals, oods_cp_eval): OodsEvals = oods_evals;
 
     // Draw OODS point
@@ -48,14 +48,16 @@ fn oods(state: ChannelState, log_size: u8, oods_evals: OodsEvals, random_coeff: 
     let state: ChannelState = channel_mix_oods_evals(state, oods_evals);
 
     // Evaluate composition polynomial at OODS point
-    let cp_eval: QM31 = eval_composition_poly(log_size, oods_point, oods_trace_evals, random_coeff);
+    let cp_eval: QM31 = eval_composition_poly(log_size, oods_point, oods_trace_evals, cp_alpha);
     
     // Reconstruct sampled CP evaluation and compare
     let sampled_cp_eval: QM31 = composition_poly_eval_from_decomposed(oods_cp_eval, oods_point);
     assert!(qm31_eq(cp_eval, sampled_cp_eval));
 
     // Draw random coefficient for DEEP quotients
-    channel_draw_qm31(state)
+    let (state, random_coeff): (ChannelState, QM31) = channel_draw_qm31(state);
+
+    (state, random_coeff, oods_point)
 }
 
 fn test_oods() {
@@ -87,7 +89,7 @@ fn test_oods() {
         qm31(0, 0, 0, 0),
     ];
     let oods_evals: OodsEvals = (oods_trace_evals, oods_cp_eval);
-    let ((digest, _), deep_alpha): (ChannelState, QM31) = oods(state, log_size, oods_evals, random_coeff);
+    let ((digest, _), deep_alpha, _): (ChannelState, QM31, QM31Point) = oods(state, log_size, oods_evals, random_coeff);
     assert!(jet::eq_256(digest, 0x7a974a58d6ebe09baa1373d9eda65b443a427796a4befe155a944ce9f9effbfd));
     assert!(qm31_eq(deep_alpha, qm31(2025520334, 1698313713, 620429472, 614470376)));
 }

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
 // Select the constraints
 #include "constraints/wide_fibonacci.simf"
 

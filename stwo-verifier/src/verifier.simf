@@ -6,12 +6,14 @@
 #define VERIFIER_SIMF
 
 #include "config.simf"
+#include "pow.simf"
 #include "deep/oods.simf"
 #include "evals/commit.simf"
 #include "evals/decommit.simf"
 #include "fri/commit.simf"
+#include "fri/answers.simf"
 
-/// Proof:
+/// Stwo proof:
 /// * trace log size
 /// * commitments
 /// * OODS trace evaluations and CP evaluation (partitioned) at OODS point
@@ -25,5 +27,34 @@ type Proof = (
     FriLayers,
     u64,
 );
+
+/// Verify Stwo proof.
+fn verify_proof(proof: Proof) {
+    let (log_size, commitments, decommitments, oods_evals, fri_layers, pow_nonce): Proof = proof;
+
+    // Initialize Prover <> Verifier non-interactive channel
+    let state: ChannelState = channel_init();
+
+    // Commit to trace & composition polynomial (CP) evaluations
+    let (state, cp_alpha): (ChannelState, QM31) = evals_commit(state, commitments);
+
+    // Read trace evaluations and CP evaluation (partitioned) at out-of-domain point
+    let (state, random_coeff, oods_point): (ChannelState, QM31, QM31Point) = oods(state, log_size, oods_evals, cp_alpha);
+
+    // Commit to FRI layers
+    let state: ChannelState = fri_commit(state, fri_layers);
+
+    // Verify proof of work
+    let state: ChannelState = check_proof_of_work(state, pow_nonce);
+
+    // Read and decommit evaluations at queried positions
+    let (state, query_responses): (ChannelState, QueryResponses) = evals_decommit(state, log_size, commitments, decommitments);
+
+    // Compute DEEP quotients at queried positions
+    let fri_answers: FriAnswers = fri_answers(query_responses, random_coeff, oods_point, oods_evals, log_size);
+    
+    // Run FRI protocol for all the queries
+    fri_decommit(fri_layers, fri_answers);
+}
 
 #endif

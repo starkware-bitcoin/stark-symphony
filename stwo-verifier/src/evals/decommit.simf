@@ -10,6 +10,7 @@
 #include "evals/commit.simf"
 #include "evals/trace_poly.simf"
 #include "evals/composition_poly.simf"
+#include "fri/queries.simf"
 #include "macros/list_map.simf"
 #include "macros/list_zip.simf"
 
@@ -71,7 +72,7 @@ fn decommit_query(query_decommitment: QueryDecommitment, roots: Commitments) -> 
     ((query, trace_evals, cp_evals), roots)
 }
 
-/// Zip queries with decommitments.
+/// Zip queries with decommitments to get query decommitments (u32, Decommitment).
 DEFINE_ZIP_ARR_2(query_decommitments, u32, Decommitment)
 DEFINE_ZIP_ARR(query_decommitments, u32, Decommitment, 4, 2)
 DEFINE_ZIP_ARR(query_decommitments, u32, Decommitment, 8, 4)
@@ -83,7 +84,7 @@ DEFINE_ZIP_LST(query_decommitments, u32, Decommitment, 8, 4)
 DEFINE_ZIP_LST(query_decommitments, u32, Decommitment, 16, 8)
 DEFINE_ZIP_LST(query_decommitments, u32, Decommitment, 32, 16)
 
-/// Map decommitments to query responses.
+/// Map query decommitments to query responses.
 DEFINE_MAP_ARR_2(query_responses, QueryDecommitment, QueryResponse, Commitments, decommit_query)
 DEFINE_MAP_ARR(query_responses, QueryDecommitment, QueryResponse, Commitments, decommit_query, 4, 2)
 DEFINE_MAP_ARR(query_responses, QueryDecommitment, QueryResponse, Commitments, decommit_query, 8, 4)
@@ -94,6 +95,20 @@ DEFINE_MAP_LST(query_responses, QueryDecommitment, QueryResponse, Commitments, d
 DEFINE_MAP_LST(query_responses, QueryDecommitment, QueryResponse, Commitments, decommit_query, 8, 4)
 DEFINE_MAP_LST(query_responses, QueryDecommitment, QueryResponse, Commitments, decommit_query, 16, 8)
 DEFINE_MAP_LST(query_responses, QueryDecommitment, QueryResponse, Commitments, decommit_query, 32, 16)
+
+/// Read FRI query positions and decommit evaluations at those positions.
+fn evals_decommit(state: ChannelState, log_size: u8, commitments: Commitments, decommitments: Decommitments) -> (ChannelState, QueryResponses) {
+    // Get FRI query positions
+    let (state, queries): (ChannelState, List<u32, MAX_FRI_QUERIES>) = fri_generate_queries(state, log_size);
+
+    // Zip queries with decommitments to get query decommitments (u32, Decommitment).
+    let query_decommitments: List<QueryDecommitment, MAX_FRI_QUERIES> = query_decommitments_zip_lst_32(queries, decommitments);
+
+    // Map query decommitments to query responses.
+    let (query_responses, _): (QueryResponses, Commitments) = query_responses_map_lst_32(query_decommitments, commitments);
+
+    (state, query_responses)
+}
 
 fn test_decommit_query() {
     let roots: Commitments = (

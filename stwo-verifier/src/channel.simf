@@ -27,6 +27,11 @@ type M31x8 = (M31, M31, M31, M31, M31, M31, M31, M31);
 /// A tuple of 4 M31 values.
 type M31x4 = (M31, M31, M31, M31);
 
+/// Initialize the channel state.
+fn channel_init() -> ChannelState {
+    (0, 0)
+}
+
 /// Draw a 256-bit value from the channel state and increment the num_sent counter.
 fn channel_draw_u256(state: ChannelState) -> (ChannelState, u256) {
     let (digest, num_sent): ChannelState = state;
