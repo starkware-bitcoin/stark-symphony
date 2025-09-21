@@ -2,11 +2,10 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef VERIFIER_POW_SIMF
-#define VERIFIER_POW_SIMF
+#ifndef POW_SIMF
+#define POW_SIMF
 
-#include "channel/helpers.simf"
-#include "channel/state.simf"
+#include "channel.simf"
 
 /// The target for the proof of work.
 /// WARNING: up to 64 bits are supported.

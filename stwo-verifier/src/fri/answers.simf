@@ -5,18 +5,13 @@
 #ifndef FRI_ANSWERS_SIMF
 #define FRI_ANSWERS_SIMF
 
-#include "verifier/proof.simf"
-#include "utils/list_zip.simf"
-#include "utils/list_map.simf"
-#include "poly/evaluations.simf"
-#include "poly/deep_quotient.simf"
+#include "config.simf"
+#include "deep/oods.simf"
+#include "deep/quotients.simf"
+#include "evals/decommit.simf"
 #include "groups/circle_domain.simf"
-
-/// Response to a single FRI query.
-type QueryResponse = (u32, TraceEvalsM31, CPEvalM31);
-
-/// List of query responses.
-type QueryResponses = List<QueryResponse, MAX_FRI_QUERIES>;
+#include "macros/list_zip.simf"
+#include "macros/list_map.simf"
 
 /// FRI answer is a pair of a query and a random linear combination of quotients.
 type FriAnswer = (u32, QM31);
@@ -110,8 +105,8 @@ fn fri_answer(response: QueryResponse, ctx: QueryResponseCtx) -> (FriAnswer, Que
 
     // Compute the domain point from the query position and column offset 0.
     let domain: CanonicCoset = circle_canonic_coset(log_size);
-    let domain_point_index: u32 = circle_position_to_point_index(domain, bit_reverse_index(query, log_size));
-    let domain_point: M31Point = circle_point_index_to_m31_point(domain_point_index);
+    let position: u32 = bit_reverse_index(query, log_size);
+    let domain_point: M31Point = circle_position_to_m31_point(domain, position);
 
     // Compute quotient denominator inverse.
     let denominator_inv: CM31 = deep_quotient_denominator_inverse(oods_point, domain_point);

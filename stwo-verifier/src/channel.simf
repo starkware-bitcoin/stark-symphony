@@ -5,20 +5,27 @@
 //! A non-interactive channel for communication between the prover and the verifier.
 //! The channel is based on the SHA-256 hash function.
 
-#ifndef CHANNEL_STATE_SIMF
-#define CHANNEL_STATE_SIMF
+#ifndef CHANNEL_SIMF
+#define CHANNEL_SIMF
 
 #include "fields/m31.simf"
 #include "fields/qm31.simf"
 #include "groups/qm31_point.simf"
-#include "channel/helpers.simf"
-#include "poly/evaluations.simf"
-#include "poly/line.simf"
 
 /// The channel state consists of:
 /// - "so-far" digest 256-bit value, initialized to 0.
 /// - 32-bit counter for the number of drawing attempts per current state (aka num_sent).
 type ChannelState = (u256, u32);
+
+/// 2P = 2^32 - 2
+#define DBL_P 4294967294
+
+/// A tuple of 8 32-bit values.
+type U32x8 = (u32, u32, u32, u32, u32, u32, u32, u32);
+/// A tuple of 8 M31 values.
+type M31x8 = (M31, M31, M31, M31, M31, M31, M31, M31);
+/// A tuple of 4 M31 values.
+type M31x4 = (M31, M31, M31, M31);
 
 /// Draw a 256-bit value from the channel state and increment the num_sent counter.
 fn channel_draw_u256(state: ChannelState) -> (ChannelState, u256) {
@@ -31,10 +38,59 @@ fn channel_draw_u256(state: ChannelState) -> (ChannelState, u256) {
     ((digest, num_sent), res)
 }
 
+/// Split a 256-bit value into 8 big endian 32-bit values.
+/// Returns the limbs as a tuple, from most significant to least significant limbs.
+fn split_256(value: u256) -> U32x8 {
+    let (abcd, efgh): (u128, u128) = <u256>::into(value);
+    let (ab, cd): (u64, u64) = <u128>::into(abcd);
+    let (ef, gh): (u64, u64) = <u128>::into(efgh);
+    let (a, b): (u32, u32) = <u64>::into(ab);
+    let (c, d): (u32, u32) = <u64>::into(cd);
+    let (e, f): (u32, u32) = <u64>::into(ef);
+    let (g, h): (u32, u32) = <u64>::into(gh);
+    (a, b, c, d, e, f, g, h)
+}
+
 /// Draw 8 big endian 32-bit words from the channel state and increment the num_sent counter.
 fn channel_draw_words(state: ChannelState) -> (ChannelState, U32x8) {
     let (state, value): (ChannelState, u256) = channel_draw_u256(state);
     (state, split_256(value))
+}
+
+/// Check if two 32-bit values are uniformly distributed.
+/// Returns true if both values are less than DBL_P.
+fn is_uniform_2(a: u32, b: u32) -> bool {
+    match jet::lt_32(a, DBL_P) {
+        true => match jet::lt_32(b, DBL_P) {
+            true => true,
+            false => false,
+        },
+        false => false,
+    }
+}
+
+/// Check if four 32-bit values are uniformly distributed.
+/// Returns true if all four values are less than DBL_P.
+fn is_uniform_4(a: u32, b: u32, c: u32, d: u32) -> bool {
+    match is_uniform_2(a, b) {
+        true => match is_uniform_2(c, d) {
+            true => true,
+            false => false,
+        },
+        false => false,
+    }
+}
+
+/// Check if eight 32-bit values are uniformly distributed.
+/// Returns true if all eight values are less than DBL_P.
+fn is_uniform_8(a: u32, b: u32, c: u32, d: u32, e: u32, f: u32, g: u32, h: u32) -> bool {
+    match is_uniform_4(a, b, c, d) {
+        true => match is_uniform_4(e, f, g, h) {
+            true => true,
+            false => false,
+        },
+        false => false,
+    }
 }
 
 /// Draw 8 base field elements (M31) from the channel uniformly at random.
@@ -110,52 +166,6 @@ fn channel_mix_u64(state: ChannelState, input: u64) -> ChannelState {
     (res, 0)
 }
 
-/// Add a QM31 value to the hasher, coordinate by coordinate, 4 bytes (big endian) at a time.
-fn hasher_add_qm31(value: QM31, ctx: Ctx8) -> Ctx8 {
-    let ((a, b), (c, d)): QM31 = dbg!(value);
-    let ctx: Ctx8 = jet::sha_256_ctx_8_add_4(ctx, a);
-    let ctx: Ctx8 = jet::sha_256_ctx_8_add_4(ctx, b);
-    let ctx: Ctx8 = jet::sha_256_ctx_8_add_4(ctx, c);
-    let ctx: Ctx8 = jet::sha_256_ctx_8_add_4(ctx, d);
-    ctx
-}
-
-/// Add a list of QM31 column evaluations to the hasher.
-fn hasher_add_qm31_column(col_evals: ColEvalsQM31, ctx: Ctx8) -> Ctx8 {
-    fold::<hasher_add_qm31, COL_MAX_OFFSET>(col_evals, ctx)
-}
-
-/// Mix a list of QM31 values into the channel state.
-fn channel_mix_oods_evals(state: ChannelState, oods_evals: OodsEvals) -> ChannelState {
-    let (digest, _): ChannelState = state;
-    let ctx: Ctx8 = jet::sha_256_ctx_8_init();
-    let ctx: Ctx8 = jet::sha_256_ctx_8_add_32(ctx, digest);
-
-    // Mix sampled values
-    let (oods_trace_evals, oods_cp_eval): OodsEvals = oods_evals;
-    let ctx: Ctx8 = fold::<hasher_add_qm31_column, MAX_COLUMNS>(oods_trace_evals, ctx);
-
-    // Mix CP decomposed partitioned evaluation
-    let cp_eval_list: List<QM31, 32> = <(Option<CPEvalQM31>, List<QM31, 16>)>::into((Some(oods_cp_eval), list![]));
-    let ctx: Ctx8 = fold::<hasher_add_qm31, 32>(cp_eval_list, ctx);
-
-    let res: u256 = jet::sha_256_ctx_8_finalize(ctx);
-    // Reset the num_sent counter
-    (res, 0)
-}
-
-/// Mix line polynomial coefficients into the channel state.
-fn channel_mix_line_poly(state: ChannelState, line_poly: LinePoly) -> ChannelState {
-    let (digest, _): ChannelState = state;
-    let ctx: Ctx8 = jet::sha_256_ctx_8_init();
-    let ctx: Ctx8 = jet::sha_256_ctx_8_add_32(ctx, digest);
-    // Mix coefficients as list of QM31 values
-    let ctx: Ctx8 = fold::<hasher_add_qm31, MAX_LINE_POLY_DEGREE>(line_poly, ctx);
-    let res: u256 = jet::sha_256_ctx_8_finalize(ctx);
-    // Reset the num_sent counter
-    (res, 0)
-}
-
 fn test_channel_draw_qm31() {
     let state: ChannelState = (0, 0);
     let first_random_felt: QM31 = qm31(1840668629, 533944055, 1922121815, 459001195);
@@ -174,38 +184,6 @@ fn test_channel_draw_qm31_point() {
     let x: QM31 = qm31(877266510, 837585062, 67369234, 641637369);
     let y: QM31 = qm31(1140140443, 711987229, 851311779, 496972972);
     assert!(qm31_point_eq(value, (x, y)));
-}
-
-fn test_channel_mix_oods_evals() {
-    let state: ChannelState = (0xf4101066b0addfbccce964d958b1dec28fcf4e2a9a280f15b8dfcb4176b65c99, 0);
-    let oods_trace_evals: TraceEvalsQM31 = list![
-        list![qm31(1, 0, 0, 0)],
-        list![qm31(1317558333, 30282626, 1003338644, 805043598)],
-        list![qm31(962074990, 170174207, 1792910003, 764280909)],
-        list![qm31(1150846786, 1548284776, 259211664, 74473918)],
-    ];
-    let oods_cp_eval: CPEvalQM31 = [
-        qm31(1454521826, 1225905306, 1400157099, 1190844098),
-        qm31(1028648943, 0, 0, 0),
-        qm31(2147287039, 0, 0, 0),
-        qm31(0, 0, 0, 0),
-        qm31(1077048838, 1065010352, 1218756193, 72961446),
-        qm31(1832027781, 0, 0, 0),
-        qm31(0, 0, 0, 0),
-        qm31(0, 0, 0, 0),
-        qm31(1384617206, 1935540515, 73491668, 934779802),
-        qm31(1354939621, 0, 0, 0),
-        qm31(0, 0, 0, 0),
-        qm31(0, 0, 0, 0),
-        qm31(1615962367, 320491381, 618401992, 1994125905),
-        qm31(180137318, 0, 0, 0),
-        qm31(0, 0, 0, 0),
-        qm31(0, 0, 0, 0),
-    ];
-    let expected: u256 = 0x7a974a58d6ebe09baa1373d9eda65b443a427796a4befe155a944ce9f9effbfd;
-
-    let (digest, _): ChannelState = channel_mix_oods_evals(state, (oods_trace_evals, oods_cp_eval));
-    assert!(jet::eq_256(digest, expected));
 }
 
 #endif

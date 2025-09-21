@@ -7,8 +7,8 @@
 
 #include "fields/qm31.simf"
 #include "groups/qm31_point.simf"
-#include "poly/evaluations.simf"
-#include "poly/vanishing.simf"
+#include "evals/trace_poly.simf"
+#include "evals/composition_poly.simf"
 
 /// The accumulator for the evaluation of the composition polynomial.
 /// * contraint accumulator

@@ -5,7 +5,8 @@
 #ifndef HASHER_SIMF
 #define HASHER_SIMF
 
-#include "poly/evaluations.simf"
+#include "evals/trace_poly.simf"
+#include "evals/composition_poly.simf"
 
 /// SHA256 hash of a 256-bit value (big-endian).
 fn sha256(input: u256) -> u256 {
@@ -37,6 +38,21 @@ fn hasher_add_m31(eval: M31, ctx: Ctx8) -> Ctx8 {
 /// Add a column of M31 values to the SHA256 context.
 fn hasher_add_m31_column(col_evals: ColEvalsM31, ctx: Ctx8) -> Ctx8 {
     fold::<hasher_add_m31, COL_MAX_OFFSET>(col_evals, ctx)
+}
+
+/// Add a QM31 value to the hasher, coordinate by coordinate, 4 bytes (big endian) at a time.
+fn hasher_add_qm31(value: QM31, ctx: Ctx8) -> Ctx8 {
+    let ((a, b), (c, d)): QM31 = dbg!(value);
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_4(ctx, a);
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_4(ctx, b);
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_4(ctx, c);
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_4(ctx, d);
+    ctx
+}
+
+/// Add a list of QM31 column evaluations to the hasher.
+fn hasher_add_qm31_column(col_evals: ColEvalsQM31, ctx: Ctx8) -> Ctx8 {
+    fold::<hasher_add_qm31, COL_MAX_OFFSET>(col_evals, ctx)
 }
 
 /// Hash multiple M31 columns (trace evaluations).

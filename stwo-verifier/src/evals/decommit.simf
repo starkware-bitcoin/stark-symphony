@@ -2,41 +2,44 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef VERIFIER_QUERIES_SIMF
-#define VERIFIER_QUERIES_SIMF
+#ifndef EVALS_DECOMMIT_SIMF
+#define EVALS_DECOMMIT_SIMF
 
-#include "channel/state.simf"
-#include "fields/qm31.simf"
-#include "groups/qm31_point.simf"
-#include "poly/evaluations.simf"
-#include "verifier/proof.simf"
-#include "vcs/hasher.simf"
-#include "vcs/merkle.simf"
-#include "utils/list_map.simf"
-#include "utils/list_zip.simf"
-#include "fri/answers.simf"
+#include "config.simf"
+#include "merkle.simf"
+#include "evals/commit.simf"
+#include "evals/trace_poly.simf"
+#include "evals/composition_poly.simf"
+#include "macros/list_map.simf"
+#include "macros/list_zip.simf"
+
+/// Composition polynomial decommitment:
+/// * partitioned evaluations in M31
+/// * Merkle proof
+type CpDecommitment = (CPEvalM31, MerkleProof32);
+
+/// Trace decommitment:
+/// * evaluations in M31
+/// * Merkle proof
+type TraceDecommitment = (TraceEvalsM31, MerkleProof32);
+
+/// Decommitment:
+/// * trace decommitment
+/// * composition polynomial decommitment
+type Decommitment = (TraceDecommitment, CpDecommitment);
+
+/// Decommitments:
+/// * decommitments for each FRI query
+type Decommitments = List<Decommitment, MAX_FRI_QUERIES>;
 
 /// Pair of a query and a decommitment.
 type QueryDecommitment = (u32, Decommitment);
 
-/// Reads the trace/cp polynomial commitments and samples random CP coefficient.
-/// Returns the updated channel state and random CP coefficient.
-fn commit(state: ChannelState, commitments: Commitments) -> (ChannelState, QM31) {
-    let (const_root, trace_root, cp_root): Commitments = commitments;
+/// Response to a single FRI query.
+type QueryResponse = (u32, TraceEvalsM31, CPEvalM31);
 
-    // Read preprocessed tree root (aka constant trace)
-    let state: ChannelState = channel_mix_u256(state, const_root);
-    // Read trace root
-    let state: ChannelState = channel_mix_u256(state, trace_root);
-
-    // Draw random coefficient for CP evaluation
-    let (state, random_coeff): (ChannelState, QM31) = channel_draw_qm31(state);
-
-    // Read composition polynomial commitment root
-    let state: ChannelState = channel_mix_u256(state, cp_root);
-
-    (state, random_coeff)
-}
+/// List of query responses.
+type QueryResponses = List<QueryResponse, MAX_FRI_QUERIES>;
 
 /// Decommit trace polynomial evaluations at queried position.
 fn decommit_trace_evals(query: u32, decommitment: TraceDecommitment, root: MerkleNode) -> TraceEvalsM31 {
@@ -91,28 +94,6 @@ DEFINE_MAP_LST(query_responses, QueryDecommitment, QueryResponse, Commitments, d
 DEFINE_MAP_LST(query_responses, QueryDecommitment, QueryResponse, Commitments, decommit_query, 8, 4)
 DEFINE_MAP_LST(query_responses, QueryDecommitment, QueryResponse, Commitments, decommit_query, 16, 8)
 DEFINE_MAP_LST(query_responses, QueryDecommitment, QueryResponse, Commitments, decommit_query, 32, 16)
-
-/// Verify decommitments of queried trace & cp evaluations.
-/// Returns the updated channel state and the list of query responses.
-fn decommit(queries: List<u32, MAX_FRI_QUERIES>, decommitments: Decommitments, roots: Commitments) -> QueryResponses {
-    // Zip queries with decommitments
-    let zipped_items: List<QueryDecommitment, MAX_FRI_QUERIES> = query_decommitments_zip_lst_32(queries, decommitments);
-    // Decommit queries and output a list of tuples (query, trace_evals, cp_evals)
-    let (responses, _): (QueryResponses, Commitments) = query_responses_map_lst_32(zipped_items, roots);
-    responses
-}
-
-fn test_commit() {
-    let state: ChannelState = (0, 0);
-    let commitments: Commitments = (
-        0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,
-        0x2151e980c7ae914e9b486e36b8392db505e1848bd7dcc89329245c61cdb95096,
-        0xe85deb2eaadb5e5376ce81ffb6ee36eab838c2a97686f83d5de609ba03845e0c,
-    );
-    let ((digest, _), random_coeff): (ChannelState, QM31) = commit(state, commitments);
-    assert!(jet::eq_256(digest, 0x94642214378090859916af45c596713b6d8abaa2c72f3ed8ad41f869ad35491b));
-    assert!(qm31_eq(random_coeff, qm31(2012724549, 1128459570, 1584582850, 1454574268)));
-}
 
 fn test_decommit_query() {
     let roots: Commitments = (

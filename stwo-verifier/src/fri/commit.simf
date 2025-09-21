@@ -2,12 +2,28 @@
 //
 // SPDX-License-Identifier: MIT
 
-#ifndef FRI_FOLDING_SIMF
-#define FRI_FOLDING_SIMF
+#ifndef FRI_COMMIT_SIMF
+#define FRI_COMMIT_SIMF
 
-#include "channel/state.simf"
+#include "config.simf"
+#include "channel.simf"
+#include "hasher.simf"
 #include "fields/qm31.simf"
-#include "verifier/proof.simf"
+
+/// FRI layer (first and inner)
+/// * commitment
+/// * folding alpha
+/// * domain size
+type FriLayer = (u256, QM31, u32);
+
+/// Line polynomial coefficients in Circle FFT basis.
+type LinePoly = List<QM31, MAX_LINE_POLY_DEGREE>;
+
+/// FRI layers:
+/// * first layer
+/// * inner layers (up to MAX_FRI_LAYERS - 1)
+/// * last layer (line polynomial coefficients)
+type FriLayers = (FriLayer, List<FriLayer, MAX_FRI_LAYERS>, LinePoly);
 
 /// Reads the FRI layer commitment and samples a random coefficient.
 /// Fails if the computed FRI layer evaluation does not match the pre-sampled FRI layer evaluation.
@@ -22,6 +38,18 @@ fn fri_layer_commit(layer: FriLayer, state: ChannelState) -> ChannelState {
     assert!(qm31_eq(random_coeff, folding_alpha));
 
     state
+}
+
+/// Mix line polynomial coefficients into the channel state.
+fn channel_mix_line_poly(state: ChannelState, line_poly: LinePoly) -> ChannelState {
+    let (digest, _): ChannelState = state;
+    let ctx: Ctx8 = jet::sha_256_ctx_8_init();
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_32(ctx, digest);
+    // Mix coefficients as list of QM31 values
+    let ctx: Ctx8 = fold::<hasher_add_qm31, MAX_LINE_POLY_DEGREE>(line_poly, ctx);
+    let res: u256 = jet::sha_256_ctx_8_finalize(ctx);
+    // Reset the num_sent counter
+    (res, 0)
 }
 
 /// Commits the FRI layers.

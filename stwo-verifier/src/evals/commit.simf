@@ -1,0 +1,49 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
+#ifndef EVALS_COMMIT_SIMF
+#define EVALS_COMMIT_SIMF
+
+#include "channel.simf"
+#include "fields/qm31.simf"
+#include "groups/qm31_point.simf"
+
+/// Commitments:
+/// * const (preprocessed) root
+/// * trace root
+/// * composition polynomial root
+type Commitments = (u256, u256, u256);
+
+/// Reads the trace/cp polynomial commitments and samples random CP coefficient.
+/// Returns the updated channel state and random CP coefficient.
+fn commit(state: ChannelState, commitments: Commitments) -> (ChannelState, QM31) {
+    let (const_root, trace_root, cp_root): Commitments = commitments;
+
+    // Read preprocessed tree root (aka constant trace)
+    let state: ChannelState = channel_mix_u256(state, const_root);
+    // Read trace root
+    let state: ChannelState = channel_mix_u256(state, trace_root);
+
+    // Draw random coefficient for CP evaluation
+    let (state, random_coeff): (ChannelState, QM31) = channel_draw_qm31(state);
+
+    // Read composition polynomial commitment root
+    let state: ChannelState = channel_mix_u256(state, cp_root);
+
+    (state, random_coeff)
+}
+
+fn test_commit() {
+    let state: ChannelState = (0, 0);
+    let commitments: Commitments = (
+        0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,
+        0x2151e980c7ae914e9b486e36b8392db505e1848bd7dcc89329245c61cdb95096,
+        0xe85deb2eaadb5e5376ce81ffb6ee36eab838c2a97686f83d5de609ba03845e0c,
+    );
+    let ((digest, _), random_coeff): (ChannelState, QM31) = commit(state, commitments);
+    assert!(jet::eq_256(digest, 0x94642214378090859916af45c596713b6d8abaa2c72f3ed8ad41f869ad35491b));
+    assert!(qm31_eq(random_coeff, qm31(2012724549, 1128459570, 1584582850, 1454574268)));
+}
+
+#endif

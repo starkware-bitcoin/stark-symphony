@@ -1,0 +1,71 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
+#ifndef EVALS_TRACE_POLY_SIMF
+#define EVALS_TRACE_POLY_SIMF
+
+#include "fields/qm31.simf"
+#include "groups/qm31_point.simf"
+#include "macros/list_get.simf"
+
+/// Maximum supported offset for an AIR column with transition constraints.
+/// Upper bound not included, i.e. offset is in range [0, COL_MAX_OFFSET).
+#define COL_MAX_OFFSET 4
+
+/// Maximum supported number of columns in the AIR.
+/// Upper bound not included, i.e. offset is in range [0, MAX_COLUMNS).
+#define MAX_COLUMNS 256
+
+/// A list of evaluations in QM31 for a given column.
+/// TODO: consider using a tuple instead, we need at most 2 for Plonk.
+type ColEvalsQM31 = List<QM31, COL_MAX_OFFSET>;
+
+/// A list of evaluations in M31 for a given column.
+type ColEvalsM31 = List<M31, COL_MAX_OFFSET>;
+
+/// A list of evaluations in QM31 for all columns.
+/// Assumming single component.
+type TraceEvalsQM31 = List<ColEvalsQM31, MAX_COLUMNS>;
+
+/// A list of evaluations in M31 for all columns.
+/// Assumming single component.
+type TraceEvalsM31 = List<ColEvalsM31, MAX_COLUMNS>;
+
+DEFINE_GET_ARR_2(qm31, QM31)
+DEFINE_GET_ARR(qm31, QM31, 4, 2)
+DEFINE_GET_LST_2(qm31, QM31)
+DEFINE_GET_LST(qm31, QM31, 4, 2)
+
+DEFINE_GET_ARR_2(m31, M31)
+DEFINE_GET_ARR(m31, M31, 4, 2)
+DEFINE_GET_LST_2(m31, M31)
+DEFINE_GET_LST(m31, M31, 4, 2)
+
+/// Get an evaluation from a column evaluations list given an offset.
+/// If the offset is out of bounds, the function will panic.
+fn col_evals_qm31_get(col_evals: ColEvalsQM31, offset: u32) -> QM31 {
+    qm31_unwrap(qm31_get_lst_4(col_evals, offset))
+}
+
+/// Get an evaluation from a column evaluations list given an offset.
+/// If the offset is out of bounds, the function will panic.
+fn col_evals_m31_get(col_evals: ColEvalsM31, offset: u32) -> M31 {
+    m31_unwrap(m31_get_lst_4(col_evals, offset))
+}
+
+fn test_col_evals_qm31_get() {
+    let col_evals: ColEvalsQM31 = list![qm31(1, 2, 3, 4), qm31(5, 6, 7, 8)];
+    let offset: u32 = 1;
+    let res: QM31 = col_evals_qm31_get(col_evals, offset);
+    assert!(qm31_eq(res, qm31(5, 6, 7, 8)));
+}
+
+fn test_col_evals_m31_get() {
+    let col_evals: ColEvalsM31 = list![1, 2, 3];
+    let offset: u32 = 2;
+    let res: M31 = col_evals_m31_get(col_evals, offset);
+    assert!(m31_eq(res, 3));
+}
+
+#endif

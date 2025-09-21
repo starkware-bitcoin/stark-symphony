@@ -7,9 +7,9 @@
 #ifndef FRI_QUERIES_SIMF
 #define FRI_QUERIES_SIMF
 
-#include "channel/state.simf"
-#include "utils/list_map.simf"
-#include "verifier/proof.simf"
+#include "config.simf"
+#include "channel.simf"
+#include "macros/list_map.simf"
 
 /// Draw 8 queries from the channel state given the log domain mask.
 fn channel_draw_queries_8(state: ChannelState, query_mask: u32) -> (ChannelState, U32x8) {

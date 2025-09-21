@@ -4,4 +4,6 @@
 
 //! STWO verifier.
 
+#include "verifier.simf"
+
 fn main() {}

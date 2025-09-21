@@ -1,0 +1,29 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
+#ifndef VERIFIER_SIMF
+#define VERIFIER_SIMF
+
+#include "config.simf"
+#include "deep/oods.simf"
+#include "evals/commit.simf"
+#include "evals/decommit.simf"
+#include "fri/commit.simf"
+
+/// Proof:
+/// * trace log size
+/// * commitments
+/// * OODS trace evaluations and CP evaluation (partitioned) at OODS point
+/// * FRI layers
+/// * PoW nonce
+type Proof = (
+    u8,
+    Commitments,
+    Decommitments,
+    OodsEvals,
+    FriLayers,
+    u64,
+);
+
+#endif
