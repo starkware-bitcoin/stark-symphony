@@ -13,6 +13,9 @@
 #include "evals/trace_poly.simf"
 #include "evals/composition_poly.simf"
 
+// Select the constraints
+#include "constraints/wide_fibonacci.simf"
+
 /// Trace evaluations and composition polynomial evaluation at OODS point
 type OodsEvals = (TraceEvalsQM31, CPEvalQM31);
 
@@ -24,11 +27,11 @@ fn channel_mix_oods_evals(state: ChannelState, oods_evals: OodsEvals) -> Channel
 
     // Mix sampled values
     let (oods_trace_evals, oods_cp_eval): OodsEvals = oods_evals;
-    let ctx: Ctx8 = fold::<hasher_add_qm31_column, MAX_COLUMNS>(oods_trace_evals, ctx);
+    // CONFIG: use the macro for the current NUM_COLUMNS.
+    let ctx: Ctx8 = hasher_add_qm31_column_fold_arr_4(oods_trace_evals, ctx);
 
     // Mix CP decomposed partitioned evaluation
-    let cp_eval_list: List<QM31, 32> = <(Option<CPEvalQM31>, List<QM31, 16>)>::into((Some(oods_cp_eval), list![]));
-    let ctx: Ctx8 = fold::<hasher_add_qm31, 32>(cp_eval_list, ctx);
+    let ctx: Ctx8 = hasher_add_qm31_fold_arr_16(oods_cp_eval, ctx);
 
     let res: u256 = jet::sha_256_ctx_8_finalize(ctx);
     // Reset the num_sent counter
@@ -64,11 +67,11 @@ fn test_oods() {
     let state: ChannelState = (0xf4101066b0addfbccce964d958b1dec28fcf4e2a9a280f15b8dfcb4176b65c99, 0);
     let log_size: u8 = 2;
     let random_coeff: QM31 = qm31(2012724549, 1128459570, 1584582850, 1454574268);
-    let oods_trace_evals: TraceEvalsQM31 = list![
-        list![qm31(1, 0, 0, 0)],
-        list![qm31(1317558333, 30282626, 1003338644, 805043598)],
-        list![qm31(962074990, 170174207, 1792910003, 764280909)],
-        list![qm31(1150846786, 1548284776, 259211664, 74473918)],
+    let oods_trace_evals: TraceEvalsQM31 = [
+        [qm31(1, 0, 0, 0)],
+        [qm31(1317558333, 30282626, 1003338644, 805043598)],
+        [qm31(962074990, 170174207, 1792910003, 764280909)],
+        [qm31(1150846786, 1548284776, 259211664, 74473918)],
     ];
     let oods_cp_eval: CPEvalQM31 = [
         qm31(1454521826, 1225905306, 1400157099, 1190844098),
@@ -96,11 +99,11 @@ fn test_oods() {
 
 fn test_channel_mix_oods_evals() {
     let state: ChannelState = (0xf4101066b0addfbccce964d958b1dec28fcf4e2a9a280f15b8dfcb4176b65c99, 0);
-    let oods_trace_evals: TraceEvalsQM31 = list![
-        list![qm31(1, 0, 0, 0)],
-        list![qm31(1317558333, 30282626, 1003338644, 805043598)],
-        list![qm31(962074990, 170174207, 1792910003, 764280909)],
-        list![qm31(1150846786, 1548284776, 259211664, 74473918)],
+    let oods_trace_evals: TraceEvalsQM31 = [
+        [qm31(1, 0, 0, 0)],
+        [qm31(1317558333, 30282626, 1003338644, 805043598)],
+        [qm31(962074990, 170174207, 1792910003, 764280909)],
+        [qm31(1150846786, 1548284776, 259211664, 74473918)],
     ];
     let oods_cp_eval: CPEvalQM31 = [
         qm31(1454521826, 1225905306, 1400157099, 1190844098),

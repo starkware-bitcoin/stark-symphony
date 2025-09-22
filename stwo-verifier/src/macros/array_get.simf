@@ -1,0 +1,68 @@
+//! SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//!
+//! SPDX-License-Identifier: MIT
+
+//! Helpers for getting an item from an array of size 2^k.
+
+#ifndef UTILS_ARRAY_GET_SIMF
+#define UTILS_ARRAY_GET_SIMF
+
+/// Get an item from an array of size 1.
+/// * `PREFIX` is the prefix of the function name.
+/// * `T` is the type of the elements in the array.
+/// Returns the element at the given index.
+#define DEFINE_GET_ARR_1(PREFIX, T) \
+fn PREFIX##_get_arr_1(arr: [T; 1], index: u32) -> Option<T> { \
+    let elt: T = <[T; 1]>::into(arr); \
+    match jet::eq_32(index, 0) { \
+        true => Some(elt), \
+        false => None, \
+    } \
+}
+
+/// Get an item from an array of size N = 2^k.
+/// * `PREFIX` is the prefix of the function name.
+/// * `T` is the type of the elements in the array.
+/// * `N` is the size of the array.
+/// * `HALF_N` is the size of the array after splitting in half.
+/// Returns the element at the given index.
+#define DEFINE_GET_ARR(PREFIX, T, N, HALF_N) \
+fn PREFIX##_get_arr_##N(arr: [T; N], index: u32) -> Option<T> { \
+    let (arr0, arr1): ([T; HALF_N], [T; HALF_N]) = <[T; N]>::into(arr); \
+    match jet::lt_32(index, HALF_N) { \
+        true => PREFIX##_get_arr_##HALF_N(arr0, index), \
+        false => { \
+            let (_, new_index): (bool, u32) = jet::subtract_32(index, HALF_N); \
+            PREFIX##_get_arr_##HALF_N(arr1, new_index) \
+        } \
+    } \
+}
+
+DEFINE_GET_ARR_1(num, u32)
+DEFINE_GET_ARR(num, u32, 2, 1)
+DEFINE_GET_ARR(num, u32, 4, 2)
+DEFINE_GET_ARR(num, u32, 8, 4)
+
+// NOTE: cannot use assert or unwrap (or any other reserved word) as a beginning of a function name.
+fn u32_unwrap(x: Option<u32>) -> u32 {
+    match x {
+        Some(x: u32) => x,
+        None => panic!(),
+    }
+}
+
+fn u32_is_none(x: Option<u32>) -> bool {
+    match x {
+        None => true,
+        Some(x: u32) => false,
+    }
+}
+
+fn test_get_arr_8() {
+    let arr: [u32; 8] = [1, 2, 3, 4, 5, 6, 7, 8];
+    let elt: u32 = u32_unwrap(num_get_arr_8(arr, 2));
+    assert!(jet::eq_32(elt, 3));
+    assert!(u32_is_none(num_get_arr_8(arr, 10)));
+}
+
+#endif

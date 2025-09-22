@@ -8,13 +8,17 @@
 #include "fields/qm31.simf"
 #include "groups/qm31_point.simf"
 
+/// Number of partitions in the composition polynomial evaluation.
+/// 4 coordinates x 4 decomposed polynomials (reducing degree by one).
+#define NUM_CP_PARTITIONS 16
+
 /// Partitioned composition polynomial evaluation.
 /// 4 coordinates x 4 decomposed polynomials (reducing degree by one).
-type CPEvalQM31 = [QM31; 16];
+type CPEvalQM31 = [QM31; NUM_CP_PARTITIONS];
 
 /// Partitioned composition polynomial evaluation in M31.
 /// 4 coordinates x 4 decomposed polynomials (reducing degree by one)
-type CPEvalM31 = [M31; 16];
+type CPEvalM31 = [M31; NUM_CP_PARTITIONS];
 
 /// Accumulator for the pi function
 type PiFnAcc = QM31;
