@@ -134,25 +134,25 @@ fn fri_answer(response: QueryResponse, ctx: QueryResponseCtx) -> (FriAnswer, Que
 
 /// Map query responses to FRI answers.
 /// CONFIG: define the macro for the current NUM_FRI_QUERIES.
-DEFINE_MAP_ARR_1(fri_answers, QueryResponse, FriAnswer, QueryResponseCtx, fri_answer)
-DEFINE_MAP_ARR(fri_answers, QueryResponse, FriAnswer, QueryResponseCtx, fri_answer, 2, 1)
-DEFINE_MAP_ARR(fri_answers, QueryResponse, FriAnswer, QueryResponseCtx, fri_answer, 4, 2)
-DEFINE_MAP_ARR(fri_answers, QueryResponse, FriAnswer, QueryResponseCtx, fri_answer, 8, 4)
-DEFINE_MAP_ARR(fri_answers, QueryResponse, FriAnswer, QueryResponseCtx, fri_answer, 16, 8)
+DEFINE_MAP_ARR_1(QueryResponse, FriAnswer, QueryResponseCtx, fri_answer)
+DEFINE_MAP_ARR(QueryResponse, FriAnswer, QueryResponseCtx, fri_answer, 2, 1)
+DEFINE_MAP_ARR(QueryResponse, FriAnswer, QueryResponseCtx, fri_answer, 4, 2)
+DEFINE_MAP_ARR(QueryResponse, FriAnswer, QueryResponseCtx, fri_answer, 8, 4)
+DEFINE_MAP_ARR(QueryResponse, FriAnswer, QueryResponseCtx, fri_answer, 16, 8)
 
 /// Map query responses to FRI answers.
-fn fri_answers_map_arr(responses: QueryResponses, ctx: QueryResponseCtx) -> (FriAnswers, QueryResponseCtx) {
+fn fri_answer_map_arr(responses: QueryResponses, ctx: QueryResponseCtx) -> (FriAnswers, QueryResponseCtx) {
 #ifdef TESTING
-    fri_answers_map_arr_1(responses, ctx)
+    fri_answer_map_arr_1(responses, ctx)
 #else
-    fri_answers_map_arr_16(responses, ctx)
+    fri_answer_map_arr_16(responses, ctx)
 #endif // TESTING
 }
 
 /// Map query responses to FRI answers.
 fn fri_answers(responses: QueryResponses, random_coeff: QM31, oods_point: QM31Point, oods_evals: OodsEvals, log_size: u8) -> FriAnswers {
     let ctx: QueryResponseCtx = (random_coeff, oods_point, oods_evals, log_size);
-    let (fri_answers, _): (FriAnswers, QueryResponseCtx) = fri_answers_map_arr(responses, ctx);
+    let (fri_answers, _): (FriAnswers, QueryResponseCtx) = fri_answer_map_arr(responses, ctx);
     fri_answers
 }
 

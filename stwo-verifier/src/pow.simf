@@ -5,11 +5,16 @@
 #ifndef POW_SIMF
 #define POW_SIMF
 
+#include "config.simf"
 #include "channel.simf"
 
 /// The target for the proof of work.
 /// WARNING: up to 64 bits are supported.
-#define POW_TARGET_64 0x07ffffffffffffff // 5 bits
+#ifdef TESTING
+    #define POW_TARGET_64 0x07ffffffffffffff // 5 bits
+#else
+    #define POW_TARGET_64 0x0000000100000000 // 32 bits
+#endif
 
 /// Reverse the bytes of a 32-bit value.
 fn reverse_bytes_32(value: u32) -> u32 {

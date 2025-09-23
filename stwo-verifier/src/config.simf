@@ -5,6 +5,8 @@
 #ifndef CONFIG_SIMF
 #define CONFIG_SIMF
 
+#define TESTING 1
+
 /// Maximum supported offset for an AIR column with transition constraints.
 /// Upper bound not included, i.e. offset is in range [0, MAX_COLUMN_OFFSET).
 #define MAX_COLUMN_OFFSET 1
@@ -22,9 +24,14 @@
     /// Number of FRI queries.
     #define NUM_FRI_QUERIES 1
 
+    /// Preprocessed (constant trace) tree root
+    #define PP_ROOT 0x0
 #else
     /// Number of FRI queries.
     #define NUM_FRI_QUERIES 16
+
+    /// Preprocessed (constant trace) tree root
+    #define PP_ROOT 0x0
 
 #endif // TESTING
 
