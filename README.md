@@ -62,9 +62,3 @@ Run a Simfony program:
 ```bash
 simfony run src/simple_fib.simf --witness src/simple_fib.wit --param src/simple_fib.param
 ```
-
-## Simfony VSIX
-
-VSCode extension providing syntax highlighting and autocompletion for the Simfony programming language.
-
-Read the [instructions](./simfony-vsix/README.md).

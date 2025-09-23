@@ -1,7 +1,0 @@
-{
-    "jet::bip_0340_verify": {
-        "prefix": "jet::bip_0340_verify",
-        "body": "jet::bip_0340_verify(($1, $2), $3)",
-        "description": "Assert that a Schnorr signature matches a public key and message. Cost: 49087 mWU"
-    }
-} 
