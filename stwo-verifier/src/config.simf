@@ -7,6 +7,9 @@
 
 #define TESTING 1
 
+/// Log of the blowup factor for the extended evaluation domain.
+#define LOG_BLOWUP_FACTOR 1
+
 /// Maximum supported offset for an AIR column with transition constraints.
 /// Upper bound not included, i.e. offset is in range [0, MAX_COLUMN_OFFSET).
 #define MAX_COLUMN_OFFSET 1

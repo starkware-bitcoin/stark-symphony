@@ -17,9 +17,6 @@
 /// FRI answer is a pair of a query and a random linear combination of quotients.
 type FriAnswer = (u32, QM31);
 
-/// List of FRI answers.
-type FriAnswers = [FriAnswer; NUM_FRI_QUERIES];
-
 /// Zip trace column evaluations with OODS trace column evaluations.
 /// CONFIG: define the macro for the current NUM_COLUMNS.
 DEFINE_ZIP_ARR_1(trace_evals, ColEvalsM31, ColEvalsQM31)
@@ -141,7 +138,7 @@ DEFINE_MAP_ARR(QueryResponse, FriAnswer, QueryResponseCtx, fri_answer, 8, 4)
 DEFINE_MAP_ARR(QueryResponse, FriAnswer, QueryResponseCtx, fri_answer, 16, 8)
 
 /// Map query responses to FRI answers.
-fn fri_answer_map_arr(responses: QueryResponses, ctx: QueryResponseCtx) -> (FriAnswers, QueryResponseCtx) {
+fn fri_answer_map_arr(responses: [QueryResponse; NUM_FRI_QUERIES], ctx: QueryResponseCtx) -> ([FriAnswer; NUM_FRI_QUERIES], QueryResponseCtx) {
 #ifdef TESTING
     fri_answer_map_arr_1(responses, ctx)
 #else
@@ -150,9 +147,9 @@ fn fri_answer_map_arr(responses: QueryResponses, ctx: QueryResponseCtx) -> (FriA
 }
 
 /// Map query responses to FRI answers.
-fn fri_answers(responses: QueryResponses, random_coeff: QM31, oods_point: QM31Point, oods_evals: OodsEvals, log_size: u8) -> FriAnswers {
+fn fri_answers(responses: [QueryResponse; NUM_FRI_QUERIES], random_coeff: QM31, oods_point: QM31Point, oods_evals: OodsEvals, log_size: u8) -> [FriAnswer; NUM_FRI_QUERIES] {
     let ctx: QueryResponseCtx = (random_coeff, oods_point, oods_evals, log_size);
-    let (fri_answers, _): (FriAnswers, QueryResponseCtx) = fri_answer_map_arr(responses, ctx);
+    let (fri_answers, _): ([FriAnswer; NUM_FRI_QUERIES], QueryResponseCtx) = fri_answer_map_arr(responses, ctx);
     fri_answers
 }
 

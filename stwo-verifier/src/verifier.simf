@@ -23,9 +23,10 @@
 type Proof = (
     u8,
     Commitments,
-    Decommitments,
+    [Decommitment; NUM_FRI_QUERIES],
     OodsEvals,
     FriCommitments,
+    //[FriDecommitment; NUM_FRI_QUERIES],
     u64,
 );
 
@@ -49,13 +50,13 @@ fn verify_proof(proof: Proof) {
     let state: ChannelState = check_proof_of_work(state, pow_nonce);
 
     // Read and decommit evaluations at queried positions
-    let (state, query_responses): (ChannelState, QueryResponses) = evals_decommit(state, log_size, commitments, decommitments);
+    let (state, query_responses): (ChannelState, [QueryResponse; NUM_FRI_QUERIES]) = evals_decommit(state, log_size, commitments, decommitments);
 
     // Compute DEEP quotients at queried positions
-    let fri_answers: FriAnswers = fri_answers(query_responses, random_coeff, oods_point, oods_evals, log_size);
+    let fri_answers: [FriAnswer; NUM_FRI_QUERIES] = fri_answers(query_responses, random_coeff, oods_point, oods_evals, log_size);
     
     // Run FRI protocol for all the queries
-    fri_decommit(fri_layers, fri_answers);
+    //fri_decommit(fri_layers, fri_answers);
 }
 
 fn test_verify_proof() {

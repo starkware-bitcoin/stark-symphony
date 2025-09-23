@@ -9,7 +9,18 @@
 #include "fri/answers.simf"
 #include "fri/commit.simf"
 
-fn fri_decommit(fri_layers: FriLayers, fri_answers: FriAnswers) {
+/// FRI decommitment for a single layer:
+/// * Witness
+/// * Merkle proof
+type FriLayerDecommitment = (QM31, MerkleProof32);
+
+/// FRI decommitment:
+/// * first layer decommitment
+/// * inner layers decommitments (up to MAX_FRI_LAYERS - 1)
+type FriDecommitment = (FriLayerDecommitment, List<FriLayerDecommitment, MAX_FRI_LAYERS>);
+
+/// FRI verification.
+fn fri_decommit(fri_layers: FriLayers, fri_answers: [FriAnswer; NUM_FRI_QUERIES], fri_decommitments: [FriDecommitment; NUM_FRI_QUERIES]) {
     // TODO
 }
 
