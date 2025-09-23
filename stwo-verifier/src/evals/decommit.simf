@@ -1,0 +1,173 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
+#ifndef EVALS_DECOMMIT_SIMF
+#define EVALS_DECOMMIT_SIMF
+
+#include "config.simf"
+#include "merkle.simf"
+#include "evals/commit.simf"
+#include "evals/trace_poly.simf"
+#include "evals/composition_poly.simf"
+#include "fri/queries.simf"
+#include "macros/array_map.simf"
+#include "macros/array_zip.simf"
+
+/// Composition polynomial decommitment:
+/// * partitioned evaluations in M31
+/// * Merkle proof
+type CpDecommitment = (CPEvalM31, MerkleProof32);
+
+/// Trace decommitment:
+/// * evaluations in M31
+/// * Merkle proof
+type TraceDecommitment = (TraceEvalsM31, MerkleProof32);
+
+/// Decommitment:
+/// * trace decommitment
+/// * composition polynomial decommitment
+type Decommitment = (TraceDecommitment, CpDecommitment);
+
+/// Decommitments:
+/// * decommitments for each FRI query
+type Decommitments = [Decommitment; NUM_FRI_QUERIES];
+
+/// Pair of a query and a decommitment.
+type QueryDecommitment = (u32, Decommitment);
+
+/// Response to a single FRI query.
+type QueryResponse = (u32, TraceEvalsM31, CPEvalM31);
+
+/// List of query responses.
+type QueryResponses = [QueryResponse; NUM_FRI_QUERIES];
+
+/// Context for decommitting query responses.
+/// * commitments
+/// * domain size
+type QueryDecommitmentCtx = (Commitments, u32);
+
+/// Decommit trace polynomial evaluations at queried position.
+fn decommit_trace_evals(query: u32, decommitment: TraceDecommitment, root: MerkleNode, domain_size: u32) -> TraceEvalsM31 {
+    let (evals, proof): (TraceEvalsM31, MerkleProof32) = decommitment;
+    let trace_node: MerkleNode = hash_node_m31_trace(evals);
+    // Auth path is query + num_leaves
+    let (_, auth_path): (bool, u32) = jet::add_32(query, domain_size);
+    merkle_verify_32(trace_node, auth_path, proof, root);
+    evals
+}
+
+/// Decommit composition polynomial evaluation at queried position.
+fn decommit_cp_evals(query: u32, decommitment: CpDecommitment, root: MerkleNode, domain_size: u32) -> CPEvalM31 {
+    let (evals, proof): (CPEvalM31, MerkleProof32) = decommitment;
+    let cp_node: MerkleNode = hash_node_m31_cp(evals);
+    // Auth path is query + num_leaves
+    let (_, auth_path): (bool, u32) = jet::add_32(query, domain_size);
+    merkle_verify_32(cp_node, auth_path, proof, root);
+    evals
+}
+
+/// Decommit a single query and output a tuple of the query response and the unchanged context (roots).
+/// This is a mapper function.
+fn decommit_query(query_decommitment: QueryDecommitment, ctx: QueryDecommitmentCtx) -> (QueryResponse, QueryDecommitmentCtx) {
+    let (query, (trace_decommitment, cp_decommitment)): QueryDecommitment = query_decommitment;
+    let ((_, trace_root, cp_root), domain_size): QueryDecommitmentCtx = ctx;
+    let trace_evals: TraceEvalsM31 = decommit_trace_evals(query, trace_decommitment, trace_root, domain_size);
+    let cp_evals: CPEvalM31 = decommit_cp_evals(query, cp_decommitment, cp_root, domain_size);
+    ((query, trace_evals, cp_evals), ctx)
+}
+
+/// Zip queries with decommitments to get query decommitments (u32, Decommitment).
+/// CONFIG: use the macro for the current NUM_FRI_QUERIES.
+DEFINE_ZIP_ARR_1(query_decommitments, u32, Decommitment)
+DEFINE_ZIP_ARR(query_decommitments, u32, Decommitment, 2, 1)
+DEFINE_ZIP_ARR(query_decommitments, u32, Decommitment, 4, 2)
+DEFINE_ZIP_ARR(query_decommitments, u32, Decommitment, 8, 4)
+DEFINE_ZIP_ARR(query_decommitments, u32, Decommitment, 16, 8)
+
+/// Zip queries with decommitments to get query decommitments (u32, Decommitment).
+fn query_decommitments_zip_arr(queries: [u32; NUM_FRI_QUERIES], decommitments: Decommitments) -> [QueryDecommitment; NUM_FRI_QUERIES] {
+#ifdef TESTING
+    query_decommitments_zip_arr_1(queries, decommitments)
+#else
+    query_decommitments_zip_arr_16(queries, decommitments)
+#endif // TESTING
+}
+
+/// Map query decommitments to query responses.
+/// CONFIG: use the macro for the current NUM_FRI_QUERIES.
+DEFINE_MAP_ARR_1(QueryDecommitment, QueryResponse, QueryDecommitmentCtx, decommit_query)
+DEFINE_MAP_ARR(QueryDecommitment, QueryResponse, QueryDecommitmentCtx, decommit_query, 2, 1)
+DEFINE_MAP_ARR(QueryDecommitment, QueryResponse, QueryDecommitmentCtx, decommit_query, 4, 2)
+DEFINE_MAP_ARR(QueryDecommitment, QueryResponse, QueryDecommitmentCtx, decommit_query, 8, 4)
+DEFINE_MAP_ARR(QueryDecommitment, QueryResponse, QueryDecommitmentCtx, decommit_query, 16, 8)
+
+/// Map query decommitments to query responses.
+fn decommit_query_map_arr(query_decommitments: [QueryDecommitment; NUM_FRI_QUERIES], ctx: QueryDecommitmentCtx) -> ([QueryResponse; NUM_FRI_QUERIES], QueryDecommitmentCtx) {
+#ifdef TESTING
+    decommit_query_map_arr_1(query_decommitments, ctx)
+#else
+    decommit_query_map_arr_16(query_decommitments, ctx)
+#endif // TESTING
+}
+
+/// Read FRI query positions and decommit evaluations at those positions.
+fn evals_decommit(state: ChannelState, log_size: u8, commitments: Commitments, decommitments: Decommitments) -> (ChannelState, QueryResponses) {
+    // Get FRI query positions
+    let (state, queries): (ChannelState, [u32; NUM_FRI_QUERIES]) = fri_generate_queries(state, log_size);
+
+    // Zip queries with decommitments to get query decommitments (u32, Decommitment).
+    let query_decommitments: [QueryDecommitment; NUM_FRI_QUERIES] = query_decommitments_zip_arr(queries, decommitments);
+
+    // Map query decommitments to query responses.
+    // TODO: should be extended domain size (x blowup factor)?
+    let domain_size: u32 = jet::left_shift_32(log_size, 1);
+    let query_decommitment_ctx: QueryDecommitmentCtx = (commitments, domain_size);
+    let (query_responses, _): (QueryResponses, QueryDecommitmentCtx) = decommit_query_map_arr(query_decommitments, query_decommitment_ctx);
+
+    (state, query_responses)
+}
+
+fn test_decommit_query() {
+    let roots: Commitments = (
+        0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,
+        0x2143f75d71572fd6cc57f586b6713dd237ce03e0e6992ef8e2199ed653129c7f,
+        0x83e5557f761f237e20462300295aa53c3480f3f0907bd5b1e4f89ffdc6f950bc,
+    );
+    let decommitment: Decommitment = (
+        (
+            [[1], [495602521], [1874631582], [1174813791]], // trace evaluations
+            list![0x61d89893714f17dacc2219d98fe3213716140fb03a2b712ddfe03fdac7b74b2d, 0x97e6ead6d49cc7289a7ec47c2c09ae05851c06dde5028b976c3a8a03c547bfa1, 0xd02fe24628e6d523938e57fc793a98c320e4b75b121faa830d2e8f95f2abaee0], // trace decommitment
+        ),
+        (
+            [1840623278, 1926730915, 2147287039, 0, 1265893248, 993651831, 0, 0, 236821717, 325156552, 0, 0, 2110497226, 1488481922, 0, 0], // cp evaluations
+            list![0x2b1f2f773bdf244640f9aaa3a3ba28aa7a413cbc28c1acf7f1a8c27e14e14cf3, 0x81886da63943805c745dbabf91e86d53f89ce5c850f52ec5e8ead438ce4418c9, 0xf628a1fa959d01d179e48d47c159e90990585cea53ca23fb8bcbdfc30781201b], // cp decommitment
+        ),
+    );
+    let query: u32 = 5;
+    let domain_size: u32 = 16;
+    let _: (QueryResponse, QueryDecommitmentCtx) = decommit_query((query, decommitment), (roots, domain_size));
+}
+
+fn test_decommit_query_1() {
+    let roots: Commitments = (
+        0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,
+        0xbef91ef39ee85f484d625afbccf9cb3c0626bc753fdd2742b69dcbf63a7e1167,
+        0x28bee4d01f3b1fea21370e41787a21fb14abbc671bff311be7215797d015ed61,
+    );
+    let decommitment: Decommitment = (
+        (
+            [[1], [139410720], [1700013473], [298840277]], 
+            list![0x7b27887a046ef1ceac6106a5dd5adad6ac6d52fbcf7f810cc4bbd67a2ba11d01, 0x3fd8f403637057955845055ea195fe6cea263623bcae2d9d2d564aa76cc8d135, 0xaedbb8a864c46fc6e45300d3728d0ab4aaf9dbc411c2541e39487912e8c146e3, 0x69915d342b04f9e2b07f0bd6e7a19788d34a80a7af8fc7624f5fbaae3e99cd83, 0x165a99657ea0a068152b7d570fb13fabcb91dd183fb0972135f869b04442802d, 0x095731161be9f3e3f0be374544de54f1a76e07d3f44484bcfd1c57e6ac252c22, 0xa2d2e46f6f7b03b946d92c4d7a1cb4de55fce28decb46f3bfe161a476d50ab31, 0x1fdbaad70ec724f0d2466f555a678b5b09b3ddc0c25379eaa2dedc1f1078ba05, 0xce8c33782b132040204d1ad98cf19abb279d5015548f8e65f84148983627c542, 0x24e8dadfae159acb643568b262a7eefb5828d67985d1639d3b9b11ac3d04abe7, 0xf7cea25c290e4f092eb3d666ba8452f72fa2a8886bad938d543d9f6d804b7533]
+        ),
+        (
+            [1147251298, 1722372683, 1729749398, 1974162199, 321853455, 1373396954, 958279341, 252872847, 2017820635, 597429825, 413704560, 383544542, 134226940, 1803642786, 127014568, 403273301], 
+            list![0xdd4903110a1cc960e0120c1492ff7f097277a6b3bb3c6ae8a5336cdd5dd8f3cf, 0x5fa56aaedbe52846217f77e3c229d70e9e75252056de03bafe9acdd215ab08e9, 0xb7a042cf250ef416848de8f6d7c0bd05878e7fb497d0fbb030335dafc284165c, 0x3975e82c2ea944e62998d85fedc513fc873b3e8c29cb86d06ee0afd2e1980cad, 0x0b128dc96c42df2dc399f4b5aca393cb975e4048744dc4c11a1ce6d1b14b0204, 0x9701625a840e2c0700cfcfe42ce419be6427ebd1ccb685c9dc6ff0e6dcb0ec94, 0x646d86fba4d6637ec12cc43b6c43344429206158b4043fa25923bc7ba391db7d, 0x1fc2a1b529fbc849d737125701706bac43134b4a9bd85245eda42ab0689436d3, 0xf6a8cd8117c2e53ea032bdadd8038b9325d0d961f8e27f94541f96c6336f2841, 0x67ef4010514c8b554774572a69b28ac63b6f4cda178c5de872823ebe91bcf363, 0x283040a0fd5c9a0569190187a9e168c0ab058aab70c0290dd3ef12f37cc22ee1]
+        ),
+    );
+    let query: u32 = 609;
+    let domain_size: u32 = 1024;
+    let _: (QueryResponse, QueryDecommitmentCtx) = decommit_query((query, decommitment), (roots, domain_size));
+}
+
+#endif

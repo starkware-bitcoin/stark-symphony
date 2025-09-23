@@ -1,0 +1,38 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
+#ifndef CONFIG_SIMF
+#define CONFIG_SIMF
+
+#define TESTING 1
+
+/// Maximum supported offset for an AIR column with transition constraints.
+/// Upper bound not included, i.e. offset is in range [0, MAX_COLUMN_OFFSET).
+#define MAX_COLUMN_OFFSET 1
+
+/// Number of columns in the AIR (depends on the particular choice).
+#define NUM_COLUMNS 4
+
+/// Max number of FRI layers (depends on the trace size).
+#define MAX_FRI_LAYERS 16
+
+/// Degree of the line polynomial
+#define MAX_LINE_POLY_DEGREE 16
+
+#ifdef TESTING
+    /// Number of FRI queries.
+    #define NUM_FRI_QUERIES 1
+
+    /// Preprocessed (constant trace) tree root
+    #define PP_ROOT 0x0
+#else
+    /// Number of FRI queries.
+    #define NUM_FRI_QUERIES 16
+
+    /// Preprocessed (constant trace) tree root
+    #define PP_ROOT 0x0
+
+#endif // TESTING
+
+#endif

@@ -1,0 +1,54 @@
+//! SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//!
+//! SPDX-License-Identifier: MIT
+
+//! Helpers for folding an array of size 2^k.
+
+#ifndef UTILS_ARRAY_FOLD_SIMF
+#define UTILS_ARRAY_FOLD_SIMF
+
+/// Fold an array of size 1.
+/// * `PREFIX` is the prefix of the function name.
+/// * `T` is the type of the elements in the array.
+/// * `ACC` is the accumulator of the folding function.
+/// * `F` is the folding function.
+/// Returns the updated accumulator.
+#define DEFINE_FOLD_ARR_1(PREFIX, T, ACC, F) \
+fn PREFIX##_fold_arr_1(arr: [T; 1], acc: ACC) -> ACC { \
+    let elt: T = <[T; 1]>::into(arr); \
+    F(elt, acc) \
+}
+
+/// Fold an array of size N = 2^k.
+/// * `PREFIX` is the prefix of the function name.
+/// * `T` is the type of the elements in the array.
+/// * `N` is the size of the array.
+/// * `HALF_N` is the size of the array after splitting in half.
+/// * `ACC` is the accumulator of the folding function.
+/// Returns a tuple of the mapped array and the updated context.
+#define DEFINE_FOLD_ARR(PREFIX, T, ACC, F, N, HALF_N) \
+fn PREFIX##_fold_arr_##N(arr: [T; N], acc: ACC) -> ACC { \
+    let (arr0, arr1): ([T; HALF_N], [T; HALF_N]) = <[T; N]>::into(arr); \
+    let acc: ACC = PREFIX##_fold_arr_##HALF_N(arr0, acc); \
+    let acc: ACC = PREFIX##_fold_arr_##HALF_N(arr1, acc); \
+    acc \
+}
+
+/// Function for tests.
+fn sum(elt: u32, acc: u32) -> u32 {
+    let (_, sum): (bool, u32) = jet::add_32(elt, acc);
+    sum
+}
+
+DEFINE_FOLD_ARR_1(num, u32, u32, sum)
+DEFINE_FOLD_ARR(num, u32, u32, sum, 2, 1)
+DEFINE_FOLD_ARR(num, u32, u32, sum, 4, 2)
+DEFINE_FOLD_ARR(num, u32, u32, sum, 8, 4)
+
+fn test_fold_arr_8() {
+    let a: [u32; 8] = [1, 2, 3, 4, 5, 6, 7, 8];
+    let acc: u32 = num_fold_arr_8(a, 0);
+    assert!(jet::eq_32(acc, 36));
+}
+
+#endif

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
 #ifndef CIRCLE_DOMAIN_H
 #define CIRCLE_DOMAIN_H
 
@@ -62,7 +66,7 @@ fn circle_point_index_neg(index: u32) -> u32 {
     jet::and_32(res, M31_CIRCLE_ORDER_BIT_MASK)
 }
 
-/// Converts a position (number of an element) to a point on the circle domain.
+/// Converts a position (number of an element) to a point index.
 fn circle_position_to_point_index(domain: CanonicCoset, position: u32) -> u32 {
     let (half_size, offset, step): (u32, u32, u32) = domain;
     match jet::lt_32(position, half_size) {
@@ -73,6 +77,12 @@ fn circle_position_to_point_index(domain: CanonicCoset, position: u32) -> u32 {
             circle_point_index_neg(index)
         }
     }
+}
+
+/// Converts a position (number of an element) to a point on the circle domain.
+fn circle_position_to_m31_point(domain: CanonicCoset, position: u32) -> M31Point {
+    let index: u32 = circle_position_to_point_index(domain, position);
+    circle_point_index_to_m31_point(index)
 }
 
 fn test_bit_reverse_index() {

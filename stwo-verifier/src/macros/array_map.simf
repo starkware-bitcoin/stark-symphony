@@ -1,0 +1,63 @@
+//! SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//!
+//! SPDX-License-Identifier: MIT
+
+//! Helpers for mapping a array of size 2^k.
+
+#ifndef UTILS_ARRAY_MAP_SIMF
+#define UTILS_ARRAY_MAP_SIMF
+
+/// Map an array of size 1.
+/// * `T1` is the type of the elements in the array.
+/// * `T2` is the type of the elements in the array after mapping.
+/// * `CTX` is the context of the mapping function.
+/// * `F` is the mapping function: (T1, CTX) -> (T2, CTX).
+/// Returns a tuple of the mapped array and the updated context.
+#define DEFINE_MAP_ARR_1(T1, T2, CTX, F) \
+fn F##_map_arr_1(arr: [T1; 1], ctx: CTX) -> ([T2; 1], CTX) { \
+    let elt: T1 = <[T1; 1]>::into(arr); \
+    let (res, ctx): (T2, CTX) = F(elt, ctx); \
+    ([res], ctx) \
+}
+
+/// Map an array of size N = 2^k.
+/// * `T1` is the type of the elements in the array.
+/// * `T2` is the type of the elements in the array after mapping.
+/// * `N` is the size of the array.
+/// * `HALF_N` is the size of the array after splitting in half.
+/// * `CTX` is the context of the mapping function: (T1, CTX) -> (T2, CTX).
+/// Returns a tuple of the mapped array and the updated context.
+#define DEFINE_MAP_ARR(T1, T2, CTX, F, N, HALF_N) \
+fn F##_map_arr_##N(arr: [T1; N], ctx: CTX) -> ([T2; N], CTX) { \
+    let (arr1, arr2): ([T1; HALF_N], [T1; HALF_N]) = <[T1; N]>::into(arr); \
+    let (res1, ctx): ([T2; HALF_N], CTX) = F##_map_arr_##HALF_N(arr1, ctx); \
+    let (res2, ctx): ([T2; HALF_N], CTX) = F##_map_arr_##HALF_N(arr2, ctx); \
+    let res: [T2; N] = <([T2; HALF_N], [T2; HALF_N])>::into((res1, res2)); \
+    (res, ctx) \
+}
+
+/// Identity function for tests.
+fn identity(elt: u32, ctx: u32) -> (u32, u32) {
+    (elt, ctx)
+}
+
+DEFINE_MAP_ARR_1(u32, u32, u32, identity)
+DEFINE_MAP_ARR(u32, u32, u32, identity, 2, 1)
+DEFINE_MAP_ARR(u32, u32, u32, identity, 4, 2)
+DEFINE_MAP_ARR(u32, u32, u32, identity, 8, 4)
+
+fn test_map_arr_8() {
+    let arr: [u32; 8] = [1, 2, 3, 4, 5, 6, 7, 8];
+    let (mapped, ctx): ([u32; 8], u32) = identity_map_arr_8(arr, 0);
+    let (a, b, c, d, e, f, g, h): (u32, u32, u32, u32, u32, u32, u32, u32) = <[u32; 8]>::into(mapped);
+    assert!(jet::eq_32(a, 1));
+    assert!(jet::eq_32(b, 2));
+    assert!(jet::eq_32(c, 3));
+    assert!(jet::eq_32(d, 4));
+    assert!(jet::eq_32(e, 5));
+    assert!(jet::eq_32(f, 6));
+    assert!(jet::eq_32(g, 7));
+    assert!(jet::eq_32(h, 8));
+}
+
+#endif

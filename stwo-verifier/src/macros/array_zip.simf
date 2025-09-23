@@ -1,0 +1,50 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
+//! Helpers for zipping two arrays of size 2^k.
+
+#ifndef UTILS_ARRAY_ZIP_SIMF
+#define UTILS_ARRAY_ZIP_SIMF
+
+/// Zip two arrays of size 1.
+/// * `PREFIX` is the prefix of the function name.
+/// * `T1` is the type of the elements in the first array.
+/// * `T2` is the type of the elements in the second array.
+#define DEFINE_ZIP_ARR_1(PREFIX, T1, T2) \
+fn PREFIX##_zip_arr_1(arr1: [T1; 1], arr2: [T2; 1]) -> [(T1, T2); 1] { \
+    let elt1: T1 = <[T1; 1]>::into(arr1); \
+    let elt2: T2 = <[T2; 1]>::into(arr2); \
+    [(elt1, elt2)] \
+}
+
+/// Zip two arrays of size N = 2^k.
+/// * `PREFIX` is the prefix of the function name.
+/// * `T1` is the type of the elements in the first array.
+/// * `T2` is the type of the elements in the second array.
+/// * `N` is the size of the arrays.
+/// * `HALF_N` is the size of the arrays after splitting in half.
+#define DEFINE_ZIP_ARR(PREFIX, T1, T2, N, HALF_N) \
+fn PREFIX##_zip_arr_##N(arr1: [T1; N], arr2: [T2; N]) -> [(T1, T2); N] { \
+    let (arr1_1, arr1_2): ([T1; HALF_N], [T1; HALF_N]) = <[T1; N]>::into(arr1); \
+    let (arr2_1, arr2_2): ([T2; HALF_N], [T2; HALF_N]) = <[T2; N]>::into(arr2); \
+    let res_1: [(T1, T2); HALF_N] = PREFIX##_zip_arr_##HALF_N(arr1_1, arr2_1); \
+    let res_2: [(T1, T2); HALF_N] = PREFIX##_zip_arr_##HALF_N(arr1_2, arr2_2); \
+    <([(T1, T2); HALF_N], [(T1, T2); HALF_N])>::into((res_1, res_2)) \
+}
+
+DEFINE_ZIP_ARR_1(num, u32, u32)
+DEFINE_ZIP_ARR(num, u32, u32, 2, 1)
+DEFINE_ZIP_ARR(num, u32, u32, 4, 2)
+DEFINE_ZIP_ARR(num, u32, u32, 8, 4)
+
+fn test_zip_arr_8() {
+    let a: [u32; 8] = [1, 2, 3, 4, 5, 6, 7, 8];
+    let zipped: [(u32, u32); 8] = num_zip_arr_8(a, a);
+    let (a, b, c, d, e, f, g, h): ((u32, u32), (u32, u32), (u32, u32), (u32, u32), (u32, u32), (u32, u32), (u32, u32), (u32, u32)) = <[(u32, u32); 8]>::into(zipped);
+    let (d0, d1): (u32, u32) = d;
+    assert!(jet::eq_32(d0, 4));
+    assert!(jet::eq_32(d1, 4));
+}
+
+#endif

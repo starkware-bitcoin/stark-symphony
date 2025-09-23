@@ -1,0 +1,111 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
+#ifndef HASHER_SIMF
+#define HASHER_SIMF
+
+#include "evals/trace_poly.simf"
+#include "evals/composition_poly.simf"
+#include "macros/array_fold.simf"
+
+/// SHA256 hash of a 256-bit value (big-endian).
+fn sha256(input: u256) -> u256 {
+    let ctx: Ctx8 = jet::sha_256_ctx_8_init();
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_32(ctx, input);
+    jet::sha_256_ctx_8_finalize(ctx)
+}
+
+/// SHA256 hash of a 32-bit value (big-endian).
+fn sha256_32(input: u32) -> u256 {
+    let ctx: Ctx8 = jet::sha_256_ctx_8_init();
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_4(ctx, input);
+    jet::sha_256_ctx_8_finalize(ctx)
+}
+
+/// SHA256 hash of a concatenation of two 256-bit values (big-endian).
+fn sha256_pair(left: u256, right: u256) -> u256 {
+    let ctx: Ctx8 = jet::sha_256_ctx_8_init();
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_32(ctx, left);
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_32(ctx, right);
+    jet::sha_256_ctx_8_finalize(ctx)
+}
+
+/// Add an M31 value to the SHA256 context.
+fn hasher_add_m31(eval: M31, ctx: Ctx8) -> Ctx8 {
+    jet::sha_256_ctx_8_add_4(ctx, dbg!(eval))
+}
+
+// CONFIG: define the macro for the current NUM_CP_PARTITIONS.
+DEFINE_FOLD_ARR_1(hasher_add_m31, M31, Ctx8, hasher_add_m31)
+DEFINE_FOLD_ARR(hasher_add_m31, M31, Ctx8, hasher_add_m31, 2, 1)
+DEFINE_FOLD_ARR(hasher_add_m31, M31, Ctx8, hasher_add_m31, 4, 2)
+DEFINE_FOLD_ARR(hasher_add_m31, M31, Ctx8, hasher_add_m31, 8, 4)
+DEFINE_FOLD_ARR(hasher_add_m31, M31, Ctx8, hasher_add_m31, 16, 8)
+
+/// Add a column of M31 values to the SHA256 context.
+fn hasher_add_m31_column(col_evals: ColEvalsM31, ctx: Ctx8) -> Ctx8 {
+    hasher_add_m31_fold_arr_1(col_evals, ctx)
+}
+
+// CONFIG: define the macro for the current NUM_COLUMNS.
+DEFINE_FOLD_ARR_1(hasher_add_m31_column, ColEvalsM31, Ctx8, hasher_add_m31_column)
+DEFINE_FOLD_ARR(hasher_add_m31_column, ColEvalsM31, Ctx8, hasher_add_m31_column, 2, 1)
+DEFINE_FOLD_ARR(hasher_add_m31_column, ColEvalsM31, Ctx8, hasher_add_m31_column, 4, 2)
+
+/// Add a QM31 value to the hasher, coordinate by coordinate, 4 bytes (big endian) at a time.
+fn hasher_add_qm31(value: QM31, ctx: Ctx8) -> Ctx8 {
+    let ((a, b), (c, d)): QM31 = dbg!(value);
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_4(ctx, a);
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_4(ctx, b);
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_4(ctx, c);
+    let ctx: Ctx8 = jet::sha_256_ctx_8_add_4(ctx, d);
+    ctx
+}
+
+// CONFIG: define the macro for the current NUM_CP_PARTITIONS.
+DEFINE_FOLD_ARR_1(hasher_add_qm31, QM31, Ctx8, hasher_add_qm31)
+DEFINE_FOLD_ARR(hasher_add_qm31, QM31, Ctx8, hasher_add_qm31, 2, 1)
+DEFINE_FOLD_ARR(hasher_add_qm31, QM31, Ctx8, hasher_add_qm31, 4, 2)
+DEFINE_FOLD_ARR(hasher_add_qm31, QM31, Ctx8, hasher_add_qm31, 8, 4)
+DEFINE_FOLD_ARR(hasher_add_qm31, QM31, Ctx8, hasher_add_qm31, 16, 8)
+
+
+/// Add a list of QM31 column evaluations to the hasher.
+fn hasher_add_qm31_column(col_evals: ColEvalsQM31, ctx: Ctx8) -> Ctx8 {
+    hasher_add_qm31_fold_arr_1(col_evals, ctx)
+}
+
+// CONFIG: define the macro for the current NUM_COLUMNS.
+DEFINE_FOLD_ARR_1(hasher_add_qm31_column, ColEvalsQM31, Ctx8, hasher_add_qm31_column)
+DEFINE_FOLD_ARR(hasher_add_qm31_column, ColEvalsQM31, Ctx8, hasher_add_qm31_column, 2, 1)
+DEFINE_FOLD_ARR(hasher_add_qm31_column, ColEvalsQM31, Ctx8, hasher_add_qm31_column, 4, 2)
+
+/// Hash multiple M31 columns (trace evaluations).
+fn hash_node_m31_trace(trace_evals: TraceEvalsM31) -> u256 {
+    let ctx: Ctx8 = jet::sha_256_ctx_8_init();
+    // CONFIG: use the macro for the current NUM_COLUMNS.
+    let ctx: Ctx8 = hasher_add_m31_column_fold_arr_4(trace_evals, ctx);
+    jet::sha_256_ctx_8_finalize(ctx)
+}
+
+/// Hash a partitioned composition polynomial evaluation.
+fn hash_node_m31_cp(cp_eval: CPEvalM31) -> u256 {
+    let ctx: Ctx8 = jet::sha_256_ctx_8_init();
+    let ctx: Ctx8 = hasher_add_m31_fold_arr_16(cp_eval, ctx);
+    jet::sha_256_ctx_8_finalize(ctx)
+}
+
+fn test_sha256() {
+    let input: u256 = 0x0000000000000000000000000000000000000000000000000000000000000000;
+    let result: u256 = sha256(input);
+    assert!(jet::eq_256(result, 0x66687aadf862bd776c8fc18b8e9f8e20089714856ee233b3902a591d0d5f2925));
+}
+
+fn test_sha256_32() {
+    let input: u32 = 2915689030;
+    let result: u256 = sha256_32(input);
+    assert!(jet::eq_256(result, 64711419806867828842001989061968035503454892533703351743109315571114974747662));
+}
+
+#endif

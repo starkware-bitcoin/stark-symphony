@@ -7,7 +7,7 @@
 #ifndef MERKLE_SIMF
 #define MERKLE_SIMF
 
-#include "vcs/hasher.simf"
+#include "hasher.simf"
 
 /// Merkle root, leaf, or intermediate node.
 type MerkleNode = u256;

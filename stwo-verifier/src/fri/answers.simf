@@ -5,48 +5,34 @@
 #ifndef FRI_ANSWERS_SIMF
 #define FRI_ANSWERS_SIMF
 
-#include "verifier/proof.simf"
-#include "utils/list_zip.simf"
-#include "utils/list_map.simf"
-#include "poly/evaluations.simf"
-#include "poly/deep_quotient.simf"
+#include "config.simf"
+#include "deep/oods.simf"
+#include "deep/quotients.simf"
+#include "evals/decommit.simf"
 #include "groups/circle_domain.simf"
-
-/// Response to a single FRI query.
-type QueryResponse = (u32, TraceEvalsM31, CPEvalM31);
-
-/// List of query responses.
-type QueryResponses = List<QueryResponse, MAX_FRI_QUERIES>;
+#include "macros/array_zip.simf"
+#include "macros/array_map.simf"
+#include "macros/array_fold.simf"
 
 /// FRI answer is a pair of a query and a random linear combination of quotients.
 type FriAnswer = (u32, QM31);
 
 /// List of FRI answers.
-type FriAnswers = List<FriAnswer, MAX_FRI_QUERIES>;
+type FriAnswers = [FriAnswer; NUM_FRI_QUERIES];
 
 /// Zip trace column evaluations with OODS trace column evaluations.
-DEFINE_ZIP_ARR_2(trace_evals, ColEvalsM31, ColEvalsQM31)
+/// CONFIG: define the macro for the current NUM_COLUMNS.
+DEFINE_ZIP_ARR_1(trace_evals, ColEvalsM31, ColEvalsQM31)
+DEFINE_ZIP_ARR(trace_evals, ColEvalsM31, ColEvalsQM31, 2, 1)
 DEFINE_ZIP_ARR(trace_evals, ColEvalsM31, ColEvalsQM31, 4, 2)
-DEFINE_ZIP_ARR(trace_evals, ColEvalsM31, ColEvalsQM31, 8, 4)
-DEFINE_ZIP_ARR(trace_evals, ColEvalsM31, ColEvalsQM31, 16, 8)
-DEFINE_ZIP_ARR(trace_evals, ColEvalsM31, ColEvalsQM31, 32, 16)
-DEFINE_ZIP_ARR(trace_evals, ColEvalsM31, ColEvalsQM31, 64, 32)
-DEFINE_ZIP_ARR(trace_evals, ColEvalsM31, ColEvalsQM31, 128, 64)
-DEFINE_ZIP_LST_2(trace_evals, ColEvalsM31, ColEvalsQM31)
-DEFINE_ZIP_LST(trace_evals, ColEvalsM31, ColEvalsQM31, 4, 2)
-DEFINE_ZIP_LST(trace_evals, ColEvalsM31, ColEvalsQM31, 8, 4)
-DEFINE_ZIP_LST(trace_evals, ColEvalsM31, ColEvalsQM31, 16, 8)
-DEFINE_ZIP_LST(trace_evals, ColEvalsM31, ColEvalsQM31, 32, 16)
-DEFINE_ZIP_LST(trace_evals, ColEvalsM31, ColEvalsQM31, 64, 32)
-DEFINE_ZIP_LST(trace_evals, ColEvalsM31, ColEvalsQM31, 128, 64)
-DEFINE_ZIP_LST(trace_evals, ColEvalsM31, ColEvalsQM31, 256, 128)
 
 /// Zip composition polynomial evaluations with OODS composition polynomial evaluations.
-DEFINE_ZIP_ARR_2(cp_evals, M31, QM31)
+/// CONFIG: define the macro for the current NUM_CP_PARTITIONS.
+DEFINE_ZIP_ARR_1(cp_evals, M31, QM31)
+DEFINE_ZIP_ARR(cp_evals, M31, QM31, 2, 1)
 DEFINE_ZIP_ARR(cp_evals, M31, QM31, 4, 2)
 DEFINE_ZIP_ARR(cp_evals, M31, QM31, 8, 4)
 DEFINE_ZIP_ARR(cp_evals, M31, QM31, 16, 8)
-DEFINE_ZIP_ARR(cp_evals, M31, QM31, 32, 16)
 
 /// Accumulator for the quotient numerator (for a single batch):
 /// * quotient numerator accumulator value
@@ -98,6 +84,18 @@ fn trace_quotient_numerator_aggregate(evals: (ColEvalsM31, ColEvalsQM31), acc: N
 /// * log size
 type QueryResponseCtx = (QM31, QM31Point, OodsEvals, u8);
 
+// CONFIG: define the macro for the current NUM_COLUMNS.
+DEFINE_FOLD_ARR_1(trace_quotient_numerator, (ColEvalsM31, ColEvalsQM31), NumeratorAcc, trace_quotient_numerator_aggregate)
+DEFINE_FOLD_ARR(trace_quotient_numerator, (ColEvalsM31, ColEvalsQM31), NumeratorAcc, trace_quotient_numerator_aggregate, 2, 1)
+DEFINE_FOLD_ARR(trace_quotient_numerator, (ColEvalsM31, ColEvalsQM31), NumeratorAcc, trace_quotient_numerator_aggregate, 4, 2)
+
+// CONFIG: define the macro for the current NUM_CP_PARTITIONS.
+DEFINE_FOLD_ARR_1(quotient_numerator, (M31, QM31), NumeratorAcc, quotient_numerator_aggregate)
+DEFINE_FOLD_ARR(quotient_numerator, (M31, QM31), NumeratorAcc, quotient_numerator_aggregate, 2, 1)
+DEFINE_FOLD_ARR(quotient_numerator, (M31, QM31), NumeratorAcc, quotient_numerator_aggregate, 4, 2)
+DEFINE_FOLD_ARR(quotient_numerator, (M31, QM31), NumeratorAcc, quotient_numerator_aggregate, 8, 4)
+DEFINE_FOLD_ARR(quotient_numerator, (M31, QM31), NumeratorAcc, quotient_numerator_aggregate, 16, 8)
+
 /// Mapper function for mapping a query response to a FRI answer.
 fn fri_answer(response: QueryResponse, ctx: QueryResponseCtx) -> (FriAnswer, QueryResponseCtx) {
     let (random_coeff, oods_point, oods_evals, log_size): QueryResponseCtx = ctx;
@@ -105,13 +103,13 @@ fn fri_answer(response: QueryResponse, ctx: QueryResponseCtx) -> (FriAnswer, Que
     let (oods_trace_evals, oods_cp_evals): OodsEvals = oods_evals;
 
     // Zip queried evaluations with sampled evaluations.
-    let zipped_trace_evals: List<(ColEvalsM31, ColEvalsQM31), MAX_COLUMNS> = trace_evals_zip_lst_256(trace_evals, oods_trace_evals);
-    let zipped_cp_evals: [(M31, QM31); 16] = cp_evals_zip_arr_16(cp_evals, oods_cp_evals);
+    let zipped_trace_evals: [(ColEvalsM31, ColEvalsQM31); NUM_COLUMNS] = trace_evals_zip_arr_4(trace_evals, oods_trace_evals);
+    let zipped_cp_evals: [(M31, QM31); NUM_CP_PARTITIONS] = cp_evals_zip_arr_16(cp_evals, oods_cp_evals);
 
     // Compute the domain point from the query position and column offset 0.
     let domain: CanonicCoset = circle_canonic_coset(log_size);
-    let domain_point_index: u32 = circle_position_to_point_index(domain, bit_reverse_index(query, log_size));
-    let domain_point: M31Point = circle_point_index_to_m31_point(domain_point_index);
+    let position: u32 = bit_reverse_index(query, log_size);
+    let domain_point: M31Point = circle_position_to_m31_point(domain, position);
 
     // Compute quotient denominator inverse.
     let denominator_inv: CM31 = deep_quotient_denominator_inverse(oods_point, domain_point);
@@ -119,14 +117,12 @@ fn fri_answer(response: QueryResponse, ctx: QueryResponseCtx) -> (FriAnswer, Que
     // Aggregate the quotient numerators.
     // Quotient numerator accumulator = 0, column offset = 0, alpha_1 = random_coeff
     let acc: NumeratorAcc = (qm31(0, 0, 0, 0), 0, domain_point, oods_point, random_coeff, random_coeff);
-    let acc: NumeratorAcc = fold::<trace_quotient_numerator_aggregate, MAX_COLUMNS>(zipped_trace_evals, acc);
+    // CONFIG: use the macro for the current NUM_COLUMNS.
+    let acc: NumeratorAcc = trace_quotient_numerator_fold_arr_4(zipped_trace_evals, acc);
 
     // TODO: process for other offsets (not needed for the current AIR)
 
-    // Convert cp evals array to a list for convenient folding.
-    // CP evals is 16 elements long (4 coords x 4 decompositions), the minimal list size that would fit that is 32.
-    let zipped_cp_evals: List<(M31, QM31), 32> = <(Option<[(M31, QM31); 16]>, List<(M31, QM31), 16>)>::into((Some(zipped_cp_evals), list![]));
-    let (acc, _, _, _, _, batch_coeff): NumeratorAcc = fold::<quotient_numerator_aggregate, 32>(zipped_cp_evals, acc);
+    let (acc, _, _, _, _, batch_coeff): NumeratorAcc = quotient_numerator_fold_arr_16(zipped_cp_evals, acc);
 
     // Batch coefficient is random coefficient to the power of the number of columns in the batch.
     // This is basically alpha^i after the last column is processed.
@@ -137,40 +133,43 @@ fn fri_answer(response: QueryResponse, ctx: QueryResponseCtx) -> (FriAnswer, Que
 }
 
 /// Map query responses to FRI answers.
-DEFINE_MAP_ARR_2(fri_answers, QueryResponse, FriAnswer, QueryResponseCtx, fri_answer)
-DEFINE_MAP_ARR(fri_answers, QueryResponse, FriAnswer, QueryResponseCtx, fri_answer, 4, 2)
-DEFINE_MAP_ARR(fri_answers, QueryResponse, FriAnswer, QueryResponseCtx, fri_answer, 8, 4)
-DEFINE_MAP_ARR(fri_answers, QueryResponse, FriAnswer, QueryResponseCtx, fri_answer, 16, 8)
-DEFINE_MAP_ARR(fri_answers, QueryResponse, FriAnswer, QueryResponseCtx, fri_answer, 32, 16)
-DEFINE_MAP_LST_2(fri_answers, QueryResponse, FriAnswer, QueryResponseCtx, fri_answer)
-DEFINE_MAP_LST(fri_answers, QueryResponse, FriAnswer, QueryResponseCtx, fri_answer, 4, 2)
-DEFINE_MAP_LST(fri_answers, QueryResponse, FriAnswer, QueryResponseCtx, fri_answer, 8, 4)
-DEFINE_MAP_LST(fri_answers, QueryResponse, FriAnswer, QueryResponseCtx, fri_answer, 16, 8)
-DEFINE_MAP_LST(fri_answers, QueryResponse, FriAnswer, QueryResponseCtx, fri_answer, 32, 16)
+/// CONFIG: define the macro for the current NUM_FRI_QUERIES.
+DEFINE_MAP_ARR_1(QueryResponse, FriAnswer, QueryResponseCtx, fri_answer)
+DEFINE_MAP_ARR(QueryResponse, FriAnswer, QueryResponseCtx, fri_answer, 2, 1)
+DEFINE_MAP_ARR(QueryResponse, FriAnswer, QueryResponseCtx, fri_answer, 4, 2)
+DEFINE_MAP_ARR(QueryResponse, FriAnswer, QueryResponseCtx, fri_answer, 8, 4)
+DEFINE_MAP_ARR(QueryResponse, FriAnswer, QueryResponseCtx, fri_answer, 16, 8)
+
+/// Map query responses to FRI answers.
+fn fri_answer_map_arr(responses: QueryResponses, ctx: QueryResponseCtx) -> (FriAnswers, QueryResponseCtx) {
+#ifdef TESTING
+    fri_answer_map_arr_1(responses, ctx)
+#else
+    fri_answer_map_arr_16(responses, ctx)
+#endif // TESTING
+}
 
 /// Map query responses to FRI answers.
 fn fri_answers(responses: QueryResponses, random_coeff: QM31, oods_point: QM31Point, oods_evals: OodsEvals, log_size: u8) -> FriAnswers {
     let ctx: QueryResponseCtx = (random_coeff, oods_point, oods_evals, log_size);
-    let (fri_answers, _): (FriAnswers, QueryResponseCtx) = fri_answers_map_lst_32(responses, ctx);
+    let (fri_answers, _): (FriAnswers, QueryResponseCtx) = fri_answer_map_arr(responses, ctx);
     fri_answers
 }
 
-fn test_trace_evals_zip_lst_8() {
-    let evals: List<ColEvalsM31, 8> = list![
-        list![1],
-        list![2],
-        list![3],
-        list![4],
-        list![5],
+fn test_trace_evals_zip_arr_4() {
+    let evals: [ColEvalsM31; 4] = [
+        [1],
+        [2],
+        [3],
+        [4],
     ];
-    let oods_evals: List<ColEvalsQM31, 8> = list![
-        list![qm31(1, 0, 0, 0)],
-        list![qm31(2, 0, 0, 0)],
-        list![qm31(3, 0, 0, 0)],
-        list![qm31(4, 0, 0, 0)],
-        list![qm31(5, 0, 0, 0)],
+    let oods_evals: [ColEvalsQM31; 4] = [
+        [qm31(1, 0, 0, 0)],
+        [qm31(2, 0, 0, 0)],
+        [qm31(3, 0, 0, 0)],
+        [qm31(4, 0, 0, 0)],
     ];
-    let zipped: List<(ColEvalsM31, ColEvalsQM31), 8> = trace_evals_zip_lst_8(evals, oods_evals);
+    let zipped: [(ColEvalsM31, ColEvalsQM31); 4] = trace_evals_zip_arr_4(evals, oods_evals);
 }
 
 fn test_cp_evals_zip_arr_4() {

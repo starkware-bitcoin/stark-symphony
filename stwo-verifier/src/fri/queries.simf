@@ -7,9 +7,8 @@
 #ifndef FRI_QUERIES_SIMF
 #define FRI_QUERIES_SIMF
 
-#include "channel/state.simf"
-#include "utils/list_map.simf"
-#include "verifier/proof.simf"
+#include "config.simf"
+#include "channel.simf"
 
 /// Draw 8 queries from the channel state given the log domain mask.
 fn channel_draw_queries_8(state: ChannelState, query_mask: u32) -> (ChannelState, U32x8) {
@@ -27,16 +26,19 @@ fn channel_draw_queries_8(state: ChannelState, query_mask: u32) -> (ChannelState
 }
 
 /// Generate FRI queries from the channel state given the log domain mask.
-fn fri_generate_queries(state: ChannelState, log_size: u8) -> (ChannelState, List<u32, MAX_FRI_QUERIES>) {
+fn fri_generate_queries(state: ChannelState, log_size: u8) -> (ChannelState, [u32; NUM_FRI_QUERIES]) {
     let (_, query_mask): (bool, u32) = jet::subtract_32(jet::left_shift_32(log_size, 1), 1);
     let (state, (q0, q1, q2, q3, q4, q5, q6, q7)): (ChannelState, U32x8) = channel_draw_queries_8(state, query_mask);
+
+#ifdef TESTING
+    let queries: [u32; NUM_FRI_QUERIES] = [q0];
+#else
     let (state, (q8, q9, q10, q11, q12, q13, q14, q15)): (ChannelState, U32x8) = channel_draw_queries_8(state, query_mask);
-    
-    // It's easier to manually construct the list of queries rather than implement a generator and then use list map.
-    let queries: List<u32, MAX_FRI_QUERIES> = list![q0, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, q13, q14, q15];
+    // CONFIG: see NUM_FRI_QUERIES
+    let queries: [u32; NUM_FRI_QUERIES] = [q0, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, q13, q14, q15];
+#endif // TESTING
 
     // NOTE: we do not sort and remove duplicates here, to simplify the implementation.
-
     (state, queries)
 }
 
