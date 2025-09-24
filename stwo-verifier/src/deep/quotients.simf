@@ -43,6 +43,8 @@ fn deep_quotient_nominator(coefficients: (QM31, QM31, QM31), query_point: M31Poi
     qm31_sub(b_val, qm31_add(a_py, c))
 }
 
+#ifdef TESTING
+
 fn test_quotient_denominator_inverse() {
     let sample_point: QM31Point = (qm31(973971476, 2096742829, 1506028233, 421744209), qm31(412553825, 1247993643, 1275808085, 759067568));
     let query_point: M31Point = (1106814243, 1856575509);
@@ -73,5 +75,7 @@ fn test_deep_quotient_interpolant_coefficients() {
     assert!(qm31_eq(bb, b));
     assert!(qm31_eq(cc, c));
 }
+
+#endif // TESTING
 
 #endif

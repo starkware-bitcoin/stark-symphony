@@ -171,6 +171,8 @@ fn channel_mix_u64(state: ChannelState, input: u64) -> ChannelState {
     (res, 0)
 }
 
+#ifdef TESTING
+
 fn test_channel_draw_qm31() {
     let state: ChannelState = (0, 0);
     let first_random_felt: QM31 = qm31(1840668629, 533944055, 1922121815, 459001195);
@@ -190,5 +192,7 @@ fn test_channel_draw_qm31_point() {
     let y: QM31 = qm31(1140140443, 711987229, 851311779, 496972972);
     assert!(qm31_point_eq(value, (x, y)));
 }
+
+#endif // TESTING
 
 #endif

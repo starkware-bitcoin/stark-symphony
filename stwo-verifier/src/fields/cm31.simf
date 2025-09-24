@@ -113,6 +113,8 @@ fn cm31_eq(a: CM31, b: CM31) -> bool {
     }
 }
 
+#ifdef TESTING
+
 fn test_cm31_add() {
     let a: CM31 = (1, 2);
     let b: CM31 = (3, 4);
@@ -155,5 +157,7 @@ fn test_cm31_inv() {
     let o: CM31 = cm31_mul(cm, cm_inv);
     assert!(cm31_eq(o, (1, 0)));
 }
+
+#endif // TESTING
 
 #endif

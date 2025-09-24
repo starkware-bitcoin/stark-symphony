@@ -57,6 +57,8 @@ fn verify_proof(proof: StarkProof) {
     fri_verify(fri_layers, fri_decommitments, fri_answers, LDE_LOG_SIZE);
 }
 
+#ifdef TESTING
+
 fn test_verify_proof() {
     let proof: StarkProof = (
         (
@@ -104,5 +106,7 @@ fn test_verify_proof() {
         185
     );
 }
+
+#endif // TESTING
 
 #endif

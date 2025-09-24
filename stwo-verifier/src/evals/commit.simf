@@ -34,6 +34,8 @@ fn evals_commit(state: ChannelState, commitments: Commitments) -> (ChannelState,
     (state, random_coeff)
 }
 
+#ifdef TESTING
+
 fn test_evals_commit() {
     let state: ChannelState = (0, 0);
     let commitments: Commitments = (
@@ -45,5 +47,7 @@ fn test_evals_commit() {
     assert!(jet::eq_256(digest, 0x94642214378090859916af45c596713b6d8abaa2c72f3ed8ad41f869ad35491b));
     assert!(qm31_eq(random_coeff, qm31(2012724549, 1128459570, 1584582850, 1454574268)));
 }
+
+#endif // TESTING
 
 #endif

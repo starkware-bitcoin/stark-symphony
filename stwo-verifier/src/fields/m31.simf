@@ -137,6 +137,8 @@ fn m31_div(a: M31, b: M31) -> M31 {
     m31_mul(a, m31_inv(b))
 }
 
+#ifdef TESTING
+
 fn test_m31_inv() {
     let a: M31 = 35;
     let a_inv: M31 = m31_inv(a);
@@ -157,5 +159,7 @@ fn test_m31_sub() {
     let c: M31 = m31_sub(a, b);
     assert!(m31_eq(c, 2147483646));
 }
+
+#endif // TESTING
 
 #endif

@@ -63,6 +63,8 @@ fn oods(state: ChannelState, log_size: u8, oods_evals: OodsEvals, cp_alpha: QM31
     (state, random_coeff, oods_point)
 }
 
+#ifdef TESTING
+
 fn test_oods() {
     let state: ChannelState = (0xf4101066b0addfbccce964d958b1dec28fcf4e2a9a280f15b8dfcb4176b65c99, 0);
     let log_size: u8 = 2;
@@ -128,5 +130,7 @@ fn test_channel_mix_oods_evals() {
     let (digest, _): ChannelState = channel_mix_oods_evals(state, (oods_trace_evals, oods_cp_eval));
     assert!(jet::eq_256(digest, expected));
 }
+
+#endif // TESTING
 
 #endif

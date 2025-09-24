@@ -131,6 +131,8 @@ fn qm31_unwrap(x: Option<QM31>) -> QM31 {
     }
 }
 
+#ifdef TESTING
+
 fn test_qm31_inv() {
     let a: QM31 = qm31(1, 2, 3, 4);
     let a_inv: QM31 = qm31_inv(a);
@@ -175,5 +177,7 @@ fn test_qm31_mul() {
     let (cr, ci): (CM31, CM31) = c;
     assert!(qm31_eq(c, qm31(2147483576, 93, 2147483631, 50)));
 }
+
+#endif // TESTING
 
 #endif

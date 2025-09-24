@@ -42,6 +42,8 @@ fn check_proof_of_work(state: ChannelState, nonce: u64) -> ChannelState {
     state
 }
 
+#ifdef TESTING
+
 fn test_reverse_bytes_32() {
     let value: u32 = 0x12345678;
     let reversed: u32 = reverse_bytes_32(value);
@@ -54,5 +56,7 @@ fn test_check_proof_of_work() {
     let (digest, _): ChannelState = check_proof_of_work(state, nonce);
     assert!(jet::eq_256(digest, 0x2b43649271b97d2eaeb7f037b1d23ad2fd06e6546bc512bb0eec27c7f24b2105));
 }
+
+#endif // TESTING
 
 #endif

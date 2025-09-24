@@ -50,6 +50,8 @@ fn circle_point_index_neg(index: u32) -> u32 {
     jet::and_32(res, M31_CIRCLE_ORDER_BIT_MASK)
 }
 
+#ifdef TESTING
+
 fn test_bit_reverse_position() {
     let index: u32 = 15;
     let log_size: u8 = 11;
@@ -76,5 +78,7 @@ fn test_circle_point_index_neg() {
     let res: u32 = circle_point_index_neg(index);
     assert!(jet::eq_32(res, 2147482259));
 }
+
+#endif // TESTING
 
 #endif

@@ -39,6 +39,8 @@ fn col_evals_m31_get(col_evals: ColEvalsM31, offset: u32) -> M31 {
     <ColEvalsM31>::into(col_evals)
 }
 
+#ifdef TESTING
+
 fn test_col_evals_qm31_get() {
     let col_evals: ColEvalsQM31 = [qm31(1, 2, 3, 4)];
     let res: QM31 = col_evals_qm31_get(col_evals, 0);
@@ -50,5 +52,7 @@ fn test_col_evals_m31_get() {
     let res: M31 = col_evals_m31_get(col_evals, 0);
     assert!(m31_eq(res, 1));
 }
+
+#endif // TESTING
 
 #endif

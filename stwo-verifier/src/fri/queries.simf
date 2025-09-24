@@ -42,6 +42,8 @@ fn fri_generate_queries(state: ChannelState, log_size: u8) -> (ChannelState, [u3
     (state, queries)
 }
 
+#ifdef TESTING
+
 fn test_channel_draw_queries_8() {
     let state: ChannelState = (0x733dfccec28657e75a61a34954fa6d0c8915e3adbcf40c765b4eaa488db84902, 0);
     let query_mask: u32 = 63; // 2^6 - 1
@@ -55,5 +57,7 @@ fn test_channel_draw_queries_8() {
     assert!(jet::eq_32(q6, 12));
     assert!(jet::eq_32(q7, 47));
 }
+
+#endif // TESTING
 
 #endif

@@ -103,6 +103,8 @@ fn hash_node_qm31(eval: QM31) -> u256 {
     jet::sha_256_ctx_8_finalize(ctx)
 }
 
+#ifdef TESTING
+
 fn test_sha256() {
     let input: u256 = 0x0000000000000000000000000000000000000000000000000000000000000000;
     let result: u256 = sha256(input);
@@ -114,5 +116,7 @@ fn test_sha256_32() {
     let result: u256 = sha256_32(input);
     assert!(jet::eq_256(result, 64711419806867828842001989061968035503454892533703351743109315571114974747662));
 }
+
+#endif // TESTING
 
 #endif

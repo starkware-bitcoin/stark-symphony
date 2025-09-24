@@ -112,6 +112,8 @@ fn m31_point_eq(lhs: M31Point, rhs: M31Point) -> bool {
     }
 }
 
+#ifdef TESTING
+
 fn test_m31_point_add_1() {
     let g4: M31Point = (0, 1);
     let g4_dbl: M31Point = m31_point_add(g4, g4);
@@ -153,5 +155,7 @@ fn test_circle_point_index_to_m31_point() {
     let expected: M31Point = (1670284485, 627279409);
     assert!(m31_point_eq(result, expected));
 }
+
+#endif // TESTING
 
 #endif

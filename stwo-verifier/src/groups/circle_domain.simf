@@ -42,6 +42,8 @@ fn circle_position_to_m31_point(domain: CircleDomain, position: u32) -> M31Point
     circle_point_index_to_m31_point(index)
 }
 
+#ifdef TESTING
+
 fn test_circle_domain() {
     let (half_size, offset, step): (u32, u32, u32) = circle_domain(11);
     assert!(jet::eq_32(half_size, 1024));
@@ -62,5 +64,7 @@ fn test_circle_position_to_point_index_2() {
     let point_index: u32 = circle_position_to_point_index(domain, position);
     assert!(jet::eq_32(point_index, 422051840));
 }
+
+#endif // TESTING
 
 #endif

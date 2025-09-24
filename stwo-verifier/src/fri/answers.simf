@@ -153,6 +153,8 @@ fn fri_answers(responses: [QueryResponse; NUM_FRI_QUERIES], random_coeff: QM31, 
     fri_answers
 }
 
+#ifdef TESTING
+
 fn test_trace_evals_zip_arr_4() {
     let evals: [ColEvalsM31; 4] = [
         [1],
@@ -174,5 +176,7 @@ fn test_cp_evals_zip_arr_4() {
     let oods_evals: [QM31; 4] = [qm31(1, 0, 0, 0), qm31(2, 0, 0, 0), qm31(3, 0, 0, 0), qm31(4, 0, 0, 0)];
     let zipped: [(M31, QM31); 4] = cp_evals_zip_arr_4(evals, oods_evals);
 }
+
+#endif // TESTING
 
 #endif

@@ -72,6 +72,8 @@ fn qm31_point_add_m31_point(lhs: QM31Point, rhs: M31Point) -> QM31Point {
     (r0, r1)
 }
 
+#ifdef TESTING
+
 fn test_add_circle_point_m31() {
     let qm31_gen: QM31Point = QM31_CIRCLE_GEN;
     let m31_gen: M31Point = M31_CIRCLE_GEN;
@@ -92,5 +94,7 @@ fn test_m31_point_neg() {
     let zero: QM31Point = qm31_point_zero();
     assert!(qm31_point_eq(qm31_point_add(point, neg_point), zero));
 }
+
+#endif // TESTING
 
 #endif

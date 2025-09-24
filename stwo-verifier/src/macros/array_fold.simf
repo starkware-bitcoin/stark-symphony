@@ -33,6 +33,8 @@ fn F##_fold_arr_##N(arr: [T; N], acc: ACC) -> ACC { \
     acc \
 }
 
+#ifdef TESTING
+
 /// Function for tests.
 fn sum(elt: u32, acc: u32) -> u32 {
     let (_, sum): (bool, u32) = jet::add_32(elt, acc);
@@ -49,5 +51,7 @@ fn test_fold_arr_8() {
     let acc: u32 = sum_fold_arr_8(a, 0);
     assert!(jet::eq_32(acc, 36));
 }
+
+#endif // TESTING
 
 #endif

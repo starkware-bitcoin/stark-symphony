@@ -36,6 +36,8 @@ fn F##_map_arr_##N(arr: [T1; N], ctx: CTX) -> ([T2; N], CTX) { \
     (res, ctx) \
 }
 
+#ifdef TESTING
+
 /// Identity function for tests.
 fn identity(elt: u32, ctx: u32) -> (u32, u32) {
     (elt, ctx)
@@ -59,5 +61,7 @@ fn test_map_arr_8() {
     assert!(jet::eq_32(g, 7));
     assert!(jet::eq_32(h, 8));
 }
+
+#endif // TESTING
 
 #endif

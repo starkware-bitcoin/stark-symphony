@@ -43,6 +43,8 @@ fn merkle_verify_32(leaf: u256, auth_path: u32, proof: MerkleProof32, root: u256
     assert!(jet::eq_256(computed_root, root));
 }
 
+#ifdef TESTING
+
 fn test_merkle() {
     let root: u256 = 0x875ef7b0a28899d85920fa5586628c27dd7f3ca3d221ee018ee34fc5d758a477;
     let leaf: u256 = sha256(0);
@@ -76,5 +78,7 @@ fn test_decommitment() {
     let (_, auth_path): (bool, u32) = jet::add_32(leaf_id, 8192);
     merkle_verify_32(leaf, auth_path, proof, root);
 }
+
+#endif // TESTING
 
 #endif

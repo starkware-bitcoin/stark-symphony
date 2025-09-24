@@ -122,6 +122,8 @@ fn evals_verify(state: ChannelState, log_size_ex: u8, commitments: Commitments, 
     (state, query_responses)
 }
 
+#ifdef TESTING
+
 fn test_verify_query() {
     let roots: Commitments = (
         0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,
@@ -142,5 +144,7 @@ fn test_verify_query() {
     let domain_size: u32 = 2048;
     let _: (QueryResponse, QueryDecommitmentCtx) = verify_query((query, decommitment), (roots, domain_size));
 }
+
+#endif // TESTING
 
 #endif

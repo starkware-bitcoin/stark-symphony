@@ -84,6 +84,8 @@ fn fri_commit(state: ChannelState, fri_commitments: FriCommitments) -> (ChannelS
     (state, (first_layer, inner_layers, last_layer))
 }
 
+#ifdef TESTING
+
 fn test_fri_commit() {
     let state: ChannelState = (0x44dff4effae0be493c21672683c892b3baeaa7d251e5e7153bc0e0b2da8a9d96, 0);
     let fri_commitments: FriCommitments = (
@@ -101,5 +103,7 @@ fn test_fri_commit() {
     let (_, first_alpha): FriLayer = first_layer;
     assert!(qm31_eq(first_alpha, qm31(299390734, 1867715474, 641071780, 899293580)));
 }
+
+#endif // TESTING
 
 #endif

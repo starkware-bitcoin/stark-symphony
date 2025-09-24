@@ -70,6 +70,8 @@ fn vanishing_poly_eval(log_size: u8, point: QM31Point) -> QM31 {
     unwrap_left::<PiFnAcc>(res)
 }
 
+#ifdef TESTING
+
 fn test_composition_poly_eval_from_partitions() {
     let partitioned_cp_eval: (QM31, QM31, QM31, QM31) = (
         qm31(102457172, 120697777, 684798907, 704325503),
@@ -93,5 +95,7 @@ fn test_vanishing_poly_eval() {
     let expected: QM31 = qm31(1577521274, 883254348, 2004066876, 1290622108);
     assert!(qm31_eq(result, expected));
 }
+
+#endif // TESTING
 
 #endif

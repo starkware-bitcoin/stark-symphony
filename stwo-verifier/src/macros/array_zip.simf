@@ -33,6 +33,8 @@ fn PREFIX##_zip_arr_##N(arr1: [T1; N], arr2: [T2; N]) -> [(T1, T2); N] { \
     <([(T1, T2); HALF_N], [(T1, T2); HALF_N])>::into((res_1, res_2)) \
 }
 
+#ifdef TESTING
+
 DEFINE_ZIP_ARR_1(num, u32, u32)
 DEFINE_ZIP_ARR(num, u32, u32, 2, 1)
 DEFINE_ZIP_ARR(num, u32, u32, 4, 2)
@@ -46,5 +48,7 @@ fn test_zip_arr_8() {
     assert!(jet::eq_32(d0, 4));
     assert!(jet::eq_32(d1, 4));
 }
+
+#endif // TESTING
 
 #endif

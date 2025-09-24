@@ -61,6 +61,8 @@ fn eval_composition_poly(log_size: u8, oods_point: QM31Point, oods_trace_evals: 
     qm31_div(constraint_acc, vanish_poly_eval)
 }
 
+#ifdef TESTING
+
 fn test_eval_composition_poly() {
     let log_size: u8 = 2;
     let oods_point: QM31Point = (
@@ -78,5 +80,7 @@ fn test_eval_composition_poly() {
     let expected: QM31 = qm31(634949303, 1333531166, 715684036, 225686437);
     assert!(qm31_eq(result, expected));
 }
+
+#endif // TESTING
 
 #endif

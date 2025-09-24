@@ -77,6 +77,8 @@ fn fri_verify_last_layer(folded_answer: FriAnswer, line_poly_coeff: QM31) -> QM3
     line_poly_coeff
 }
 
+#ifdef TESTING
+
 fn test_verify_decommitment() {
     let position: u32 = 8;
     let eval0: QM31 = qm31(133596213, 1292214427, 800853508, 1157812585);
@@ -123,5 +125,7 @@ fn test_fri_verify_inner_layer() {
     );
     let (folded_answer, folded_context): (FriAnswer, FriLayerContext) = fri_verify_query(data, context);
 }
+
+#endif // TESTING
 
 #endif

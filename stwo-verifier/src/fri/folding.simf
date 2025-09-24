@@ -40,6 +40,8 @@ fn line_fold(position: u32, f_p: QM31, f_neg_p: QM31, log_size_ex: u8, fold_alph
    qm31_add(f0, qm31_mul(fold_alpha, f1))
 }
 
+#ifdef TESTING
+
 fn test_circle_fold() {
     let query: u32 = 8;
     let f_p: QM31 = qm31(133596213, 1292214427, 800853508, 1157812585);
@@ -59,5 +61,7 @@ fn test_line_fold() {
     let folded_eval: QM31 = line_fold(query, f_x, f_neg_x, log_size_ex, fold_alpha);
     assert!(qm31_eq(folded_eval, qm31(443679784, 1722172524, 1862974103, 1176634013)))
 }
+
+#endif // TESTING
 
 #endif
