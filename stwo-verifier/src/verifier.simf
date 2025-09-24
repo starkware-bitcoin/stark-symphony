@@ -24,7 +24,7 @@ type Proof = (
     [Decommitment; NUM_FRI_QUERIES],
     OodsEvals,
     FriCommitments,
-    //[FriDecommitment; NUM_FRI_QUERIES],
+    //FriDecommitments,
     u64,
 );
 

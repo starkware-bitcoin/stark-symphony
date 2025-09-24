@@ -6,71 +6,64 @@
 #define FRI_FOLDING_SIMF
 
 #include "config.simf"
-#include "merkle.simf"
-#include "hasher.simf"
 #include "fields/qm31.simf"
 #include "fields/m31.simf"
 #include "groups/circle_domain.simf"
 #include "groups/line_domain.simf"
 
-/// Inverse of 2 modulo M31
-#define M31_INV_2 1073741824
-
-/// Returns the two adjacent leaf indices for `query` in ascending order and their values.
-/// `evaluation` is the value at `query`, `witness` is the neighbor's value. The returned
-/// `idx` is the left leaf index, and `(left_eval, right_eval)` are ordered evaluations.
-fn adjacent_leaves(query: u32, evaluation: QM31, witness: QM31) -> (u32, QM31, QM31) {
-    match jet::eq_32(query, jet::right_shift_32(1, query)) {
-        true => (query, evaluation, witness),
-        false => {
-            let (_, sibling): (bool, u32) = jet::subtract_32(query, 1);
-            (sibling, witness, evaluation)
-        }
-    }
-}
-
-/// Verify a proof of inclusion for two adjacent leaves in a Merkle tree having a maximum depth of 32.
-fn verify_decommitment(position: u32, eval0: QM31, eval1: QM31, log_size_ex: u8, proof: MerkleProof32, root: u256) {
-    let domain_size: u32 = jet::left_shift_32(log_size_ex, 1);
-    let leaf0: u256 = hash_node_qm31(eval0);
-    let leaf1: u256 = hash_node_qm31(eval1);
-    let node: u256 = sha256_pair(leaf0, leaf1);
-    let (_, auth_path): (bool, u32) = jet::add_32(position, domain_size);
-    let auth_path: u32 = jet::divide_32(auth_path, 2);
-    merkle_verify_32(node, auth_path, proof, root);
-}
-
 // Fold evaluations of a degree `d` circle polynomial into evaluations of a degree `d/2` univariate polynomial.
-fn fold_circle(position: u32, f_p: QM31, f_neg_p: QM31, log_size_ex: u8, fold_alpha: QM31) -> (u32, QM31) {
+fn circle_fold(position: u32, f_p: QM31, f_neg_p: QM31, log_size_ex: u8, fold_alpha: QM31) -> (u32, QM31) {
     // Get y coords of the points given the left leaf position, precompute inverses
     let domain: CircleDomain = circle_domain(log_size_ex);
     let (_, y): M31Point = circle_position_to_m31_point(domain, bit_reverse_position(position, log_size_ex));
     let y_inv: M31 = m31_inv(y);
 
-    // Calculate f0 = (f(p) + f(-p)) / 2 and f1 = (f(p) - f(-p)) / 2y
-    let f0: QM31 = qm31_mul_m31(qm31_add(f_p, f_neg_p), M31_INV_2);
-    let f1: QM31 = qm31_mul_m31(qm31_sub(f_p, f_neg_p), m31_mul(y_inv, M31_INV_2));
+    // Calculate f0 = (f(p) + f(-p)) and f1 = (f(p) - f(-p)) / p.y
+    let f0: QM31 = qm31_add(f_p, f_neg_p);
+    let f1: QM31 = qm31_mul_m31(qm31_sub(f_p, f_neg_p), y_inv);
 
     // Fold: res = f0 + fold_alpha * f1
     let folded_eval: QM31 = qm31_add(f0, qm31_mul(fold_alpha, f1));
-    let folded_query: u32 = fold_query(position, 2); // NOTE: folded queries are not deduplicated
+    let folded_query: u32 = jet::divide_32(position, 2); // NOTE: folded queries are not deduplicated
     (folded_query, folded_eval)
 }
 
 /// Folds evaluations of a degree `d` univariate polynomial into evaluations of a degree `d/2` univariate polynomial.
-fn fold_line(position: u32, f_p: QM31, f_neg_p: QM31, log_size_ex: u8, fold_alpha: QM31) -> (u32, QM31) {
+fn line_fold(position: u32, f_p: QM31, f_neg_p: QM31, log_size_ex: u8, fold_alpha: QM31) -> (u32, QM31) {
     let domain: LineDomain = line_domain(log_size_ex);
     let x: M31 = line_position_to_x_coord(domain, bit_reverse_position(position, log_size_ex));
     let x_inv: M31 = m31_inv(x);
 
-    // Calculate f0 = (f(x) + f(-x)) / 2 and f1 = (f(x) - f(-x)) / 2x
-    let f0: QM31 = qm31_mul_m31(qm31_add(f_p, f_neg_p), M31_INV_2);
-    let f1: QM31 = qm31_mul_m31(qm31_sub(f_p, f_neg_p), m31_mul(x_inv, M31_INV_2));
+    // Calculate f0 = (f(x) + f(-x)) and f1 = (f(x) - f(-x)) / x
+    let f0: QM31 = qm31_add(f_p, f_neg_p);
+    let f1: QM31 = qm31_mul_m31(qm31_sub(f_p, f_neg_p), x_inv);
 
     // Fold: res = f0 + fold_alpha * f1
     let folded_eval: QM31 = qm31_add(f0, qm31_mul(fold_alpha, f1));
-    let folded_query: u32 = fold_query(position, 2); // NOTE: folded queries are not deduplicated
+    let folded_query: u32 = jet::divide_32(position, 2); // NOTE: folded queries are not deduplicated
     (folded_query, folded_eval)
+}
+
+fn test_circle_fold() {
+    let query: u32 = 8;
+    let f_p: QM31 = qm31(133596213, 1292214427, 800853508, 1157812585);
+    let f_neg_p: QM31 = qm31(1484824379, 1229977982, 1421154847, 1627236275);
+    let log_size_ex: u8 = 4;
+    let fold_alpha: QM31 = qm31(1516394272, 915498982, 1578049480, 1826337248);
+    let (folded_query, folded_eval): (u32, QM31) = circle_fold(query, f_p, f_neg_p, log_size_ex, fold_alpha);
+    assert!(jet::eq_32(folded_query, 4));
+    assert!(qm31_eq(folded_eval, qm31(393099248, 1530799782, 1841971559, 129121955)))
+}
+
+fn test_line_fold() {
+    let query: u32 = 4;
+    let f_x: QM31 = qm31(393099248, 1530799782, 1841971559, 129121955);
+    let f_neg_x: QM31 = qm31(327766526, 1092493934, 446779071, 2013755084);
+    let log_size_ex: u8 = 3;
+    let fold_alpha: QM31 = qm31(428468021, 292366470, 1298858467, 227984395);
+    let (folded_query, folded_eval): (u32, QM31) = line_fold(query, f_x, f_neg_x, log_size_ex, fold_alpha);
+    assert!(jet::eq_32(folded_query, 2));
+    assert!(qm31_eq(folded_eval, qm31(443679784, 1722172524, 1862974103, 1176634013)))
 }
 
 #endif

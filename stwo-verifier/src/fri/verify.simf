@@ -7,16 +7,10 @@
 
 #include "config.simf"
 #include "groups/circle_domain.simf"
-#include "fri/answers.simf"
-#include "fri/commit.simf"
-#include "fri/folding.simf"
+#include "fri/layers.simf"
 #include "macros/array_zip.simf"
 #include "macros/array_map.simf"
-
-/// FRI decommitment for a single query:
-/// * Witness
-/// * Merkle proof
-type FriQueryDecommitment = (QM31, MerkleProof32);
+#include "macros/array_fold.simf"
 
 /// FRI decommitment for a single layer:
 type FriLayerDecommitment = [FriQueryDecommitment; NUM_FRI_QUERIES];
@@ -24,105 +18,86 @@ type FriLayerDecommitment = [FriQueryDecommitment; NUM_FRI_QUERIES];
 /// FRI decommitment:
 /// * first layer decommitments
 /// * inner layers decommitments
-type FriDecommitment = (FriLayerDecommitment, [FriLayerDecommitment; NUM_FRI_LAYERS]);
+type FriDecommitments = (FriLayerDecommitment, [FriLayerDecommitment; NUM_FRI_LAYERS]);
 
-/// FRI folding context:
-/// * Layer commitment and folding alpha
-/// * Domain log size
-type FriLayerContext = (FriLayer, u8);
+// CONFIG: see NUM_FRI_QUERIES.
+DEFINE_ZIP_ARR_1(fri_layer_data, FriAnswer, FriLayerDecommitment)
+DEFINE_ZIP_ARR(fri_layer_data, FriAnswer, FriLayerDecommitment, 2, 1)
+DEFINE_ZIP_ARR(fri_layer_data, FriAnswer, FriLayerDecommitment, 4, 2)
+DEFINE_ZIP_ARR(fri_layer_data, FriAnswer, FriLayerDecommitment, 8, 4)
+DEFINE_ZIP_ARR(fri_layer_data, FriAnswer, FriLayerDecommitment, 16, 8)
 
-/// Verifies the first FRI layer for a single query and computes the next-layer evaluation.
-/// Steps:
-/// - Order `(quotient, witness)` as adjacent leaves and verify a shared Merkle proof.
-/// - Recover circle points for the query, apply the IFFT step, and fold with `fold_alpha`.
-fn fri_verify_first_layer(item: (FriAnswer, FriLayerDecommitment), context: FriLayerContext) -> (FriAnswer, FriLayerContext) {
-    let ((query, quotient), (witness, proof)): (FriAnswer, FriLayerDecommitment) = item;
-    let ((commitment, fold_alpha), log_size_ex): FriLayerContext = context;
-    // Determine whether the witness position is on the left or right relative to quotient
-    let (position, f_p, f_neg_p): (u32, QM31, QM31) = adjacent_leaves(query, quotient, witness);
-    // Verify decommitment (two adjacent leaves share the same proof)
-    verify_decommitment(position, f_p, f_neg_p, log_size_ex, proof, commitment);
-    // Project circle points onto a line and fold
-    (fold_circle(position, f_p, f_neg_p, fold_alpha), context)
-}
-
-/// Verifies an inner FRI layer decommitment and folds to the next-layer evaluation.
-/// Expects two adjacent evaluations sharing a Merkle proof and uses the layer's `fold_alpha`.
-fn fri_verify_inner_layer(item: (FriAnswer, FriLayerDecommitment), context: FriLayerContext) -> (FriAnswer, FriLayerContext) {
-    let ((folded_query, folded_evaluation), (witness, proof)): (FriAnswer, FriLayerDecommitment) = item;
-    let ((commitment, fold_alpha), log_size_ex): FriLayerContext = context;
-    // Determine whether the witness position is on the left or right relative to the folded evaluation
-    let (position, f_x, f_neg_x): (u32, QM31, QM31) = adjacent_leaves(folded_query, folded_evaluation, witness);
-    // Verify decommitment (two adjacent leaves share the same proof)
-    verify_decommitment(position, f_x, f_neg_x, log_size_ex, proof, commitment);
-    // Fold the evaluations and query
-    (fold_line(position, f_x, f_neg_x, fold_alpha), context)
-}
-
-fn fri_verify_inner_layers(fri_layer_decommitment: FriLayerDecommitment, acc: ([FriAnswer; NUM_FRI_QUERIES], FriLayerContext)) -> ([FriAnswer; NUM_FRI_QUERIES], FriLayerContext) {
-
-fn fri_verify_last_layer(line_poly: LinePoly, log_size_ex: u8, folded_answers: [FriAnswer; NUM_FRI_QUERIES]) {
-    // Evaluate the polynomial on the line domain
-    let domain: LineDomain = line_domain(log_size_ex);
-    
-    // For every folded query check that the polynomial evaluation matches the decommitted value
-
-}
-
-DEFINE_ZIP_ARR_1(fri_layer, FriAnswer, FriLayerDecommitment)
-DEFINE_ZIP_ARR(fri_layer, FriAnswer, FriLayerDecommitment, 2, 1)
-DEFINE_ZIP_ARR(fri_layer, FriAnswer, FriLayerDecommitment, 4, 2)
-DEFINE_ZIP_ARR(fri_layer, FriAnswer, FriLayerDecommitment, 8, 4)
-DEFINE_ZIP_ARR(fri_layer, FriAnswer, FriLayerDecommitment, 16, 8)
-
-fn fri_layer_zip_arr(fri_answers: [FriAnswer; NUM_FRI_QUERIES], fri_layer_decommitment: FriLayerDecommitment) -> [(FriAnswer, FriLayerDecommitment); NUM_FRI_QUERIES] {
+fn fri_layer_data_zip_arr(fri_answers: [FriAnswer; NUM_FRI_QUERIES], fri_layer_decommitment: FriLayerDecommitment) -> [(FriAnswer, FriLayerDecommitment); NUM_FRI_QUERIES] {
 #ifdef TESTING
-    fri_layer_zip_arr_1(fri_answers, fri_layer_decommitment)
+    fri_layer_data_zip_arr_1(fri_answers, fri_layer_decommitment)
 #else
-    fri_layer_zip_arr_16(fri_answers, fri_layer_decommitment)
+    fri_layer_data_zip_arr_16(fri_answers, fri_layer_decommitment)
 #endif // TESTING
 }
 
-DEFINE_MAP_ARR_1((FriAnswer, FriLayerDecommitment), FriAnswer, FriLayerContext, fri_verify_first_layer)
-DEFINE_MAP_ARR((FriAnswer, FriLayerDecommitment), FriAnswer, FriLayerContext, fri_verify_first_layer, 2, 1)
-DEFINE_MAP_ARR((FriAnswer, FriLayerDecommitment), FriAnswer, FriLayerContext, fri_verify_first_layer, 4, 2)
-DEFINE_MAP_ARR((FriAnswer, FriLayerDecommitment), FriAnswer, FriLayerContext, fri_verify_first_layer, 8, 4)
-DEFINE_MAP_ARR((FriAnswer, FriLayerDecommitment), FriAnswer, FriLayerContext, fri_verify_first_layer, 16, 8)
+// CONFIG: see NUM_FRI_QUERIES.
+DEFINE_MAP_ARR_1((FriAnswer, FriQueryDecommitment), FriAnswer, FriLayerContext, fri_verify_first_layer)
+DEFINE_MAP_ARR((FriAnswer, FriQueryDecommitment), FriAnswer, FriLayerContext, fri_verify_first_layer, 2, 1)
+DEFINE_MAP_ARR((FriAnswer, FriQueryDecommitment), FriAnswer, FriLayerContext, fri_verify_first_layer, 4, 2)
+DEFINE_MAP_ARR((FriAnswer, FriQueryDecommitment), FriAnswer, FriLayerContext, fri_verify_first_layer, 8, 4)
+DEFINE_MAP_ARR((FriAnswer, FriQueryDecommitment), FriAnswer, FriLayerContext, fri_verify_first_layer, 16, 8)
 
-fn fri_verify_first_layer_map_arr(items: [(FriAnswer, FriLayerDecommitment); NUM_FRI_QUERIES], context: FriLayerContext) -> ([FriAnswer; NUM_FRI_QUERIES], FriLayerContext) {
+fn fri_verify_first_layer_map_arr(data: [(FriAnswer, FriQueryDecommitment); NUM_FRI_QUERIES], context: FriLayerContext) -> ([FriAnswer; NUM_FRI_QUERIES], FriLayerContext) {
 #ifdef TESTING
-    fri_verify_first_layer_map_arr_1(items, context)
+    fri_verify_first_layer_map_arr_1(data, context)
 #else
-    fri_verify_first_layer_map_arr_16(items, context)
+    fri_verify_first_layer_map_arr_16(data, context)
 #endif // TESTING
 }
 
-DEFINE_MAP_ARR_1((FriAnswer, FriLayerDecommitment), FriAnswer, FriAnswer, FriLayerContext, fri_verify_inner_layer)
-DEFINE_MAP_ARR((FriAnswer, FriLayerDecommitment), FriAnswer, FriAnswer, FriLayerContext, fri_verify_inner_layer, 2, 1)
-DEFINE_MAP_ARR((FriAnswer, FriLayerDecommitment), FriAnswer, FriAnswer, FriLayerContext, fri_verify_inner_layer, 4, 2)
-DEFINE_MAP_ARR((FriAnswer, FriLayerDecommitment), FriAnswer, FriAnswer, FriLayerContext, fri_verify_inner_layer, 8, 4)
-DEFINE_MAP_ARR((FriAnswer, FriLayerDecommitment), FriAnswer, FriAnswer, FriLayerContext, fri_verify_inner_layer, 16, 8)
+// CONFIG: see NUM_FRI_QUERIES.
+DEFINE_MAP_ARR_1((FriAnswer, FriQueryDecommitment), FriAnswer, FriLayerContext, fri_verify_inner_layer)
+DEFINE_MAP_ARR((FriAnswer, FriQueryDecommitment), FriAnswer, FriLayerContext, fri_verify_inner_layer, 2, 1)
+DEFINE_MAP_ARR((FriAnswer, FriQueryDecommitment), FriAnswer, FriLayerContext, fri_verify_inner_layer, 4, 2)
+DEFINE_MAP_ARR((FriAnswer, FriQueryDecommitment), FriAnswer, FriLayerContext, fri_verify_inner_layer, 8, 4)
+DEFINE_MAP_ARR((FriAnswer, FriQueryDecommitment), FriAnswer, FriLayerContext, fri_verify_inner_layer, 16, 8)
 
-fn fri_verify_inner_layer_map_arr(items: [(FriAnswer, FriLayerDecommitment); NUM_FRI_QUERIES], context: FriLayerContext) -> ([FriAnswer; NUM_FRI_QUERIES], FriLayerContext) {
+fn fri_verify_inner_layer_map_arr(data: [(FriAnswer, FriQueryDecommitment); NUM_FRI_QUERIES], context: FriLayerContext) -> ([FriAnswer; NUM_FRI_QUERIES], FriLayerContext) {
 #ifdef TESTING
-    fri_verify_inner_layer_map_arr_1(items, context)
+    fri_verify_inner_layer_map_arr_1(data, context)
 #else
-    fri_verify_inner_layer_map_arr_16(items, context)
+    fri_verify_inner_layer_map_arr_16(data, context)
 #endif // TESTING
 }
+
+// CONFIG: see NUM_FRI_LAYERS.
+DEFINE_ZIP_ARR_1(fri_inner_layer, FriLayer, FriLayerDecommitment)
+DEFINE_ZIP_ARR(fri_inner_layer, FriLayer, FriLayerDecommitment, 2, 1)
+DEFINE_ZIP_ARR(fri_inner_layer, FriLayer, FriLayerDecommitment, 4, 2)
+DEFINE_ZIP_ARR(fri_inner_layer, FriLayer, FriLayerDecommitment, 8, 4)
+
+fn fri_inner_layer_zip_arr(fri_layer: FriLayer, fri_layer_decommitment: FriLayerDecommitment) -> [(FriLayer, FriLayerDecommitment); NUM_FRI_LAYERS] {
+#ifdef TESTING
+    fri_inner_layer_zip_arr_2(fri_layer, fri_layer_decommitment)
+#else
+    fri_inner_layer_zip_arr_8(fri_layer, fri_layer_decommitment)
+#endif // TESTING
+}
+
+fn fri_verify_inner_layer(fri_layer_decommitment: FriLayerDecommitment, acc: ([FriAnswer; NUM_FRI_QUERIES], FriLayerContext)) -> ([FriAnswer; NUM_FRI_QUERIES], FriLayerContext) {
+
+
 
 /// Verify FRI decommitments.
-fn fri_verify(fri_layers: FriLayers, fri_decommitment: FriDecommitment, fri_answers: [FriAnswer; NUM_FRI_QUERIES], log_size_ex: u8) {
+fn fri_verify(fri_layers: FriLayers, fri_decommitments: FriDecommitments, fri_answers: [FriAnswer; NUM_FRI_QUERIES], log_size_ex: u8) {
     let (first_layer, inner_layers, last_layer): FriLayers = fri_layers;
-    let (first_layer_decommitment, inner_layers_decommitment): FriDecommitment = fri_decommitment;
+    let (first_layer_decommitment, inner_layers_decommitment): FriDecommitments = fri_decommitments;
     
     // Zip fri answers with first layer decommitments and verify the first layer
-    let first_layer_items: [(FriAnswer, FriLayerDecommitment); NUM_FRI_QUERIES] = fri_layer_zip_arr(fri_answers, first_layer_decommitment);
+    let first_layer_data: [(FriAnswer, FriQueryDecommitment); NUM_FRI_QUERIES] = fri_layer_data_zip_arr(fri_answers, first_layer_decommitment);
     let first_layer_context: FriLayerContext = (first_layer, log_size_ex);
-    let (first_layer_results, _): ([FriAnswer; NUM_FRI_QUERIES], FriLayerContext) = fri_verify_first_layer_map_arr(first_layer_items, first_layer_context);
+    let (first_layer_results, _): ([FriAnswer; NUM_FRI_QUERIES], FriLayerContext) = fri_verify_first_layer_map_arr(first_layer_data, first_layer_context);
 
-    // Zip folded answers with inner layers decommitments and verify the inner layers
-    let inner_layer_items: [(FriAnswer, FriLayerDecommitment); NUM_FRI_QUERIES] = fri_layer_zip_arr(first_layer_results, inner_layers_decommitment);
+    // Zip inner layer commitments with inner layers decommitments and verify the inner layers
+    let inner_layer_data = fri_inner_layer_zip_arr(inner_layers, inner_layers_decommitment);
+    let inner_layer_acc = (first_layer_results, jet::divide_8(log_size_ex, 2));
+
+    let inner_layer_items: [(FriAnswer, FriQueryDecommitment); NUM_FRI_QUERIES] = fri_layer_data_zip_arr(first_layer_results, inner_layers_decommitment);
     let (inner_layer_results, _): ([FriAnswer; NUM_FRI_QUERIES], FriLayerContext) = fri_verify_inner_layer_map_arr(inner_layer_items, inner_layer_context);
 
     // Verify the last layer

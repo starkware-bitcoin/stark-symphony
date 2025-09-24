@@ -1,0 +1,130 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
+#ifndef FRI_LAYERS_SIMF
+#define FRI_LAYERS_SIMF
+
+#include "config.simf"
+#include "merkle.simf"
+#include "hasher.simf"
+#include "fri/commit.simf"
+#include "fri/answers.simf"
+#include "fri/folding.simf"
+
+/// FRI decommitment for a single query:
+/// * Witness
+/// * Merkle proof
+type FriQueryDecommitment = (QM31, MerkleProof32);
+
+/// FRI folding context:
+/// * Layer commitment and folding alpha
+/// * Domain log size
+type FriLayerContext = (FriLayer, u8);
+
+/// Returns the two adjacent leaf indices for `query` in ascending order and their values.
+/// `evaluation` is the value at `query`, `witness` is the neighbor's value. The returned
+/// `idx` is the left leaf index, and `(left_eval, right_eval)` are ordered evaluations.
+fn adjacent_leaves(query: u32, evaluation: QM31, witness: QM31) -> (u32, QM31, QM31) {
+    match jet::divides_32(2, query) {
+        true => (query, evaluation, witness),
+        false => {
+            let (_, sibling): (bool, u32) = jet::subtract_32(query, 1);
+            (sibling, witness, evaluation)
+        }
+    }
+}
+
+/// Verify a proof of inclusion for two adjacent leaves in a Merkle tree having a maximum depth of 32.
+fn verify_decommitment(position: u32, eval0: QM31, eval1: QM31, log_size_ex: u8, proof: MerkleProof32, root: u256) {
+    let domain_size: u32 = jet::left_shift_32(log_size_ex, 1);
+    let leaf0: u256 = hash_node_qm31(eval0);
+    let leaf1: u256 = hash_node_qm31(eval1);
+    let node: u256 = sha256_pair(leaf0, leaf1);
+    let (_, auth_path): (bool, u32) = jet::add_32(position, domain_size);
+    let auth_path: u32 = jet::divide_32(auth_path, 2);
+    merkle_verify_32(node, auth_path, proof, root);
+}
+
+/// Verifies the first FRI layer for a single query and computes the next-layer evaluation.
+/// Steps:
+/// - Order `(quotient, witness)` as adjacent leaves and verify a shared Merkle proof.
+/// - Recover circle points for the query, apply the IFFT step, and fold with `fold_alpha`.
+fn fri_verify_first_layer(data: (FriAnswer, FriQueryDecommitment), context: FriLayerContext) -> (FriAnswer, FriLayerContext) {
+    let ((query, quotient), (witness, proof)): (FriAnswer, FriQueryDecommitment) = data;
+    let ((commitment, fold_alpha), log_size_ex): FriLayerContext = context;
+    // Determine whether the witness position is on the left or right relative to quotient
+    let (position, f_p, f_neg_p): (u32, QM31, QM31) = adjacent_leaves(query, quotient, witness);
+    // Verify decommitment (two adjacent leaves share the same proof)
+    verify_decommitment(position, f_p, f_neg_p, log_size_ex, proof, commitment);
+    // Project circle points onto a line and fold
+    (circle_fold(position, f_p, f_neg_p, log_size_ex, fold_alpha), context)
+}
+
+/// Verifies an inner FRI layer decommitment and folds to the next-layer evaluation.
+/// Expects two adjacent evaluations sharing a Merkle proof and uses the layer's `fold_alpha`.
+fn fri_verify_inner_layer(data: (FriAnswer, FriQueryDecommitment), context: FriLayerContext) -> (FriAnswer, FriLayerContext) {
+    let ((folded_query, folded_evaluation), (witness, proof)): (FriAnswer, FriQueryDecommitment) = data;
+    let ((commitment, fold_alpha), log_size_ex): FriLayerContext = context;
+    // Determine whether the witness position is on the left or right relative to the folded evaluation
+    let (position, f_x, f_neg_x): (u32, QM31, QM31) = adjacent_leaves(folded_query, folded_evaluation, witness);
+    // Verify decommitment (two adjacent leaves share the same proof)
+    verify_decommitment(position, f_x, f_neg_x, log_size_ex, proof, commitment);
+    // Fold the evaluations and query
+    (line_fold(position, f_x, f_neg_x, log_size_ex, fold_alpha), context)
+}
+
+/// Verifies the last FRI layer for a single folded query.
+/// Last layer is a line polynomial (coefficients) of degree 0, i.e. constant.
+fn fri_verify_last_layer(folded_answer: FriAnswer, line_poly_coeff: QM31) {
+    let (folded_query, folded_evaluation): FriAnswer = folded_answer;
+    assert!(jet::eq_32(folded_query, 0));
+    assert!(qm31_eq(folded_evaluation, line_poly_coeff));
+}
+
+fn test_verify_decommitment() {
+    let position: u32 = 8;
+    let eval0: QM31 = qm31(133596213, 1292214427, 800853508, 1157812585);
+    let eval1: QM31 = qm31(1484824379, 1229977982, 1421154847, 1627236275);
+    let log_size_ex: u8 = 4;
+    let proof: MerkleProof32 = list![
+        0x87ccfa665ca4f91454a98045fe8198fb65eb2e60e974addbe93b488f229c534e,
+        0x53266e6808282280665de29e749f5aad710ff056e7aefb16712005d1f438e259,
+        0x061e38b6444a637a0a7a3027d6dcef23ad597f7a304623cebddc010f41c8632d,
+    ];
+    let root: u256 = 0x26da5011fe955be570da501ab3d42f3903913fa59554a6ec8bfbbc9c66d84b5b;
+    verify_decommitment(position, eval0, eval1, log_size_ex, proof, root);
+}
+
+fn test_fri_verify_first_layer() {
+    let data: (FriAnswer, FriQueryDecommitment) = (
+        (8, qm31(133596213, 1292214427, 800853508, 1157812585)),
+        (qm31(1484824379, 1229977982, 1421154847, 1627236275), list![
+            0x87ccfa665ca4f91454a98045fe8198fb65eb2e60e974addbe93b488f229c534e,
+            0x53266e6808282280665de29e749f5aad710ff056e7aefb16712005d1f438e259,
+            0x061e38b6444a637a0a7a3027d6dcef23ad597f7a304623cebddc010f41c8632d,
+        ]),
+    );
+    let context: FriLayerContext = (
+        (0x26da5011fe955be570da501ab3d42f3903913fa59554a6ec8bfbbc9c66d84b5b, qm31(1516394272, 915498982, 1578049480, 1826337248)), 
+        4
+    );
+    let (folded_answer, folded_context): (FriAnswer, FriLayerContext) = fri_verify_first_layer(data, context);
+}
+
+fn test_fri_verify_inner_layer() {
+    let data: (FriAnswer, FriQueryDecommitment) = (
+        (4, qm31(393099248, 1530799782, 1841971559, 129121955)),
+        (qm31(327766526, 1092493934, 446779071, 2013755084), list![
+            0x46ed5cf88a5f3cc367dfbc649adecd4cd1527b7f0f85e20fe6d3d4c8af043cc2,
+            0xfe9cad33a4c79f16e3f3af044e9da1aaf44bd7c00b83de13e44baf9d22fe5a6d,
+        ]),
+    );
+    let context: FriLayerContext = (
+        (0x0d11aa22f18af5f6f5e8f7a844d359a82bffb5f18c12a29722a09884bc3a7b17, qm31(428468021, 292366470, 1298858467, 227984395)), 
+        3
+    );
+    let (folded_answer, folded_context): (FriAnswer, FriLayerContext) = fri_verify_inner_layer(data, context);
+}
+
+#endif
