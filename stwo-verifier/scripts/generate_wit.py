@@ -142,27 +142,42 @@ def build_witness_from_json(data: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
     cp_oods_val = "[" + ", ".join(qm31_value_str(q) for q in cp_oods_qm31) + "]"
     oods_evals_val = f"({trace_oods_val}, {cp_oods_val})"
 
-    # Decommitments per tree (we have 1 query in tests)
+    # Decommitments: values and Merkle proofs are concatenated across queries
+    n_queries: int = int(data.get("config", {}).get("fri_config", {}).get("n_queries", 1))
     decommitments = data["decommitments"]
-    trace_proof_nodes = [u256_from_bytes_be(bytes32_from_list(x)) for x in decommitments[1]["hash_witness"]]
-    cp_proof_nodes = [u256_from_bytes_be(bytes32_from_list(x)) for x in decommitments[2]["hash_witness"]]
 
-    # Queried values (M31)
+    # Split Merkle proofs equally across queries
+    trace_hash_concat = decommitments[1]["hash_witness"]
+    cp_hash_concat = decommitments[2]["hash_witness"]
+    trace_hash_chunks = split_equal_chunks(trace_hash_concat, n_queries)
+    cp_hash_chunks = split_equal_chunks(cp_hash_concat, n_queries)
+
+    # Split queried values equally across queries
     queried = data["queried_values"]
-    trace_m31 = [int(x) for x in queried[1]]  # 4 values
-    cp_m31 = [int(x) for x in queried[2]]     # 16 values
+    trace_vals_concat = [int(x) for x in queried[1]]
+    cp_vals_concat = [int(x) for x in queried[2]]
+    trace_val_chunks = split_equal_chunks(trace_vals_concat, n_queries)
+    cp_val_chunks = split_equal_chunks(cp_vals_concat, n_queries)
 
-    trace_evals_m31_val = "[" + ", ".join("[" + str(x) + "]" for x in trace_m31) + "]"
-    cp_evals_m31_val = "[" + ", ".join(str(x) for x in cp_m31) + "]"
-    trace_merkle_val = "list![" + ", ".join(u256_hex(x) for x in trace_proof_nodes) + "]"  # List only for MerkleProof
-    cp_merkle_val = "list![" + ", ".join(u256_hex(x) for x in cp_proof_nodes) + "]"
-
-    decommitment_item_val = f"(({trace_evals_m31_val}, {trace_merkle_val}), ({cp_evals_m31_val}, {cp_merkle_val}))"
-    decommitments_list_val = "[" + decommitment_item_val + "]"
+    # Build per-query decommitment entries
+    decommitment_items: List[str] = []
+    for i in range(n_queries):
+        trace_evals_m31_val = "[" + ", ".join("[" + str(x) + "]" for x in trace_val_chunks[i]) + "]"
+        cp_evals_m31_val = "[" + ", ".join(str(x) for x in cp_val_chunks[i]) + "]"
+        trace_merkle_val = "list![" + ", ".join(
+            u256_hex(u256_from_bytes_be(bytes32_from_list(x))) for x in trace_hash_chunks[i]
+        ) + "]"
+        cp_merkle_val = "list![" + ", ".join(
+            u256_hex(u256_from_bytes_be(bytes32_from_list(x))) for x in cp_hash_chunks[i]
+        ) + "]"
+        decommitment_items.append(
+            f"(({trace_evals_m31_val}, {trace_merkle_val}), ({cp_evals_m31_val}, {cp_merkle_val}))"
+        )
+    decommitments_list_val = "[" + ", ".join(decommitment_items) + "]"
 
     # FRI config and commitments
     fri = data["fri_proof"]
-    n_queries: int = int(data.get("config", {}).get("fri_config", {}).get("n_queries", 1))
+    # n_queries already determined above
     first_commitment_b = bytes32_from_list(fri["first_layer"]["commitment"]) if isinstance(fri["first_layer"]["commitment"], list) else bytes(fri["first_layer"]["commitment"])
     inner_layers = fri.get("inner_layers", [])
     n_layers: int = len(inner_layers)

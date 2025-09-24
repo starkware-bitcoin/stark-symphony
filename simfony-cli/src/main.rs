@@ -142,6 +142,8 @@ fn handle_build(
         println!("Node bounds: {:?}", node.bounds());
 
         let (program_bytes, witness_bytes) = node.encode_to_vec();
+        println!("Program size: {}", program_bytes.len());
+        println!("Witness size: {}", witness_bytes.len());
 
         let padding_size = node
             .bounds()

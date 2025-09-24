@@ -24,29 +24,31 @@
     /// NOTE: must be power of 2 (temporarily, because array macros work for power of 2 sizes only)
     #define NUM_FRI_QUERIES 1
     
-    /// Number of FRI layers (depends on the trace size).
+    /// Number of FRI inner layers (depends on the trace size).
     /// NOTE: must be power of 2 (temporarily, because array macros work for power of 2 sizes only)
     #define NUM_FRI_LAYERS 2
 
-    /// Preprocessed (constant trace) tree root
-    #define PP_ROOT 0x0
+    /// The target for the proof of work.
+    #define POW_TARGET_64 0x07ffffffffffffff // 5 bits
+
 #else
     #define TRACE_LOG_SIZE 9
 
     /// Log size of the extended evaluation domain.
     /// trace log size + log blowup factor
-    #define LDE_LOG_SIZE 10
+    #define LDE_LOG_SIZE 13
 
     /// Number of FRI queries.
     /// NOTE: must be power of 2 (temporarily, because array macros work for power of 2 sizes only)
     #define NUM_FRI_QUERIES 16
   
-    /// Number of FRI layers (depends on the trace size).
+    /// Number of FRI inner layers (depends on the trace size).
     /// NOTE: must be power of 2 (temporarily, because array macros work for power of 2 sizes only)
     #define NUM_FRI_LAYERS 8
 
-    /// Preprocessed (constant trace) tree root
-    #define PP_ROOT 0x0
+    /// The target for the proof of work.
+    /// TODO: change to 32
+    #define POW_TARGET_64 0x07ffffffffffffff // 5 bits
 
 #endif // TESTING
 

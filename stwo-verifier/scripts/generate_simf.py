@@ -128,21 +128,24 @@ def main() -> None:
             inner = inner[0]
         cp_oods_qm31.append(parse_qm31_from_json(inner))
 
-    # Decommitments
-    # JSON provides per-tree decommitments; we need (trace_decommitment, cp_decommitment) per query
-    # For current proofs there is 1 query.
+    # Decommitments: values and Merkle proofs are concatenated across queries
     decommitments = data["decommitments"]
-    trace_proof_nodes = [u256_from_bytes_be(bytes32_from_list(x)) for x in decommitments[1]["hash_witness"]]
-    cp_proof_nodes = [u256_from_bytes_be(bytes32_from_list(x)) for x in decommitments[2]["hash_witness"]]
+    n_queries: int = int(data.get("config", {}).get("fri_config", {}).get("n_queries", 1))
+    trace_hash_concat = decommitments[1]["hash_witness"]
+    cp_hash_concat = decommitments[2]["hash_witness"]
+    trace_hash_chunks = split_equal_chunks(trace_hash_concat, n_queries)
+    cp_hash_chunks = split_equal_chunks(cp_hash_concat, n_queries)
 
-    # Queried values (M31)
+    # Queried values (M31) are also concatenated
     queried = data["queried_values"]
-    trace_m31 = queried[1]  # 4 values
-    cp_m31 = queried[2]     # 16 values
+    trace_vals_concat = [int(x) for x in queried[1]]
+    cp_vals_concat = [int(x) for x in queried[2]]
+    trace_val_chunks = split_equal_chunks(trace_vals_concat, n_queries)
+    cp_val_chunks = split_equal_chunks(cp_vals_concat, n_queries)
 
     # FRI config and commitments
     fri = data["fri_proof"]
-    n_queries: int = int(data["config"]["fri_config"]["n_queries"]) if "config" in data and "fri_config" in data["config"] else 1
+    # n_queries defined above
     first_commitment_b = bytes32_from_list(fri["first_layer"]["commitment"]) if isinstance(fri["first_layer"]["commitment"], list) else bytes(fri["first_layer"]["commitment"])
     inner_layers = fri.get("inner_layers", [])
     inner_commitments_b = [bytes32_from_list(layer["commitment"]) for layer in inner_layers]
@@ -160,13 +163,23 @@ def main() -> None:
         f"(\n        {u256_hex(const_root)},\n        {u256_hex(trace_root)},\n        {u256_hex(cp_root)},\n    )"
     )
 
-    # Decommitments array: only one query in provided proof
-    trace_evals_m31_str = "[" + ", ".join(f"[{int(x)}]" for x in trace_m31) + "]"
-    cp_evals_m31_str = "[" + ", ".join(str(int(x)) for x in cp_m31) + "]"
-    trace_merkle_str = "list![" + ", ".join(u256_hex(x) for x in trace_proof_nodes) + "]"
-    cp_merkle_str = "list![" + ", ".join(u256_hex(x) for x in cp_proof_nodes) + "]"
+    # Decommitments array: build per query using the split chunks
+    decommitment_items: List[str] = []
+    for i in range(n_queries):
+        trace_evals_m31_str = "[" + ", ".join(f"[{int(x)}]" for x in trace_val_chunks[i]) + "]"
+        cp_evals_m31_str = "[" + ", ".join(str(int(x)) for x in cp_val_chunks[i]) + "]"
+        trace_merkle_str = "list![" + ", ".join(
+            u256_hex(u256_from_bytes_be(bytes32_from_list(x))) for x in trace_hash_chunks[i]
+        ) + "]"
+        cp_merkle_str = "list![" + ", ".join(
+            u256_hex(u256_from_bytes_be(bytes32_from_list(x))) for x in cp_hash_chunks[i]
+        ) + "]"
+        decommitment_items.append(
+            "(\n            (" + trace_evals_m31_str + ", " + trace_merkle_str + "),\n            (" + cp_evals_m31_str + ", " + cp_merkle_str + "),\n        )"
+        )
+    decommitments_inner = ",\n        ".join(decommitment_items)
     decommitments_str = (
-        "[\n        (\n            (" + trace_evals_m31_str + ", " + trace_merkle_str + "),\n            (" + cp_evals_m31_str + ", " + cp_merkle_str + "),\n        )\n    ]"
+        "[\n        " + decommitments_inner + "\n    ]"
     )
 
     # OODS evals (QM31)
