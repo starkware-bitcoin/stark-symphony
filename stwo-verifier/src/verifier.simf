@@ -12,7 +12,7 @@
 #include "evals/verify.simf"
 #include "fri/commit.simf"
 #include "fri/answers.simf"
-//#include "fri/verify.simf"
+#include "fri/verify.simf"
 
 /// Stwo proof:
 /// * commitments
@@ -24,13 +24,13 @@ type Proof = (
     [Decommitment; NUM_FRI_QUERIES],
     OodsEvals,
     FriCommitments,
-    //FriDecommitments,
+    FriDecommitments,
     u64,
 );
 
 /// Verify Stwo proof.
 fn verify_proof(proof: Proof) {
-    let (commitments, decommitments, oods_evals, fri_commitments, pow_nonce): Proof = proof;
+    let (commitments, decommitments, oods_evals, fri_commitments, fri_decommitments, pow_nonce): Proof = proof;
 
     // Initialize Prover <> Verifier non-interactive channel
     let state: ChannelState = channel_init();
@@ -54,7 +54,7 @@ fn verify_proof(proof: Proof) {
     let fri_answers: [FriAnswer; NUM_FRI_QUERIES] = fri_answers(query_responses, random_coeff, oods_point, oods_evals, LDE_LOG_SIZE);
     
     // Run FRI protocol for all the queries
-    //fri_verify(fri_layers, fri_decommitment, fri_answers, LDE_LOG_SIZE);
+    fri_verify(fri_layers, fri_decommitments, fri_answers, LDE_LOG_SIZE);
 }
 
 fn test_verify_proof() {
@@ -79,9 +79,30 @@ fn test_verify_proof() {
             [0x0d11aa22f18af5f6f5e8f7a844d359a82bffb5f18c12a29722a09884bc3a7b17, 0x8bcd04bf4645c85a8040bb8f29c588023e540fe9a8d1d22396d784ffbef71c40],
             qm31(1851250268, 910573865, 1450294152, 1860964773),
         ),
+        (
+            [
+                (
+                    qm31(1484824379, 1229977982, 1421154847, 1627236275),
+                    list![0x87ccfa665ca4f91454a98045fe8198fb65eb2e60e974addbe93b488f229c534e, 0x53266e6808282280665de29e749f5aad710ff056e7aefb16712005d1f438e259, 0x061e38b6444a637a0a7a3027d6dcef23ad597f7a304623cebddc010f41c8632d]
+                )
+            ],
+            [
+                [
+                    (
+                        qm31(327766526, 1092493934, 446779071, 2013755084),
+                        list![0x46ed5cf88a5f3cc367dfbc649adecd4cd1527b7f0f85e20fe6d3d4c8af043cc2, 0xfe9cad33a4c79f16e3f3af044e9da1aaf44bd7c00b83de13e44baf9d22fe5a6d]
+                    )
+                ],
+                [
+                    (
+                        qm31(776882854, 672105075, 926826408, 436663002),
+                        list![0xc74f446635d6b31807b103dce92b98900a173dd60d50643aa1ebea798eccbc81]
+                    )
+                ]
+            ]
+        ),
         185
     );
-    verify_proof(proof);
 }
 
 #endif

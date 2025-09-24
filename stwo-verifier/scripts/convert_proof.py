@@ -36,6 +36,56 @@ def fmt_qm31(q: Tuple[int, int, int, int]) -> str:
     return f"qm31({a}, {b}, {c}, {d})"
 
 
+def indent(text: str, spaces: int) -> str:
+    pad = " " * spaces
+    return "\n".join(pad + line if line else line for line in text.splitlines())
+
+
+def split_equal_chunks(lst: List[Any], n_chunks: int) -> List[List[Any]]:
+    assert n_chunks > 0, "n_chunks must be positive"
+    assert len(lst) % n_chunks == 0, "List length must be divisible by number of chunks"
+    chunk_size = len(lst) // n_chunks
+    return [lst[i * chunk_size : (i + 1) * chunk_size] for i in range(n_chunks)]
+
+
+def parse_fri_layer_decommitment(layer: Any, n_queries: int) -> str:
+    # Witnesses per query (QM31)
+    witnesses_json = layer["fri_witness"]
+    witnesses_qm31: List[Tuple[int, int, int, int]] = []
+    for w in witnesses_json:
+        inner = w
+        while isinstance(inner, list) and len(inner) == 1:
+            inner = inner[0]
+        witnesses_qm31.append(parse_qm31_from_json(inner))
+
+    # Hash witnesses are concatenated across queries – split equally
+    hash_witness_concat = layer["decommitment"]["hash_witness"]
+    hash_witness_chunks = split_equal_chunks(hash_witness_concat, n_queries)
+
+    # Build FriLayerDecommitment = [ (QM31, MerkleProof32); NUM_FRI_QUERIES ]
+    query_items: List[str] = []
+    for i in range(n_queries):
+        witness_q = fmt_qm31(witnesses_qm31[i])
+        proof_nodes_hex = [
+            u256_hex(u256_from_bytes_be(bytes32_from_list(x))) for x in hash_witness_chunks[i]
+        ]
+        proof_str = "list![" + ", ".join(proof_nodes_hex) + "]"
+        item = (
+            "(\n"
+            "            " + witness_q + ",\n"
+            "            " + proof_str + "\n"
+            "        )"
+        )
+        query_items.append(item)
+
+    inner = ",\n        ".join(query_items)
+    return (
+        "[\n"
+        "        " + inner + "\n"
+        "    ]"
+    )
+
+
 def main() -> None:
     if len(sys.argv) < 2:
         print("Usage: convert_proof.py <proof.json>", file=sys.stderr)
@@ -90,8 +140,9 @@ def main() -> None:
     trace_m31 = queried[1]  # 4 values
     cp_m31 = queried[2]     # 16 values
 
-    # FRI commitments
+    # FRI config and commitments
     fri = data["fri_proof"]
+    n_queries: int = int(data["config"]["fri_config"]["n_queries"]) if "config" in data and "fri_config" in data["config"] else 1
     first_commitment_b = bytes32_from_list(fri["first_layer"]["commitment"]) if isinstance(fri["first_layer"]["commitment"], list) else bytes(fri["first_layer"]["commitment"])
     inner_layers = fri.get("inner_layers", [])
     inner_commitments_b = [bytes32_from_list(layer["commitment"]) for layer in inner_layers]
@@ -129,6 +180,23 @@ def main() -> None:
     last_layer_str = fmt_qm31(last_coeffs_qm31)
     fri_commitments_str = f"(\n        {first_commitment_str},\n        {inner_commitments_str},\n        {last_layer_str},\n    )"
 
+    # FRI decommitments: (FriLayerDecommitment, [FriLayerDecommitment; NUM_FRI_LAYERS])
+    first_layer = fri["first_layer"]
+    first_layer_decommitment_str = indent(parse_fri_layer_decommitment(first_layer, n_queries), 8)
+    inner_layer_decommitments_strs = [parse_fri_layer_decommitment(layer, n_queries) for layer in inner_layers]
+    inner_layers_block = (
+        "[\n"
+        + ",\n".join(indent(s, 8) for s in inner_layer_decommitments_strs)
+        + "\n    ]"
+    )
+    fri_decommitments_str = (
+        "(\n"
+        + first_layer_decommitment_str
+        + ",\n"
+        + indent(inner_layers_block, 4)
+        + "\n    )"
+    )
+
     # PoW nonce
     pow_nonce = int(data.get("proof_of_work", 0))
 
@@ -139,6 +207,7 @@ def main() -> None:
         f"    {decommitments_str},\n"
         f"    {oods_evals_str},\n"
         f"    {fri_commitments_str},\n"
+        f"    {fri_decommitments_str},\n"
         f"    {pow_nonce}\n"
         ");"
     )
