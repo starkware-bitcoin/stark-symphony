@@ -20,7 +20,8 @@ type FriQueryDecommitment = (QM31, MerkleProof32);
 /// FRI folding context:
 /// * Layer commitment and folding alpha
 /// * Domain log size
-type FriLayerContext = (FriLayer, u8);
+/// * Is first layer
+type FriLayerContext = (FriLayer, u8, bool);
 
 /// Returns the two adjacent leaf indices for `query` in ascending order and their values.
 /// `evaluation` is the value at `query`, `witness` is the neighbor's value. The returned
@@ -46,40 +47,34 @@ fn verify_decommitment(position: u32, eval0: QM31, eval1: QM31, log_size_ex: u8,
     merkle_verify_32(node, auth_path, proof, root);
 }
 
-/// Verifies the first FRI layer for a single query and computes the next-layer evaluation.
-/// Steps:
-/// - Order `(quotient, witness)` as adjacent leaves and verify a shared Merkle proof.
-/// - Recover circle points for the query, apply the IFFT step, and fold with `fold_alpha`.
-fn fri_verify_first_layer(data: (FriAnswer, FriQueryDecommitment), context: FriLayerContext) -> (FriAnswer, FriLayerContext) {
-    let ((query, quotient), (witness, proof)): (FriAnswer, FriQueryDecommitment) = data;
-    let ((commitment, fold_alpha), log_size_ex): FriLayerContext = context;
+/// Verify first or inner layer (depending on the context) for a single query.
+/// Return folded query and evaluation.
+fn fri_verify_query(data: (FriAnswer, FriQueryDecommitment), context: FriLayerContext) -> (FriAnswer, FriLayerContext) {
+    let ((query, evaluation), (witness, proof)): (FriAnswer, FriQueryDecommitment) = data;
+    let ((commitment, fold_alpha), log_size_ex, is_first): FriLayerContext = context;
+    
     // Determine whether the witness position is on the left or right relative to quotient
-    let (position, f_p, f_neg_p): (u32, QM31, QM31) = adjacent_leaves(query, quotient, witness);
+    let (position, eval0, eval1): (u32, QM31, QM31) = adjacent_leaves(query, evaluation, witness);
+    
     // Verify decommitment (two adjacent leaves share the same proof)
-    verify_decommitment(position, f_p, f_neg_p, log_size_ex, proof, commitment);
-    // Project circle points onto a line and fold
-    (circle_fold(position, f_p, f_neg_p, log_size_ex, fold_alpha), context)
-}
-
-/// Verifies an inner FRI layer decommitment and folds to the next-layer evaluation.
-/// Expects two adjacent evaluations sharing a Merkle proof and uses the layer's `fold_alpha`.
-fn fri_verify_inner_layer(data: (FriAnswer, FriQueryDecommitment), context: FriLayerContext) -> (FriAnswer, FriLayerContext) {
-    let ((folded_query, folded_evaluation), (witness, proof)): (FriAnswer, FriQueryDecommitment) = data;
-    let ((commitment, fold_alpha), log_size_ex): FriLayerContext = context;
-    // Determine whether the witness position is on the left or right relative to the folded evaluation
-    let (position, f_x, f_neg_x): (u32, QM31, QM31) = adjacent_leaves(folded_query, folded_evaluation, witness);
-    // Verify decommitment (two adjacent leaves share the same proof)
-    verify_decommitment(position, f_x, f_neg_x, log_size_ex, proof, commitment);
-    // Fold the evaluations and query
-    (line_fold(position, f_x, f_neg_x, log_size_ex, fold_alpha), context)
+    verify_decommitment(position, eval0, eval1, log_size_ex, proof, commitment);
+    
+    // Project circle points onto a line for the first layer, otherwise fold the line points
+    let folded_eval: QM31 = match is_first {
+        true => circle_fold(position, eval0, eval1, log_size_ex, fold_alpha),
+        false => line_fold(position, eval0, eval1, log_size_ex, fold_alpha),
+    };
+    let folded_query: u32 = jet::divide_32(position, 2);
+    ((folded_query, folded_eval), context)
 }
 
 /// Verifies the last FRI layer for a single folded query.
 /// Last layer is a line polynomial (coefficients) of degree 0, i.e. constant.
-fn fri_verify_last_layer(folded_answer: FriAnswer, line_poly_coeff: QM31) {
+fn fri_verify_last_layer(folded_answer: FriAnswer, line_poly_coeff: QM31) -> QM31 {
     let (folded_query, folded_evaluation): FriAnswer = folded_answer;
     assert!(jet::eq_32(folded_query, 0));
     assert!(qm31_eq(folded_evaluation, line_poly_coeff));
+    line_poly_coeff
 }
 
 fn test_verify_decommitment() {
@@ -107,9 +102,10 @@ fn test_fri_verify_first_layer() {
     );
     let context: FriLayerContext = (
         (0x26da5011fe955be570da501ab3d42f3903913fa59554a6ec8bfbbc9c66d84b5b, qm31(1516394272, 915498982, 1578049480, 1826337248)), 
-        4
+        4,
+        true,
     );
-    let (folded_answer, folded_context): (FriAnswer, FriLayerContext) = fri_verify_first_layer(data, context);
+    let (folded_answer, folded_context): (FriAnswer, FriLayerContext) = fri_verify_query(data, context);
 }
 
 fn test_fri_verify_inner_layer() {
@@ -122,9 +118,10 @@ fn test_fri_verify_inner_layer() {
     );
     let context: FriLayerContext = (
         (0x0d11aa22f18af5f6f5e8f7a844d359a82bffb5f18c12a29722a09884bc3a7b17, qm31(428468021, 292366470, 1298858467, 227984395)), 
-        3
+        3,
+        false,
     );
-    let (folded_answer, folded_context): (FriAnswer, FriLayerContext) = fri_verify_inner_layer(data, context);
+    let (folded_answer, folded_context): (FriAnswer, FriLayerContext) = fri_verify_query(data, context);
 }
 
 #endif
