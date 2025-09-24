@@ -74,6 +74,7 @@ fn compute_auth_path(idx: u32, domain_size: u32) -> (u32, u32) {
 fn fri_verify_layer(layer: FriLayer, acc: FriAcc) -> FriAcc {
     let (cp_mt_root, beta, cpa_ev, cpa_proof, cpb_ev, cpb_proof): FriLayer = layer;
     let (idx, x, cp_ev, domain_size): FriAcc = acc;
+    assert!(jet::eq_32(cp_ev, cpa_ev));
     let (cpa_path, cpb_path): (u32, u32) = compute_auth_path(idx, domain_size);
     merkle_verify_32(sha256_32(cpa_ev), cpa_path, cpa_proof, cp_mt_root);
     merkle_verify_32(sha256_32(cpb_ev), cpb_path, cpb_proof, cp_mt_root);

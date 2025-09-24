@@ -1,0 +1,63 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
+#ifndef FRI_FOLDING_SIMF
+#define FRI_FOLDING_SIMF
+
+#include "config.simf"
+#include "fields/qm31.simf"
+#include "fields/m31.simf"
+#include "groups/circle_domain.simf"
+#include "groups/line_domain.simf"
+
+// Fold evaluations of a degree `d` circle polynomial into evaluations of a degree `d/2` univariate polynomial.
+fn circle_fold(position: u32, f_p: QM31, f_neg_p: QM31, log_size_ex: u8, fold_alpha: QM31) -> QM31 {
+    // Get y coords of the points given the left leaf position, precompute inverses
+    let domain: CircleDomain = circle_domain(log_size_ex);
+    let (_, y): M31Point = circle_position_to_m31_point(domain, bit_reverse_position(position, log_size_ex));
+    let y_inv: M31 = m31_inv(y);
+
+    // Calculate f0 = (f(p) + f(-p)) and f1 = (f(p) - f(-p)) / p.y
+    let f0: QM31 = qm31_add(f_p, f_neg_p);
+    let f1: QM31 = qm31_mul_m31(qm31_sub(f_p, f_neg_p), y_inv);
+
+    // Fold: res = f0 + fold_alpha * f1
+    qm31_add(f0, qm31_mul(fold_alpha, f1))
+}
+
+/// Folds evaluations of a degree `d` univariate polynomial into evaluations of a degree `d/2` univariate polynomial.
+fn line_fold(position: u32, f_p: QM31, f_neg_p: QM31, log_size_ex: u8, fold_alpha: QM31) -> QM31 {
+    let domain: LineDomain = line_domain(log_size_ex);
+    let x: M31 = line_position_to_x_coord(domain, bit_reverse_position(position, log_size_ex));
+    let x_inv: M31 = m31_inv(x);
+
+    // Calculate f0 = (f(x) + f(-x)) and f1 = (f(x) - f(-x)) / x
+    let f0: QM31 = qm31_add(f_p, f_neg_p);
+    let f1: QM31 = qm31_mul_m31(qm31_sub(f_p, f_neg_p), x_inv);
+
+    // Fold: res = f0 + fold_alpha * f1
+   qm31_add(f0, qm31_mul(fold_alpha, f1))
+}
+
+fn test_circle_fold() {
+    let query: u32 = 8;
+    let f_p: QM31 = qm31(133596213, 1292214427, 800853508, 1157812585);
+    let f_neg_p: QM31 = qm31(1484824379, 1229977982, 1421154847, 1627236275);
+    let log_size_ex: u8 = 4;
+    let fold_alpha: QM31 = qm31(1516394272, 915498982, 1578049480, 1826337248);
+    let folded_eval: QM31 = circle_fold(query, f_p, f_neg_p, log_size_ex, fold_alpha);
+    assert!(qm31_eq(folded_eval, qm31(393099248, 1530799782, 1841971559, 129121955)))
+}
+
+fn test_line_fold() {
+    let query: u32 = 4;
+    let f_x: QM31 = qm31(393099248, 1530799782, 1841971559, 129121955);
+    let f_neg_x: QM31 = qm31(327766526, 1092493934, 446779071, 2013755084);
+    let log_size_ex: u8 = 3;
+    let fold_alpha: QM31 = qm31(428468021, 292366470, 1298858467, 227984395);
+    let folded_eval: QM31 = line_fold(query, f_x, f_neg_x, log_size_ex, fold_alpha);
+    assert!(qm31_eq(folded_eval, qm31(443679784, 1722172524, 1862974103, 1176634013)))
+}
+
+#endif

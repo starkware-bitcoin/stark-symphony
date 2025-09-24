@@ -12,23 +12,40 @@
 #define MAX_COLUMN_OFFSET 1
 
 /// Number of columns in the AIR (depends on the particular choice).
+/// NOTE: must be power of 2 (temporarily, because array macros work for power of 2 sizes only)
 #define NUM_COLUMNS 4
 
-/// Max number of FRI layers (depends on the trace size).
-#define MAX_FRI_LAYERS 16
-
-/// Degree of the line polynomial
-#define MAX_LINE_POLY_DEGREE 16
-
 #ifdef TESTING
+    #define TRACE_LOG_SIZE 3
+
+    /// Log size of the extended evaluation domain.
+    /// trace log size + log blowup factor
+    #define LDE_LOG_SIZE 4
+
     /// Number of FRI queries.
+    /// NOTE: must be power of 2 (temporarily, because array macros work for power of 2 sizes only)
     #define NUM_FRI_QUERIES 1
+    
+    /// Number of FRI layers (depends on the trace size).
+    /// NOTE: must be power of 2 (temporarily, because array macros work for power of 2 sizes only)
+    #define NUM_FRI_LAYERS 2
 
     /// Preprocessed (constant trace) tree root
     #define PP_ROOT 0x0
 #else
+    #define TRACE_LOG_SIZE 9
+
+    /// Log size of the extended evaluation domain.
+    /// trace log size + log blowup factor
+    #define LDE_LOG_SIZE 10
+
     /// Number of FRI queries.
+    /// NOTE: must be power of 2 (temporarily, because array macros work for power of 2 sizes only)
     #define NUM_FRI_QUERIES 16
+  
+    /// Number of FRI layers (depends on the trace size).
+    /// NOTE: must be power of 2 (temporarily, because array macros work for power of 2 sizes only)
+    #define NUM_FRI_LAYERS 8
 
     /// Preprocessed (constant trace) tree root
     #define PP_ROOT 0x0

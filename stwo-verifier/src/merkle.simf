@@ -38,7 +38,8 @@ fn merkle_compute_step(sib_node: MerkleNode, acc: MerkleAcc) -> MerkleAcc {
 /// * `root` - The root of the Merkle tree.
 fn merkle_verify_32(leaf: u256, auth_path: u32, proof: MerkleProof32, root: u256) {
     let acc: MerkleAcc = (leaf, auth_path);
-    let (computed_root, _): MerkleAcc = fold::<merkle_compute_step, 32>(proof, acc);
+    let (computed_root, path): MerkleAcc = fold::<merkle_compute_step, 32>(proof, acc);
+    assert!(jet::eq_32(path, 1));
     assert!(jet::eq_256(computed_root, root));
 }
 

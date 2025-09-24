@@ -38,12 +38,12 @@ fn eval_column(col_evals: ColEvalsQM31, acc: EvalAcc) -> EvalAcc {
 }
 
 // CONFIG: define the macro for the current NUM_COLUMNS.
-DEFINE_FOLD_ARR_1(eval_column, ColEvalsQM31, EvalAcc, eval_column)
-DEFINE_FOLD_ARR(eval_column, ColEvalsQM31, EvalAcc, eval_column, 2, 1)
-DEFINE_FOLD_ARR(eval_column, ColEvalsQM31, EvalAcc, eval_column, 4, 2)
-DEFINE_FOLD_ARR(eval_column, ColEvalsQM31, EvalAcc, eval_column, 8, 4)
-DEFINE_FOLD_ARR(eval_column, ColEvalsQM31, EvalAcc, eval_column, 16, 8)
-DEFINE_FOLD_ARR(eval_column, ColEvalsQM31, EvalAcc, eval_column, 32, 16)
+DEFINE_FOLD_ARR_1(ColEvalsQM31, EvalAcc, eval_column)
+DEFINE_FOLD_ARR(ColEvalsQM31, EvalAcc, eval_column, 2, 1)
+DEFINE_FOLD_ARR(ColEvalsQM31, EvalAcc, eval_column, 4, 2)
+DEFINE_FOLD_ARR(ColEvalsQM31, EvalAcc, eval_column, 8, 4)
+DEFINE_FOLD_ARR(ColEvalsQM31, EvalAcc, eval_column, 16, 8)
+DEFINE_FOLD_ARR(ColEvalsQM31, EvalAcc, eval_column, 32, 16)
 
 /// Evaluates the composition polynomial at OODS point.
 ///

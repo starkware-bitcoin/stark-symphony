@@ -31,7 +31,7 @@ fn fri_generate_queries(state: ChannelState, log_size: u8) -> (ChannelState, [u3
     let (state, (q0, q1, q2, q3, q4, q5, q6, q7)): (ChannelState, U32x8) = channel_draw_queries_8(state, query_mask);
 
 #ifdef TESTING
-    let queries: [u32; NUM_FRI_QUERIES] = [q0];
+    let queries: [u32; NUM_FRI_QUERIES] = dbg!([q0]);
 #else
     let (state, (q8, q9, q10, q11, q12, q13, q14, q15)): (ChannelState, U32x8) = channel_draw_queries_8(state, query_mask);
     // CONFIG: see NUM_FRI_QUERIES
