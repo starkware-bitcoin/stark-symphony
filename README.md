@@ -1,7 +1,7 @@
-# STARK verifier in Simfony language
+# STARK verifier in SimplicityHL
 
-This is an exploration project with a goal to implement a simple STARK verifier in Simfony language.   
-[Simfony](https://github.com/BlockstreamResearch/simfony) is a Rust-like language that compiles to [Simplicity](https://github.com/BlockstreamResearch/simplicity) assembly. The stack is developed by Blockstream, and it is currently deployed in the [Liquid](https://liquidtestnet.com/) sidechain testnet.
+This is an exploration project with a goal to implement a simple STARK verifier in SimplicityHL language.   
+[SimplicityHL](https://github.com/BlockstreamResearch/simfony) is a Rust-like language that compiles to [Simplicity](https://github.com/BlockstreamResearch/simplicity) assembly. The stack is developed by Blockstream, and it is currently deployed in the [Liquid](https://liquidtestnet.com/) sidechain testnet.
 
 One of the key concepts of Simplicity is **Jets**:
 - The core language is very concise (nine GADT operators)
@@ -10,24 +10,6 @@ One of the key concepts of Simplicity is **Jets**:
 - This opens a clear path for introducing new exciting features without softforks, with a follow-up optimization route
 
 STARKs are perfect candidate for this approach!
-
-## Roadmap
-
-- [x] Fibonacci square over toy field PoC
-- [x] Liquid testnet deployment
-- [x] Operations in M31 field and its extensions
-- [x] Operations on M31 and QM31 circle points
-- [x] Composition polynomial evaluation
-- [x] Sha256 channel
-- [x] Commitment phase
-- [x] OODS phase
-- [x] Circle FRI commitment
-- [x] Proof of work
-- [ ] Generating FRI queries
-- [ ] Merkle decommitments
-- [ ] FRI decommitments
-- [ ] Wide fibonacci e2e
-- [ ] Plonk
 
 ## Dev quickstart
 
@@ -41,9 +23,15 @@ STARKs are perfect candidate for this approach!
 3. Build STARK verifier program with `make build`
 4. Run the program using the generated witness with `make run`
 
+### Stwo verifier
+1. Go to stwo-verifier folder
+2. Run tests with `make test`
+3. Generate witness with `make proof-wit`
+4. Build the program using `make build`
+
 ## Simfony CLI
 
-This is a small CLI tool that helps with the development of Simfony programs.
+This is a small CLI tool that helps with the development of SimplicityHL programs.
 
 Install `simfony` binary:
 
