@@ -6,4 +6,20 @@
 
 #include "verifier.simf"
 
-fn main() {}
+fn main() {
+    let commitments: Commitments = witness::COMMITMENTS;
+    let decommitments: Decommitments = witness::DECOMMITMENTS;
+    let oods_evals: OodsEvals = witness::OODS_EVALS;
+    let fri_commitments: FriCommitments = witness::FRI_COMMITMENTS;
+    let fri_decommitments: FriDecommitments = witness::FRI_DECOMMITMENTS;
+    let pow_nonce: u64 = witness::POW_NONCE;
+    let proof: StarkProof = (
+        commitments,
+        decommitments,
+        oods_evals,
+        fri_commitments,
+        fri_decommitments,
+        pow_nonce,
+    );
+    verify_proof(proof);
+}

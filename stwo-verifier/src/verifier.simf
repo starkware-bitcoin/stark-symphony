@@ -19,9 +19,9 @@
 /// * OODS trace evaluations and CP evaluation (partitioned) at OODS point
 /// * FRI commitments
 /// * PoW nonce
-type Proof = (
+type StarkProof = (
     Commitments,
-    [Decommitment; NUM_FRI_QUERIES],
+    Decommitments,
     OodsEvals,
     FriCommitments,
     FriDecommitments,
@@ -29,8 +29,8 @@ type Proof = (
 );
 
 /// Verify Stwo proof.
-fn verify_proof(proof: Proof) {
-    let (commitments, decommitments, oods_evals, fri_commitments, fri_decommitments, pow_nonce): Proof = proof;
+fn verify_proof(proof: StarkProof) {
+    let (commitments, decommitments, oods_evals, fri_commitments, fri_decommitments, pow_nonce): StarkProof = proof;
 
     // Initialize Prover <> Verifier non-interactive channel
     let state: ChannelState = channel_init();
@@ -58,7 +58,7 @@ fn verify_proof(proof: Proof) {
 }
 
 fn test_verify_proof() {
-    let proof: Proof = (
+    let proof: StarkProof = (
         (
             0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,
             0xc65ea783c23a8098b4ee6f1305f7ccfbbc2ed12a09cd1e3634ee33c9829a7a0d,

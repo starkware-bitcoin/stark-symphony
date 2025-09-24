@@ -29,6 +29,9 @@ type TraceDecommitment = (TraceEvalsM31, MerkleProof32);
 /// * composition polynomial decommitment
 type Decommitment = (TraceDecommitment, CpDecommitment);
 
+/// Array of decommitments.
+type Decommitments = [Decommitment; NUM_FRI_QUERIES];
+
 /// Pair of a query and a decommitment.
 type QueryDecommitment = (u32, Decommitment);
 

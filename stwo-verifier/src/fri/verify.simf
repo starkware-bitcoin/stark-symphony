@@ -128,8 +128,4 @@ fn fri_verify(fri_layers: FriLayers, fri_decommitments: FriDecommitments, fri_an
     let _: QM31 = fri_verify_last_layer_fold_arr(folded_answers, last_layer);
 }
 
-fn test_fri_verify() {
-
-}
-
 #endif
