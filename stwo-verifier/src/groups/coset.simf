@@ -1,0 +1,80 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
+#ifndef COSET_H
+#define COSET_H
+
+#include "groups/m31_point.simf"
+
+/// M31 circle point index bit mask
+#define M31_CIRCLE_ORDER_BIT_MASK 0x7fffffff
+
+/// Bit reverse a u8.
+fn bit_reverse_u8(value: u8) -> u8 {
+    let (a, b, c, d, e, f, g, h): (u1, u1, u1, u1, u1, u1, u1, u1) = <u8>::into(value);
+    <(u1, u1, u1, u1, u1, u1, u1, u1)>::into((h, g, f, e, d, c, b, a))
+}
+
+/// Returns the bit reversed position which is represented by `log_size` bits.
+fn bit_reverse_position(position: u32, log_size: u8) -> u32 {
+    let (l0, l1, l2, l3): (u8, u8, u8, u8) = <u32>::into(position);
+    let res: u32 = <(u8, u8, u8, u8)>::into((bit_reverse_u8(l3), bit_reverse_u8(l2), bit_reverse_u8(l1), bit_reverse_u8(l0)));
+    let (_, shift): (bool, u8) = jet::subtract_8(32, log_size);
+    jet::right_shift_32(shift, res)
+}
+
+/// Returns the generator (index) of the circle subgroup of size 2^log_size.
+fn circle_subgroup_gen(log_size: u8) -> u32 {
+    let (_, shift): (bool, u8) = jet::subtract_8(M31_CIRCLE_LOG_ORDER, log_size);
+    jet::left_shift_32(shift, 1)
+}
+
+/// Adds two circle point indices.
+fn circle_point_index_add(lhs: u32, rhs: u32) -> u32 {
+    let (_, res): (bool, u32) = jet::add_32(lhs, rhs);
+    jet::and_32(res, M31_CIRCLE_ORDER_BIT_MASK)
+}
+
+/// Multiplies two circle point indices.
+fn circle_point_index_mul(lhs: u32, rhs: u32) -> u32 {
+    let res: u64 = jet::multiply_32(lhs, rhs);
+    // Discarding the high 32 bits (emulating wrapping multiplication)
+    let (_, lo): (u32, u32) = <u64>::into(res);
+    jet::and_32(lo, M31_CIRCLE_ORDER_BIT_MASK)
+}
+
+/// Negates a circle point index.
+fn circle_point_index_neg(index: u32) -> u32 {
+    let (_, res): (bool, u32) = jet::subtract_32(M31_CIRCLE_ORDER, index);
+    jet::and_32(res, M31_CIRCLE_ORDER_BIT_MASK)
+}
+
+fn test_bit_reverse_position() {
+    let index: u32 = 15;
+    let log_size: u8 = 11;
+    let reversed: u32 = bit_reverse_position(index, log_size);
+    assert!(jet::eq_32(reversed, 1920));
+}
+
+fn test_circle_point_index_add() {
+    let lhs: u32 = 1389;
+    let rhs: u32 = 1390;
+    let res: u32 = circle_point_index_add(lhs, rhs);
+    assert!(jet::eq_32(res, 2779));
+}
+
+fn test_circle_point_index_mul() {
+    let lhs: u32 = 1389;
+    let rhs: u32 = 123;
+    let res: u32 = circle_point_index_mul(lhs, rhs);
+    assert!(jet::eq_32(res, 170847));
+}
+
+fn test_circle_point_index_neg() {
+    let index: u32 = 1389;
+    let res: u32 = circle_point_index_neg(index);
+    assert!(jet::eq_32(res, 2147482259));
+}
+
+#endif

@@ -38,14 +38,10 @@ def fmt_qm31(q: Tuple[int, int, int, int]) -> str:
 
 def main() -> None:
     if len(sys.argv) < 2:
-        print("Usage: convert_proof.py <proof.json> [--log-size N]", file=sys.stderr)
+        print("Usage: convert_proof.py <proof.json>", file=sys.stderr)
         sys.exit(1)
 
     path = sys.argv[1]
-    # Optional override for log_size
-    forced_log_size = None
-    if len(sys.argv) >= 4 and sys.argv[2] == "--log-size":
-        forced_log_size = int(sys.argv[3])
 
     with open(path, "r") as f:
         data = json.load(f)
@@ -103,15 +99,9 @@ def main() -> None:
     # Last layer polynomial coefficients (QM31 list)
     last_layer_poly = fri["last_layer_poly"]
     coeffs_json = last_layer_poly["coeffs"]
-    last_coeffs_qm31: List[Tuple[int, int, int, int]] = []
-    for coeff in coeffs_json:
-        inner = coeff
-        while isinstance(inner, list) and len(inner) == 1:
-            inner = inner[0]
-        last_coeffs_qm31.append(parse_qm31_from_json(inner))
-
-    # Optional log_size override or fallback
-    log_size = forced_log_size if forced_log_size is not None else 4  # best-effort default
+    last_coeffs_qm31: Tuple[int, int, int, int]
+    assert len(coeffs_json) == 1, "Expected only one coefficient"
+    last_coeffs_qm31 = parse_qm31_from_json(coeffs_json[0])
 
     # Prepare SimplicityHL serialization
     # Commitments tuple
@@ -135,8 +125,8 @@ def main() -> None:
 
     # FRI commitments (no alphas): (u256, List<u256, MAX_FRI_LAYERS>, LinePoly)
     first_commitment_str = u256_hex(u256_from_bytes_be(first_commitment_b))
-    inner_commitments_str = "list![" + ", ".join(u256_hex(u256_from_bytes_be(c_b)) for c_b in inner_commitments_b) + "]"
-    last_layer_str = "list![" + ", ".join(fmt_qm31(q) for q in last_coeffs_qm31) + "]"
+    inner_commitments_str = "[" + ", ".join(u256_hex(u256_from_bytes_be(c_b)) for c_b in inner_commitments_b) + "]"
+    last_layer_str = fmt_qm31(last_coeffs_qm31)
     fri_commitments_str = f"(\n        {first_commitment_str},\n        {inner_commitments_str},\n        {last_layer_str},\n    )"
 
     # PoW nonce
@@ -145,7 +135,6 @@ def main() -> None:
     # Assemble final proof
     proof_str = (
         "let proof: Proof = (\n"
-        f"    {int(log_size)},\n"
         f"    {commitments_str},\n"
         f"    {decommitments_str},\n"
         f"    {oods_evals_str},\n"

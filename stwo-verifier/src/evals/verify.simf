@@ -40,8 +40,8 @@ type QueryResponse = (u32, TraceEvalsM31, CPEvalM31);
 /// * domain size
 type QueryDecommitmentCtx = (Commitments, u32);
 
-/// Decommit trace polynomial evaluations at queried position.
-fn decommit_trace_evals(query: u32, decommitment: TraceDecommitment, root: MerkleNode, domain_size: u32) -> TraceEvalsM31 {
+/// Verify trace polynomial decommitment at queried position.
+fn verify_trace_evals(query: u32, decommitment: TraceDecommitment, root: MerkleNode, domain_size: u32) -> TraceEvalsM31 {
     let (evals, proof): (TraceEvalsM31, MerkleProof32) = decommitment;
     let trace_node: MerkleNode = hash_node_m31_trace(evals);
     // Auth path is query + num_leaves
@@ -50,8 +50,8 @@ fn decommit_trace_evals(query: u32, decommitment: TraceDecommitment, root: Merkl
     evals
 }
 
-/// Decommit composition polynomial evaluation at queried position.
-fn decommit_cp_evals(query: u32, decommitment: CpDecommitment, root: MerkleNode, domain_size: u32) -> CPEvalM31 {
+/// Verify composition polynomial decommitment at queried position.
+fn verify_cp_evals(query: u32, decommitment: CpDecommitment, root: MerkleNode, domain_size: u32) -> CPEvalM31 {
     let (evals, proof): (CPEvalM31, MerkleProof32) = decommitment;
     let cp_node: MerkleNode = hash_node_m31_cp(evals);
     // Auth path is query + num_leaves
@@ -62,11 +62,11 @@ fn decommit_cp_evals(query: u32, decommitment: CpDecommitment, root: MerkleNode,
 
 /// Decommit a single query and output a tuple of the query response and the unchanged context (roots).
 /// This is a mapper function.
-fn decommit_query(query_decommitment: QueryDecommitment, ctx: QueryDecommitmentCtx) -> (QueryResponse, QueryDecommitmentCtx) {
+fn verify_query(query_decommitment: QueryDecommitment, ctx: QueryDecommitmentCtx) -> (QueryResponse, QueryDecommitmentCtx) {
     let (query, (trace_decommitment, cp_decommitment)): QueryDecommitment = query_decommitment;
     let ((_, trace_root, cp_root), domain_size): QueryDecommitmentCtx = ctx;
-    let trace_evals: TraceEvalsM31 = decommit_trace_evals(query, trace_decommitment, trace_root, domain_size);
-    let cp_evals: CPEvalM31 = decommit_cp_evals(query, cp_decommitment, cp_root, domain_size);
+    let trace_evals: TraceEvalsM31 = verify_trace_evals(query, trace_decommitment, trace_root, domain_size);
+    let cp_evals: CPEvalM31 = verify_cp_evals(query, cp_decommitment, cp_root, domain_size);
     ((query, trace_evals, cp_evals), ctx)
 }
 
@@ -89,26 +89,23 @@ fn query_decommitments_zip_arr(queries: [u32; NUM_FRI_QUERIES], decommitments: [
 
 /// Map query decommitments to query responses.
 /// CONFIG: use the macro for the current NUM_FRI_QUERIES.
-DEFINE_MAP_ARR_1(QueryDecommitment, QueryResponse, QueryDecommitmentCtx, decommit_query)
-DEFINE_MAP_ARR(QueryDecommitment, QueryResponse, QueryDecommitmentCtx, decommit_query, 2, 1)
-DEFINE_MAP_ARR(QueryDecommitment, QueryResponse, QueryDecommitmentCtx, decommit_query, 4, 2)
-DEFINE_MAP_ARR(QueryDecommitment, QueryResponse, QueryDecommitmentCtx, decommit_query, 8, 4)
-DEFINE_MAP_ARR(QueryDecommitment, QueryResponse, QueryDecommitmentCtx, decommit_query, 16, 8)
+DEFINE_MAP_ARR_1(QueryDecommitment, QueryResponse, QueryDecommitmentCtx, verify_query)
+DEFINE_MAP_ARR(QueryDecommitment, QueryResponse, QueryDecommitmentCtx, verify_query, 2, 1)
+DEFINE_MAP_ARR(QueryDecommitment, QueryResponse, QueryDecommitmentCtx, verify_query, 4, 2)
+DEFINE_MAP_ARR(QueryDecommitment, QueryResponse, QueryDecommitmentCtx, verify_query, 8, 4)
+DEFINE_MAP_ARR(QueryDecommitment, QueryResponse, QueryDecommitmentCtx, verify_query, 16, 8)
 
 /// Map query decommitments to query responses.
-fn decommit_query_map_arr(query_decommitments: [QueryDecommitment; NUM_FRI_QUERIES], ctx: QueryDecommitmentCtx) -> ([QueryResponse; NUM_FRI_QUERIES], QueryDecommitmentCtx) {
+fn verify_query_map_arr(query_decommitments: [QueryDecommitment; NUM_FRI_QUERIES], ctx: QueryDecommitmentCtx) -> ([QueryResponse; NUM_FRI_QUERIES], QueryDecommitmentCtx) {
 #ifdef TESTING
-    decommit_query_map_arr_1(query_decommitments, ctx)
+    verify_query_map_arr_1(query_decommitments, ctx)
 #else
-    decommit_query_map_arr_16(query_decommitments, ctx)
+    verify_query_map_arr_16(query_decommitments, ctx)
 #endif // TESTING
 }
 
-/// Read FRI query positions and decommit evaluations at those positions.
-fn evals_decommit(state: ChannelState, log_size: u8, commitments: Commitments, decommitments: [Decommitment; NUM_FRI_QUERIES]) -> (ChannelState, [QueryResponse; NUM_FRI_QUERIES]) {
-    // Calculate the log size of the extended domain.
-    let (_, log_size_ex): (bool, u8) = jet::add_8(log_size, LOG_BLOWUP_FACTOR);
-
+/// Read FRI query positions and verify decommitments at those positions.
+fn evals_verify(state: ChannelState, log_size_ex: u8, commitments: Commitments, decommitments: [Decommitment; NUM_FRI_QUERIES]) -> (ChannelState, [QueryResponse; NUM_FRI_QUERIES]) {
     // Get FRI query positions
     let (state, queries): (ChannelState, [u32; NUM_FRI_QUERIES]) = fri_generate_queries(state, log_size_ex);
 
@@ -117,12 +114,12 @@ fn evals_decommit(state: ChannelState, log_size: u8, commitments: Commitments, d
 
     // Map query decommitments to query responses.
     let query_decommitment_ctx: QueryDecommitmentCtx = (commitments, jet::left_shift_32(log_size_ex, 1));
-    let (query_responses, _): ([QueryResponse; NUM_FRI_QUERIES], QueryDecommitmentCtx) = decommit_query_map_arr(query_decommitments, query_decommitment_ctx);
+    let (query_responses, _): ([QueryResponse; NUM_FRI_QUERIES], QueryDecommitmentCtx) = verify_query_map_arr(query_decommitments, query_decommitment_ctx);
 
     (state, query_responses)
 }
 
-fn test_decommit_query() {
+fn test_verify_query() {
     let roots: Commitments = (
         0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,
         0xbef91ef39ee85f484d625afbccf9cb3c0626bc753fdd2742b69dcbf63a7e1167,
@@ -140,7 +137,7 @@ fn test_decommit_query() {
     );
     let query: u32 = 1633;
     let domain_size: u32 = 2048;
-    let _: (QueryResponse, QueryDecommitmentCtx) = decommit_query((query, decommitment), (roots, domain_size));
+    let _: (QueryResponse, QueryDecommitmentCtx) = verify_query((query, decommitment), (roots, domain_size));
 }
 
 #endif

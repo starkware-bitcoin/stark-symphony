@@ -9,19 +9,17 @@
 #include "pow.simf"
 #include "deep/oods.simf"
 #include "evals/commit.simf"
-#include "evals/decommit.simf"
+#include "evals/verify.simf"
 #include "fri/commit.simf"
 #include "fri/answers.simf"
-#include "fri/decommit.simf"
+//#include "fri/verify.simf"
 
 /// Stwo proof:
-/// * trace log size
 /// * commitments
 /// * OODS trace evaluations and CP evaluation (partitioned) at OODS point
 /// * FRI commitments
 /// * PoW nonce
 type Proof = (
-    u8,
     Commitments,
     [Decommitment; NUM_FRI_QUERIES],
     OodsEvals,
@@ -32,7 +30,7 @@ type Proof = (
 
 /// Verify Stwo proof.
 fn verify_proof(proof: Proof) {
-    let (log_size, commitments, decommitments, oods_evals, fri_commitments, pow_nonce): Proof = proof;
+    let (commitments, decommitments, oods_evals, fri_commitments, pow_nonce): Proof = proof;
 
     // Initialize Prover <> Verifier non-interactive channel
     let state: ChannelState = channel_init();
@@ -41,7 +39,7 @@ fn verify_proof(proof: Proof) {
     let (state, cp_alpha): (ChannelState, QM31) = evals_commit(state, commitments);
 
     // Read trace evaluations and CP evaluation (partitioned) at out-of-domain point
-    let (state, random_coeff, oods_point): (ChannelState, QM31, QM31Point) = oods(state, log_size, oods_evals, cp_alpha);
+    let (state, random_coeff, oods_point): (ChannelState, QM31, QM31Point) = oods(state, TRACE_LOG_SIZE, oods_evals, cp_alpha);
 
     // Commit to FRI layers
     let (state, fri_layers): (ChannelState, FriLayers) = fri_commit(state, fri_commitments);
@@ -49,40 +47,39 @@ fn verify_proof(proof: Proof) {
     // Verify proof of work
     let state: ChannelState = check_proof_of_work(state, pow_nonce);
 
-    // Read and decommit evaluations at queried positions
-    let (state, query_responses): (ChannelState, [QueryResponse; NUM_FRI_QUERIES]) = evals_decommit(state, log_size, commitments, decommitments);
+    // Read and verify evaluation decommitments at queried positions
+    let (state, query_responses): (ChannelState, [QueryResponse; NUM_FRI_QUERIES]) = evals_verify(state, LDE_LOG_SIZE, commitments, decommitments);
 
     // Compute DEEP quotients at queried positions
-    let fri_answers: [FriAnswer; NUM_FRI_QUERIES] = fri_answers(query_responses, random_coeff, oods_point, oods_evals, log_size);
+    let fri_answers: [FriAnswer; NUM_FRI_QUERIES] = fri_answers(query_responses, random_coeff, oods_point, oods_evals, LDE_LOG_SIZE);
     
     // Run FRI protocol for all the queries
-    //fri_decommit(fri_layers, fri_answers);
+    //fri_verify(fri_layers, fri_decommitment, fri_answers, LDE_LOG_SIZE);
 }
 
 fn test_verify_proof() {
     let proof: Proof = (
-        10,
         (
             0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,
-            0xbef91ef39ee85f484d625afbccf9cb3c0626bc753fdd2742b69dcbf63a7e1167,
-            0x28bee4d01f3b1fea21370e41787a21fb14abbc671bff311be7215797d015ed61,
+            0xc65ea783c23a8098b4ee6f1305f7ccfbbc2ed12a09cd1e3634ee33c9829a7a0d,
+            0xf8a31f3f2cd5929ad666eb5a433464a4dac64ccbc23761e4ee3a49493b63d5b1,
         ),
         [
             (
-                ([[1], [139410720], [1700013473], [298840277]], list![0x7b27887a046ef1ceac6106a5dd5adad6ac6d52fbcf7f810cc4bbd67a2ba11d01, 0x3fd8f403637057955845055ea195fe6cea263623bcae2d9d2d564aa76cc8d135, 0xaedbb8a864c46fc6e45300d3728d0ab4aaf9dbc411c2541e39487912e8c146e3, 0x69915d342b04f9e2b07f0bd6e7a19788d34a80a7af8fc7624f5fbaae3e99cd83, 0x165a99657ea0a068152b7d570fb13fabcb91dd183fb0972135f869b04442802d, 0x095731161be9f3e3f0be374544de54f1a76e07d3f44484bcfd1c57e6ac252c22, 0xa2d2e46f6f7b03b946d92c4d7a1cb4de55fce28decb46f3bfe161a476d50ab31, 0x1fdbaad70ec724f0d2466f555a678b5b09b3ddc0c25379eaa2dedc1f1078ba05, 0xce8c33782b132040204d1ad98cf19abb279d5015548f8e65f84148983627c542, 0x24e8dadfae159acb643568b262a7eefb5828d67985d1639d3b9b11ac3d04abe7, 0xf7cea25c290e4f092eb3d666ba8452f72fa2a8886bad938d543d9f6d804b7533]),
-                ([1147251298, 1722372683, 1729749398, 1974162199, 321853455, 1373396954, 958279341, 252872847, 2017820635, 597429825, 413704560, 383544542, 134226940, 1803642786, 127014568, 403273301], list![0xdd4903110a1cc960e0120c1492ff7f097277a6b3bb3c6ae8a5336cdd5dd8f3cf, 0x5fa56aaedbe52846217f77e3c229d70e9e75252056de03bafe9acdd215ab08e9, 0xb7a042cf250ef416848de8f6d7c0bd05878e7fb497d0fbb030335dafc284165c, 0x3975e82c2ea944e62998d85fedc513fc873b3e8c29cb86d06ee0afd2e1980cad, 0x0b128dc96c42df2dc399f4b5aca393cb975e4048744dc4c11a1ce6d1b14b0204, 0x9701625a840e2c0700cfcfe42ce419be6427ebd1ccb685c9dc6ff0e6dcb0ec94, 0x646d86fba4d6637ec12cc43b6c43344429206158b4043fa25923bc7ba391db7d, 0x1fc2a1b529fbc849d737125701706bac43134b4a9bd85245eda42ab0689436d3, 0xf6a8cd8117c2e53ea032bdadd8038b9325d0d961f8e27f94541f96c6336f2841, 0x67ef4010514c8b554774572a69b28ac63b6f4cda178c5de872823ebe91bcf363, 0x283040a0fd5c9a0569190187a9e168c0ab058aab70c0290dd3ef12f37cc22ee1]),
+                ([[1], [1097248027], [203043143], [388317402]], list![0x87c06c0233ea3adf4fcf0b44e1093133c53ac0b1bf624a4d9a0188870be4103b, 0xbda875c57a1e13a092469061192b21ca6fe76d6b3c766aa782eb45b0b5678a29, 0xc03e0de290efcb5b56e1ded846fc0c186de756e207579c7fec38cc7a084984d8, 0x24bbed5e4abbf4ef71845fb597c940bd2af90c1d9a92f7531401dedcacc3d0b8]),
+                ([24417571, 734177972, 1061304697, 1743749941, 1773515215, 1064335009, 786846002, 665182420, 1394349939, 721175540, 1100190593, 545196695, 1486897469, 1000256507, 497011414, 895484187], list![0xd273f15b2722296af2ea3cad066a6d7d45cf521a8b2890a32cea25ae6ad71556, 0xa3d664316fb27a7ed950efdf3b086997936f54ee59fc681dfcf48bc2d4babde8, 0x8ddce621c685b8500c8f81bdd2736f4af1aae7ed49d0251b4a009e5f19d4477b, 0x1dd9d1d0b9e7d21fb0de6f598215b28af6f26dfdc1e6507ea2ffcc54f4ca1888]),
             )
         ],
         (
-            [[qm31(1, 0, 0, 0)], [qm31(1681911681, 1773265243, 1736861756, 1228667694)], [qm31(194747945, 500970143, 1469536596, 1498438001)], [qm31(494281534, 148837544, 35002031, 430043267)]],
-            [qm31(942572736, 713947206, 1753835565, 923186572), qm31(97332001, 342131944, 1894222083, 2072090188), qm31(1490230811, 1087931036, 668468424, 922520224), qm31(1863531657, 1293297427, 923741000, 1065768851), qm31(1398824300, 456591405, 1146222520, 449830787), qm31(397850325, 1477154358, 1349579272, 2074584503), qm31(1382913126, 437073405, 1043118352, 591381955), qm31(1168571065, 1338937485, 568253456, 917989840), qm31(1593177592, 626071749, 1262374577, 1408096041), qm31(1970440065, 1229270954, 1309403567, 1265979775), qm31(254727105, 2035590042, 2025080508, 2125237178), qm31(543543694, 1651569529, 670706689, 656511865), qm31(2044956127, 393858995, 1223680858, 216725672), qm31(278079246, 1363809514, 1226114987, 410108198), qm31(843237768, 1433322275, 625580103, 61831646), qm31(2025027313, 1914672673, 548949768, 892288245)],
+            [[qm31(1, 0, 0, 0)], [qm31(990025692, 1389754042, 1487506423, 685694764)], [qm31(894089319, 667649104, 649371519, 704390464)], [qm31(1642360473, 1090843745, 482993750, 784842214)]],
+            [qm31(959920549, 1760794918, 311260133, 1512597505), qm31(1511409668, 907835411, 1049830705, 2141520948), qm31(463626816, 727784487, 149742880, 93949568), qm31(1743749941, 0, 0, 0), qm31(2102633028, 1482184202, 1940121136, 1068512960), qm31(1032673586, 1816881966, 1689865120, 1475984463), qm31(786846002, 0, 0, 0), qm31(665182420, 0, 0, 0), qm31(1898289524, 2067715955, 2045793037, 1523138896), qm31(2091510314, 1151197826, 1007057364, 460154002), qm31(1100190593, 0, 0, 0), qm31(545196695, 0, 0, 0), qm31(1044506623, 1399438977, 688902540, 1384536142), qm31(595558306, 676448493, 2076120789, 108484436), qm31(497011414, 0, 0, 0), qm31(895484187, 0, 0, 0)],
         ),
         (
-            0x38b6fc3257d247a8c73306d347a2a2244a990c73486ae59da9f207734fc50490,
-            list![0x33aefc1aed2ca0df49d2b098eafbcd5a65cb9301b221b2d4e322ad404c7bc732, 0x2eab369c60f529bad6f64f4e4f52f0c4f3d5c8df7a85d2b1e3e6db90edc1675c, 0x84bcef84393cb9011b8f97317f117553cff4c0d0a18cd24f94c4d37a961c63e5, 0xed307d62d3d04baa7ec8e430b58d8e2c2257590f281c13d56d80adcb50f1d9ab, 0x601588b86c5313dc2214dbd6d69907e59915cb017610a18bcbc27ba629a4e740, 0x8f3b2970a06e4aa30862cd74b884d3285cfd4681539974fa6a701f013696e801, 0x17cd0d882a6200e6b44372ef1bbff75e245a7f8ff56160069daef6bcc9e9015a, 0x30ea91a9f6aa9545b621a57e56afe0b3a1345da68556673bd4fd72ba1d394c6c, 0xe0332e64adda972dd7634136609c4050ae2e720eed1e393244c276b3e3e99f60],
-            list![qm31(1993530748, 1540867123, 805781148, 712513523)],
+            0x26da5011fe955be570da501ab3d42f3903913fa59554a6ec8bfbbc9c66d84b5b,
+            [0x0d11aa22f18af5f6f5e8f7a844d359a82bffb5f18c12a29722a09884bc3a7b17, 0x8bcd04bf4645c85a8040bb8f29c588023e540fe9a8d1d22396d784ffbef71c40],
+            qm31(1851250268, 910573865, 1450294152, 1860964773),
         ),
-        15
+        185
     );
     verify_proof(proof);
 }

@@ -96,6 +96,13 @@ fn hash_node_m31_cp(cp_eval: CPEvalM31) -> u256 {
     jet::sha_256_ctx_8_finalize(ctx)
 }
 
+/// Hash a QM31 value.
+fn hash_node_qm31(eval: QM31) -> u256 {
+    let ctx: Ctx8 = jet::sha_256_ctx_8_init();
+    let ctx: Ctx8 = hasher_add_qm31(eval, ctx);
+    jet::sha_256_ctx_8_finalize(ctx)
+}
+
 fn test_sha256() {
     let input: u256 = 0x0000000000000000000000000000000000000000000000000000000000000000;
     let result: u256 = sha256(input);

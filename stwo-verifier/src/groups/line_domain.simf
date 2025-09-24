@@ -1,0 +1,33 @@
+// SPDX-FileCopyrightText: 2025 StarkWare Industries Ltd.
+//
+// SPDX-License-Identifier: MIT
+
+//! Domain comprising of the x-coordinates of points in a coset.
+
+#ifndef LINE_DOMAIN_H
+#define LINE_DOMAIN_H
+
+#include "groups/coset.simf"
+
+/// Line domain is a half of a standard coset, defined by parameters of its half-coset:
+///  * offset: 2^(31-(n+2))
+///  * step: 2^(31-n)
+type LineDomain = (u32, u32);
+
+/// Creates a line domain of size 2^log_size.
+fn line_domain(log_size: u8) -> LineDomain {
+    let (_, log_size_plus_2): (bool, u8) = jet::add_8(log_size, 2);
+    let offset: u32 = circle_subgroup_gen(log_size_plus_2);
+    let step: u32 = circle_subgroup_gen(log_size);
+    (offset, step)
+}
+
+/// Converts a position (number of an element) to a x coordinate of a point on the line domain.
+fn line_position_to_x_coord(domain: LineDomain, position: u32) -> M31 {
+    let (offset, step): (u32, u32) = domain;
+    let index: u32 = circle_point_index_add(offset, circle_point_index_mul(step, position));
+    let (x, _): M31Point = circle_point_index_to_m31_point(index);
+    x
+}
+
+#endif
