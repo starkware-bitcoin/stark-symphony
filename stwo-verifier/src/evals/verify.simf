@@ -84,7 +84,7 @@ DEFINE_ZIP_ARR(query_decommitments, u32, Decommitment, 16, 8)
 /// Zip queries with decommitments to get query decommitments (u32, Decommitment).
 fn query_decommitments_zip_arr(queries: [u32; NUM_FRI_QUERIES], decommitments: [Decommitment; NUM_FRI_QUERIES]) -> [QueryDecommitment; NUM_FRI_QUERIES] {
 #ifdef TESTING
-    query_decommitments_zip_arr_1(queries, decommitments)
+    query_decommitments_zip_arr_2(queries, decommitments)
 #else
     query_decommitments_zip_arr_16(queries, decommitments)
 #endif // TESTING
@@ -101,7 +101,7 @@ DEFINE_MAP_ARR(QueryDecommitment, QueryResponse, QueryDecommitmentCtx, verify_qu
 /// Map query decommitments to query responses.
 fn verify_query_map_arr(query_decommitments: [QueryDecommitment; NUM_FRI_QUERIES], ctx: QueryDecommitmentCtx) -> ([QueryResponse; NUM_FRI_QUERIES], QueryDecommitmentCtx) {
 #ifdef TESTING
-    verify_query_map_arr_1(query_decommitments, ctx)
+    verify_query_map_arr_2(query_decommitments, ctx)
 #else
     verify_query_map_arr_16(query_decommitments, ctx)
 #endif // TESTING

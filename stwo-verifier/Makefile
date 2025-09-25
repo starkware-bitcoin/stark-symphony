@@ -4,10 +4,10 @@ WIT_FILE=../target/proof.wit
 test:
 	bash ../scripts/unit_tests.sh --debug
 
-proof-simf:
+proof-test:
 	python3 scripts/generate_simf.py tests/data/proof.json > ../target/proof.simf
 
-proof-wit:
+proof:
 	python3 scripts/generate_wit.py tests/data/proof.json > $(WIT_FILE)
 
 build:

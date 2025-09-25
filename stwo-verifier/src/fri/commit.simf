@@ -13,10 +13,9 @@
 #include "macros/array_map.simf"
 
 /// FRI commitments:
-/// * first layer commitment
-/// * inner layers commitments
+/// * first and inner layers commitments
 /// * last layer: line polynomial coefficient (always degree 0)
-type FriCommitments = (u256, [u256; NUM_FRI_LAYERS], QM31);
+type FriCommitments = ([u256; NUM_FRI_LAYERS], QM31);
 
 /// FRI layer:
 /// * commitment
@@ -27,7 +26,7 @@ type FriLayer = (u256, QM31);
 /// * first layer
 /// * inner layers
 /// * last layer: line polynomial coefficient (always degree 0)
-type FriLayers = (FriLayer, [FriLayer; NUM_FRI_LAYERS], QM31);
+type FriLayers = ([FriLayer; NUM_FRI_LAYERS], QM31);
 
 /// Reads the FRI layer commitment and samples a random coefficient.
 /// Fails if the computed FRI layer evaluation does not match the pre-sampled FRI layer evaluation.
@@ -43,12 +42,12 @@ fn fri_layer_commit(root: u256, state: ChannelState) -> (FriLayer, ChannelState)
 }
 
 /// Mix line polynomial coefficients into the channel state.
-fn channel_mix_line_poly(state: ChannelState, last_layer: QM31) -> ChannelState {
+fn channel_mix_line_poly(state: ChannelState, line_poly_coeff: QM31) -> ChannelState {
     let (digest, _): ChannelState = state;
     let ctx: Ctx8 = jet::sha_256_ctx_8_init();
     let ctx: Ctx8 = jet::sha_256_ctx_8_add_32(ctx, digest);
     // Mix coefficients
-    let ctx: Ctx8 = hasher_add_qm31(last_layer, ctx);
+    let ctx: Ctx8 = hasher_add_qm31(line_poly_coeff, ctx);
     let res: u256 = jet::sha_256_ctx_8_finalize(ctx);
     // Reset the num_sent counter
     (res, 0)
@@ -70,38 +69,31 @@ fn fri_layer_commit_map_arr(commitments: [u256; NUM_FRI_LAYERS], state: ChannelS
 
 /// Commits the FRI layers.
 fn fri_commit(state: ChannelState, fri_commitments: FriCommitments) -> (ChannelState, FriLayers) {
-    let (first_commitment, inner_commitments, last_layer): FriCommitments = fri_commitments;
+    let (commitments, line_poly_coeff): FriCommitments = fri_commitments;
 
-    // Commit first layer
-    let (first_layer, state): (FriLayer, ChannelState) = fri_layer_commit(first_commitment, state);
-
-    // Commit inner layers
-    let (inner_layers, state): ([FriLayer; NUM_FRI_LAYERS], ChannelState) = fri_layer_commit_map_arr(inner_commitments, state);
+    // Commit first and inner layers
+    let (layers, state): ([FriLayer; NUM_FRI_LAYERS], ChannelState) = fri_layer_commit_map_arr(commitments, state);
 
     // Commit last layer (line polynomial coefficients)
-    let state: ChannelState = channel_mix_line_poly(state, last_layer);
+    let state: ChannelState = channel_mix_line_poly(state, line_poly_coeff);
 
-    (state, (first_layer, inner_layers, last_layer))
+    (state, (layers, line_poly_coeff))
 }
 
 #ifdef TESTING
 
 fn test_fri_commit() {
-    let state: ChannelState = (0x44dff4effae0be493c21672683c892b3baeaa7d251e5e7153bc0e0b2da8a9d96, 0);
+    let state: ChannelState = (0x28583eb83f6fe4837a995243e8e5c2648edbfd9cdd06262edcbce47fe96e5e3c, 0);
     let fri_commitments: FriCommitments = (
-        0x768a89291d8db4be401f5545f1cc7f25a1b00753773a4b3789592badc33ecf3f,
-        [
-            0x3f2a2cb1b0384b1ddd57c16bb40b67a0b011c1449606196e959fdbff885a0280,
-            0xb03eededd1682fcab8c82d0d284ccf0f8ddc7d003708ecd12323adfd843f0f5f,
-        ],
-        qm31(1462473176, 2065988908, 1080482792, 1497677558),
+        [0x0bee0d98d63597a3b6725c885e77c23647585e29ae3ebd3b3b88bdba21f30f13, 0xd63312459c0bd0456789cce101ab292880c3bf103514eb22bd7457808388423e],
+        qm31(502777192, 1639915013, 504572960, 826242631),
     );
     let ((digest, _), layers): (ChannelState, FriLayers) = fri_commit(state, fri_commitments);
-    assert!(jet::eq_256(digest, 0xa906adfe1ac2b7cf283ae8a11e16a1c4c44834f259056eacd36d14044761266c));
+    assert!(jet::eq_256(digest, 0x3532bad0c22ceae1a8c9e137dfde35b18e8bd4a08ce6c5e64ea3d9465a517f82));
 
-    let (first_layer, _, _): FriLayers = layers;
-    let (_, first_alpha): FriLayer = first_layer;
-    assert!(qm31_eq(first_alpha, qm31(299390734, 1867715474, 641071780, 899293580)));
+    let (layers, _): FriLayers = layers;
+    let ((_, first_alpha), _): (FriLayer, FriLayer) = <[FriLayer; NUM_FRI_LAYERS]>::into(layers);
+    assert!(qm31_eq(first_alpha, qm31(766788992, 1201991280, 1148418600, 2122329945)));
 }
 
 #endif // TESTING

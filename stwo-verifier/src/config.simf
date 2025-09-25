@@ -14,17 +14,17 @@
 #define NUM_COLUMNS 4
 
 #ifdef TESTING
-    #define TRACE_LOG_SIZE 3
+    #define TRACE_LOG_SIZE 2
 
     /// Log size of the extended evaluation domain.
     /// trace log size + log blowup factor
-    #define LDE_LOG_SIZE 4
+    #define LDE_LOG_SIZE 3
 
     /// Number of FRI queries.
     /// NOTE: must be power of 2 (temporarily, because array macros work for power of 2 sizes only)
-    #define NUM_FRI_QUERIES 1
+    #define NUM_FRI_QUERIES 2
     
-    /// Number of FRI inner layers (depends on the trace size).
+    /// Number of FRI layers except the last one (depends on the trace size).
     /// NOTE: must be power of 2 (temporarily, because array macros work for power of 2 sizes only)
     #define NUM_FRI_LAYERS 2
 
@@ -32,11 +32,11 @@
     #define POW_TARGET_64 0x07ffffffffffffff // 5 bits
 
 #else
-    #define TRACE_LOG_SIZE 9
+    #define TRACE_LOG_SIZE 8
 
     /// Log size of the extended evaluation domain.
     /// trace log size + log blowup factor
-    #define LDE_LOG_SIZE 13
+    #define LDE_LOG_SIZE 12
 
     /// Number of FRI queries.
     /// NOTE: must be power of 2 (temporarily, because array macros work for power of 2 sizes only)

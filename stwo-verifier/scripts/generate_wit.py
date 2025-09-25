@@ -87,9 +87,9 @@ def build_types(cols: int, col_offsets: int, cp_parts: int, n_queries: int, n_la
 
     FriQueryDecommitment = f"({QM31}, {MerkleProof32})"
     FriLayerDecommitment = f"[{FriQueryDecommitment}; {n_queries}]"
-    FriDecommitments = f"({FriLayerDecommitment}, [{FriLayerDecommitment}; {n_layers}])"
+    FriDecommitments = f"[{FriLayerDecommitment}; {n_layers}]"
 
-    FriCommitments = f"(u256, [u256; {n_layers}], {QM31})"
+    FriCommitments = f"([u256; {n_layers}], {QM31})"
 
     Commitments = "(u256, u256, u256)"
 
@@ -175,16 +175,25 @@ def build_witness_from_json(data: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
         )
     decommitments_list_val = "[" + ", ".join(decommitment_items) + "]"
 
-    # FRI config and commitments
+    # FRI config and commitments (unified layers array with fallback)
     fri = data["fri_proof"]
-    # n_queries already determined above
-    first_commitment_b = bytes32_from_list(fri["first_layer"]["commitment"]) if isinstance(fri["first_layer"]["commitment"], list) else bytes(fri["first_layer"]["commitment"])
-    inner_layers = fri.get("inner_layers", [])
-    n_layers: int = len(inner_layers)
-    inner_commitments_b = [bytes32_from_list(layer["commitment"]) for layer in inner_layers]
+    layers = fri.get("layers")
+    if layers is not None:
+        n_layers: int = len(layers)
+        layer_commitments_b = [
+            bytes32_from_list(layer["commitment"]) if isinstance(layer["commitment"], list) else bytes(layer["commitment"])  # type: ignore[arg-type]
+            for layer in layers
+        ]
+        fri_layers_for_decomm = layers
+    else:
+        first_commitment_b = bytes32_from_list(fri["first_layer"]["commitment"]) if isinstance(fri["first_layer"]["commitment"], list) else bytes(fri["first_layer"]["commitment"])  # type: ignore[arg-type]
+        inner_layers = fri.get("inner_layers", [])
+        n_layers = 1 + len(inner_layers)
+        inner_commitments_b = [bytes32_from_list(layer["commitment"]) for layer in inner_layers]
+        layer_commitments_b = [first_commitment_b] + inner_commitments_b
+        fri_layers_for_decomm = [fri["first_layer"]] + inner_layers
 
-    first_commitment_val = u256_hex(u256_from_bytes_be(first_commitment_b))
-    inner_commitments_val = "[" + ", ".join(u256_hex(u256_from_bytes_be(c_b)) for c_b in inner_commitments_b) + "]"
+    commitments_arr_val = "[" + ", ".join(u256_hex(u256_from_bytes_be(c_b)) for c_b in layer_commitments_b) + "]"
 
     # Last layer polynomial coefficients (QM31 list of one)
     last_layer_poly = fri["last_layer_poly"]
@@ -193,14 +202,11 @@ def build_witness_from_json(data: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
     last_coeffs_qm31 = parse_qm31_from_json(coeffs_json[0])
     last_layer_val = qm31_value_str(last_coeffs_qm31)
 
-    fri_commitments_val = f"({first_commitment_val}, {inner_commitments_val}, {last_layer_val})"
+    fri_commitments_val = f"({commitments_arr_val}, {last_layer_val})"
 
-    # FRI decommitments: first + inner
-    first_layer = fri["first_layer"]
-    first_layer_decommitment_val = parse_fri_layer_decommitment(first_layer, n_queries)
-    inner_layer_decommitments_vals = [parse_fri_layer_decommitment(layer, n_queries) for layer in inner_layers]
-    inner_layers_block_val = "[" + ", ".join(inner_layer_decommitments_vals) + "]"
-    fri_decommitments_val = f"({first_layer_decommitment_val}, {inner_layers_block_val})"
+    # FRI decommitments: unified array over layers
+    fri_layer_decommitments_vals = [parse_fri_layer_decommitment(layer, n_queries) for layer in fri_layers_for_decomm]
+    fri_decommitments_val = "[" + ", ".join(fri_layer_decommitments_vals) + "]"
 
     # PoW nonce
     pow_nonce = int(data.get("proof_of_work", 0))
