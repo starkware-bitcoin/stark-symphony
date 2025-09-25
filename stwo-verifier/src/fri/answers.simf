@@ -140,7 +140,7 @@ DEFINE_MAP_ARR(QueryResponse, FriAnswer, QueryResponseCtx, fri_answer, 16, 8)
 /// Map query responses to FRI answers.
 fn fri_answer_map_arr(responses: [QueryResponse; NUM_FRI_QUERIES], ctx: QueryResponseCtx) -> ([FriAnswer; NUM_FRI_QUERIES], QueryResponseCtx) {
 #ifdef TESTING
-    fri_answer_map_arr_1(responses, ctx)
+    fri_answer_map_arr_2(responses, ctx)
 #else
     fri_answer_map_arr_16(responses, ctx)
 #endif // TESTING

@@ -14,10 +14,8 @@
 /// FRI decommitment for a single layer:
 type FriLayerDecommitment = [FriQueryDecommitment; NUM_FRI_QUERIES];
 
-/// FRI decommitment:
-/// * first layer decommitments
-/// * inner layers decommitments
-type FriDecommitments = (FriLayerDecommitment, [FriLayerDecommitment; NUM_FRI_LAYERS]);
+/// FRI decommitments: first and inner layers
+type FriDecommitments = [FriLayerDecommitment; NUM_FRI_LAYERS];
 
 type FriLayerAccumulator = ([FriAnswer; NUM_FRI_QUERIES], u8);
 
@@ -30,7 +28,7 @@ DEFINE_ZIP_ARR(fri_layer_data, FriAnswer, FriQueryDecommitment, 16, 8)
 
 fn fri_layer_data_zip_arr(fri_answers: [FriAnswer; NUM_FRI_QUERIES], fri_layer_decommitment: [FriQueryDecommitment; NUM_FRI_QUERIES]) -> [(FriAnswer, FriQueryDecommitment); NUM_FRI_QUERIES] {
 #ifdef TESTING
-    fri_layer_data_zip_arr_1(fri_answers, fri_layer_decommitment)
+    fri_layer_data_zip_arr_2(fri_answers, fri_layer_decommitment)
 #else
     fri_layer_data_zip_arr_16(fri_answers, fri_layer_decommitment)
 #endif // TESTING
@@ -45,23 +43,23 @@ DEFINE_MAP_ARR((FriAnswer, FriQueryDecommitment), FriAnswer, FriLayerContext, fr
 
 fn fri_verify_query_map_arr(data: [(FriAnswer, FriQueryDecommitment); NUM_FRI_QUERIES], context: FriLayerContext) -> ([FriAnswer; NUM_FRI_QUERIES], FriLayerContext) {
 #ifdef TESTING
-    fri_verify_query_map_arr_1(data, context)
+    fri_verify_query_map_arr_2(data, context)
 #else
     fri_verify_query_map_arr_16(data, context)
 #endif // TESTING
 }
 
 // CONFIG: see NUM_FRI_LAYERS.
-DEFINE_ZIP_ARR_1(fri_inner_layer, FriLayer, FriLayerDecommitment)
-DEFINE_ZIP_ARR(fri_inner_layer, FriLayer, FriLayerDecommitment, 2, 1)
-DEFINE_ZIP_ARR(fri_inner_layer, FriLayer, FriLayerDecommitment, 4, 2)
-DEFINE_ZIP_ARR(fri_inner_layer, FriLayer, FriLayerDecommitment, 8, 4)
+DEFINE_ZIP_ARR_1(fri_layer, FriLayer, FriLayerDecommitment)
+DEFINE_ZIP_ARR(fri_layer, FriLayer, FriLayerDecommitment, 2, 1)
+DEFINE_ZIP_ARR(fri_layer, FriLayer, FriLayerDecommitment, 4, 2)
+DEFINE_ZIP_ARR(fri_layer, FriLayer, FriLayerDecommitment, 8, 4)
 
-fn fri_inner_layer_zip_arr(fri_layers: [FriLayer; NUM_FRI_LAYERS], fri_layer_decommitments: [FriLayerDecommitment; NUM_FRI_LAYERS]) -> [(FriLayer, FriLayerDecommitment); NUM_FRI_LAYERS] {
+fn fri_layer_zip_arr(fri_layers: [FriLayer; NUM_FRI_LAYERS], fri_layer_decommitments: [FriLayerDecommitment; NUM_FRI_LAYERS]) -> [(FriLayer, FriLayerDecommitment); NUM_FRI_LAYERS] {
 #ifdef TESTING
-    fri_inner_layer_zip_arr_2(fri_layers, fri_layer_decommitments)
+    fri_layer_zip_arr_2(fri_layers, fri_layer_decommitments)
 #else
-    fri_inner_layer_zip_arr_8(fri_layers, fri_layer_decommitments)
+    fri_layer_zip_arr_8(fri_layers, fri_layer_decommitments)
 #endif // TESTING
 }
 
@@ -75,23 +73,23 @@ fn fri_verify_layer(fri_answers: [FriAnswer; NUM_FRI_QUERIES], fri_layer_decommi
 }
 
 /// Verify inner layers.
-fn fri_verify_inner_layers(data: (FriLayer, FriLayerDecommitment), acc: FriLayerAccumulator) -> FriLayerAccumulator {
+fn fri_verify_layers(data: (FriLayer, FriLayerDecommitment), acc: FriLayerAccumulator) -> FriLayerAccumulator {
     let (fri_layer, fri_layer_decommitment): (FriLayer, FriLayerDecommitment) = data;
     let (fri_answers, log_size_ex): FriLayerAccumulator = acc;
     fri_verify_layer(fri_answers, fri_layer_decommitment, (fri_layer, log_size_ex, false))
 }
 
 // CONFIG: see NUM_FRI_LAYERS.
-DEFINE_FOLD_ARR_1((FriLayer, FriLayerDecommitment), FriLayerAccumulator, fri_verify_inner_layers)
-DEFINE_FOLD_ARR((FriLayer, FriLayerDecommitment), FriLayerAccumulator, fri_verify_inner_layers, 2, 1)
-DEFINE_FOLD_ARR((FriLayer, FriLayerDecommitment), FriLayerAccumulator, fri_verify_inner_layers, 4, 2)
-DEFINE_FOLD_ARR((FriLayer, FriLayerDecommitment), FriLayerAccumulator, fri_verify_inner_layers, 8, 4)
+DEFINE_FOLD_ARR_1((FriLayer, FriLayerDecommitment), FriLayerAccumulator, fri_verify_layers)
+DEFINE_FOLD_ARR((FriLayer, FriLayerDecommitment), FriLayerAccumulator, fri_verify_layers, 2, 1)
+DEFINE_FOLD_ARR((FriLayer, FriLayerDecommitment), FriLayerAccumulator, fri_verify_layers, 4, 2)
+DEFINE_FOLD_ARR((FriLayer, FriLayerDecommitment), FriLayerAccumulator, fri_verify_layers, 8, 4)
 
-fn fri_verify_inner_layers_fold_arr(data: [(FriLayer, FriLayerDecommitment); NUM_FRI_LAYERS], acc: FriLayerAccumulator) -> FriLayerAccumulator {
+fn fri_verify_layers_fold_arr(data: [(FriLayer, FriLayerDecommitment); NUM_FRI_LAYERS], acc: FriLayerAccumulator) -> FriLayerAccumulator {
 #ifdef TESTING
-    fri_verify_inner_layers_fold_arr_2(data, acc)
+    fri_verify_layers_fold_arr_2(data, acc)
 #else
-    fri_verify_inner_layers_fold_arr_8(data, acc)
+    fri_verify_layers_fold_arr_8(data, acc)
 #endif // TESTING
 }
 
@@ -104,7 +102,7 @@ DEFINE_FOLD_ARR(FriAnswer, QM31, fri_verify_last_layer, 16, 8)
 
 fn fri_verify_last_layer_fold_arr(folded_answers: [FriAnswer; NUM_FRI_QUERIES], line_poly_coeff: QM31) -> QM31 {
 #ifdef TESTING
-    fri_verify_last_layer_fold_arr_1(folded_answers, line_poly_coeff)
+    fri_verify_last_layer_fold_arr_2(folded_answers, line_poly_coeff)
 #else
     fri_verify_last_layer_fold_arr_16(folded_answers, line_poly_coeff)
 #endif // TESTING
@@ -112,20 +110,17 @@ fn fri_verify_last_layer_fold_arr(folded_answers: [FriAnswer; NUM_FRI_QUERIES], 
 
 /// Verify FRI decommitments.
 fn fri_verify(fri_layers: FriLayers, fri_decommitments: FriDecommitments, fri_answers: [FriAnswer; NUM_FRI_QUERIES], log_size_ex: u8) {
-    let (first_layer, inner_layers, last_layer): FriLayers = fri_layers;
-    let (first_layer_decommitment, inner_layer_decommitments): FriDecommitments = fri_decommitments;
+    let (layers, line_poly_coeff): FriLayers = fri_layers;
 
-    // Verify the first layer
-    let acc: FriLayerAccumulator = fri_verify_layer(fri_answers, first_layer_decommitment, (first_layer, log_size_ex, true));
-    
-    // Zip inner layer commitments with inner layers decommitments and verify the inner layers
-    let inner_layer_data: [(FriLayer, FriLayerDecommitment); NUM_FRI_LAYERS] = fri_inner_layer_zip_arr(inner_layers, inner_layer_decommitments);
-    let acc: FriLayerAccumulator = fri_verify_inner_layers_fold_arr(inner_layer_data, acc);
+    // Zip layer commitments with decommitments and verify the layers
+    let layer_data: [(FriLayer, FriLayerDecommitment); NUM_FRI_LAYERS] = fri_layer_zip_arr(layers, fri_decommitments);
+    let acc: FriLayerAccumulator = (fri_answers, log_size_ex);
+    let acc: FriLayerAccumulator = fri_verify_layers_fold_arr(layer_data, acc);
 
     // Verify the last layer
     let (folded_answers, log_size_ex): FriLayerAccumulator = acc;
     assert!(jet::eq_8(log_size_ex, 0));
-    let _: QM31 = fri_verify_last_layer_fold_arr(folded_answers, last_layer);
+    let _: QM31 = fri_verify_last_layer_fold_arr(folded_answers, line_poly_coeff);
 }
 
 #endif

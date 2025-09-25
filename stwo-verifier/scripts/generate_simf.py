@@ -146,9 +146,18 @@ def main() -> None:
     # FRI config and commitments
     fri = data["fri_proof"]
     # n_queries defined above
-    first_commitment_b = bytes32_from_list(fri["first_layer"]["commitment"]) if isinstance(fri["first_layer"]["commitment"], list) else bytes(fri["first_layer"]["commitment"])
-    inner_layers = fri.get("inner_layers", [])
-    inner_commitments_b = [bytes32_from_list(layer["commitment"]) for layer in inner_layers]
+    layers = fri.get("layers")
+    if layers is not None:
+        layer_commitments_b = [
+            bytes32_from_list(layer["commitment"]) if isinstance(layer["commitment"], list) else bytes(layer["commitment"])  # type: ignore[arg-type]
+            for layer in layers
+        ]
+    else:
+        # Backward compatibility: separate first + inner
+        first_commitment_b = bytes32_from_list(fri["first_layer"]["commitment"]) if isinstance(fri["first_layer"]["commitment"], list) else bytes(fri["first_layer"]["commitment"])  # type: ignore[arg-type]
+        inner_layers = fri.get("inner_layers", [])
+        inner_commitments_b = [bytes32_from_list(layer["commitment"]) for layer in inner_layers]
+        layer_commitments_b = [first_commitment_b] + inner_commitments_b
 
     # Last layer polynomial coefficients (QM31 list)
     last_layer_poly = fri["last_layer_poly"]
@@ -187,27 +196,19 @@ def main() -> None:
     cp_oods_str = "[" + ", ".join(fmt_qm31(q) for q in cp_oods_qm31) + "]"
     oods_evals_str = f"(\n        {trace_oods_str},\n        {cp_oods_str},\n    )"
 
-    # FRI commitments (no alphas): (u256, List<u256, MAX_FRI_LAYERS>, LinePoly)
-    first_commitment_str = u256_hex(u256_from_bytes_be(first_commitment_b))
-    inner_commitments_str = "[" + ", ".join(u256_hex(u256_from_bytes_be(c_b)) for c_b in inner_commitments_b) + "]"
+    # FRI commitments (unified): ([u256; NUM_FRI_LAYERS], LinePoly)
+    commitments_arr_str = "[" + ", ".join(u256_hex(u256_from_bytes_be(c_b)) for c_b in layer_commitments_b) + "]"
     last_layer_str = fmt_qm31(last_coeffs_qm31)
-    fri_commitments_str = f"(\n        {first_commitment_str},\n        {inner_commitments_str},\n        {last_layer_str},\n    )"
+    fri_commitments_str = f"(\n        {commitments_arr_str},\n        {last_layer_str},\n    )"
 
-    # FRI decommitments: (FriLayerDecommitment, [FriLayerDecommitment; NUM_FRI_LAYERS])
-    first_layer = fri["first_layer"]
-    first_layer_decommitment_str = indent(parse_fri_layer_decommitment(first_layer, n_queries), 8)
-    inner_layer_decommitments_strs = [parse_fri_layer_decommitment(layer, n_queries) for layer in inner_layers]
-    inner_layers_block = (
-        "[\n"
-        + ",\n".join(indent(s, 8) for s in inner_layer_decommitments_strs)
-        + "\n    ]"
-    )
+    # FRI decommitments (unified array)
+    fri_layers_list = layers if layers is not None else [fri["first_layer"]] + inner_layers
+    fri_layer_decommitments_strs = [parse_fri_layer_decommitment(layer, n_queries) for layer in fri_layers_list]
+    fri_decommitments_inner = ",\n".join(indent(s, 8) for s in fri_layer_decommitments_strs)
     fri_decommitments_str = (
-        "(\n"
-        + first_layer_decommitment_str
-        + ",\n"
-        + indent(inner_layers_block, 4)
-        + "\n    )"
+        "[\n"
+        + "        " + fri_decommitments_inner + "\n"
+        + "    ]"
     )
 
     # PoW nonce
@@ -215,7 +216,7 @@ def main() -> None:
 
     # Assemble final proof
     proof_str = (
-        "let proof: Proof = (\n"
+        "let proof: StarkProof = (\n"
         f"    {commitments_str},\n"
         f"    {decommitments_str},\n"
         f"    {oods_evals_str},\n"
